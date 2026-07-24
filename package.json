@@ -10,7 +10,9 @@
     "clean": "next clean",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "import:geo": "bun run scripts/import-geonames.ts",
+    "import:kinginsun": "bun run scripts/import-kinginsun.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
