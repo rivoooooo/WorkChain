@@ -4,14 +4,10 @@ import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language } from '../../../../lib/i18n';
-import { ThemeToggle } from '../../../../components/theme-toggle';
 import {
   Building,
-  ArrowLeft,
   Search,
-  SlidersHorizontal,
-  ChevronRight,
-  TrendingUp,
+  ArrowUpDown,
   Star,
   Clock,
   DollarSign,
@@ -22,12 +18,12 @@ import {
   Loader2,
   ShieldCheck,
   ShieldAlert,
-  ThumbsUp,
-  ThumbsDown,
   Building2,
-  Briefcase,
   MapPin,
-  AlertCircle
+  AlertCircle,
+  Briefcase,
+  Layers,
+  FileText
 } from 'lucide-react';
 
 interface Review {
@@ -87,7 +83,7 @@ interface CacheEntry {
   timestamp: number;
 }
 
-const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+const CACHE_DURATION_MS = 24 * 60 * 60 * 1000;
 
 const getCachedAIReport = (companyId: string): AIReport | null => {
   if (typeof window === 'undefined') return null;
@@ -125,12 +121,6 @@ const setCachedAIReport = (companyId: string, data: AIReport) => {
 export default function CompanyDetailPage({ params }: { params: Promise<{ id: string; lang: string }> }) {
   const { id: companyId, lang: rawLang } = use(params);
   const lang: Language = (rawLang === 'zh-cn' || rawLang === 'zh') ? 'zh' : 'en';
-
-  const toggleLang = () => {
-    const nextLangPath = lang === 'zh' ? `/en/companies/${companyId}` : `/zh-cn/companies/${companyId}`;
-    window.location.href = nextLangPath;
-  };
-
   const t = i18n[lang];
 
   // Component State
@@ -149,7 +139,6 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const [aiReport, setAiReport] = useState<AIReport | null>(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiError, setAiError] = useState('');
-  const [isReportFromCache, setIsReportFromCache] = useState(false);
 
   // Blockchain Ledger verification states
   const [isVerifyingLedger, setIsVerifyingLedger] = useState(false);
@@ -164,25 +153,21 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
     async function loadData() {
       setIsLoading(true);
       try {
-        // Fetch company detail
         const compRes = await fetch(`/api/companies?id=${companyId}`);
         const compJson = await compRes.json();
         if (compJson.success) {
           setCompany(compJson.data);
         }
 
-        // Fetch company reviews
         const revRes = await fetch(`/api/reviews?company_id=${companyId}`);
         const revJson = await revRes.json();
         if (revJson.success) {
           setReviews(revJson.data || []);
         }
 
-        // Preload cached AI Report
         const cached = getCachedAIReport(companyId);
         if (cached) {
           setAiReport(cached);
-          setIsReportFromCache(true);
         }
       } catch (err) {
         console.error('Failed to fetch company details:', err);
@@ -193,10 +178,8 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
     loadData();
   }, [companyId]);
 
-  // Unique lists for filtering dropdowns
   const uniquePositions = Array.from(new Set(reviews.map(r => r.position.trim()))).filter(Boolean);
 
-  // Filter and sort reviews
   const filteredAndSortedReviews = reviews
     .filter(r => {
       const matchSearch =
@@ -215,19 +198,16 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         const ratingB = (b.rating_career + b.rating_balance + b.rating_management + b.rating_compensation + b.rating_culture) / 5;
         return ratingB - ratingA;
       } else {
-        // 'latest'
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       }
     });
 
-  // Call Gemini API Route for analysis
   const handleGenerateAIReport = async (force: boolean = false) => {
     if (!company) return;
     if (!force) {
       const cached = getCachedAIReport(companyId);
       if (cached) {
         setAiReport(cached);
-        setIsReportFromCache(true);
         return;
       }
     }
@@ -243,7 +223,6 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
       const json = await res.json();
       if (json.success) {
         setAiReport(json.data);
-        setIsReportFromCache(false);
         setCachedAIReport(companyId, json.data);
       } else {
         setAiError(json.error || '无法生成AI分析报告，请稍后再试。');
@@ -256,13 +235,11 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  // Perform Blockchain Integrity Verification
   const handleVerifyLedger = () => {
     if (reviews.length === 0) return;
     setIsVerifyingLedger(true);
     setVerificationResult(null);
 
-    // Dynamic audit animation
     setTimeout(() => {
       const details: typeof verificationResult = {
         isValid: true,
@@ -272,8 +249,6 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
       for (let i = 0; i < reviews.length; i++) {
         const r = reviews[i];
-        
-        // Match standard evaluation of previous hashes
         const chainLinkIsValid = i === 0 ? r.previous_hash === '0' : r.previous_hash === reviews[i - 1].hash;
 
         details.details.push({
@@ -292,14 +267,14 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
       setVerificationResult(details);
       setIsVerifyingLedger(false);
-    }, 1500);
+    }, 1200);
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center" id="loading_screen">
-        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mb-4" />
-        <p className="text-sm text-muted-foreground tracking-wide">
+      <div className="flex flex-col items-center justify-center py-20 font-sans" id="loading_screen">
+        <Loader2 className="w-8 h-8 text-foreground animate-spin mb-4" />
+        <p className="text-xs text-muted-foreground font-mono">
           {lang === 'zh' ? '正在加载企业专属口碑看板与存证数据...' : 'Syncing company profile and block reviews...'}
         </p>
       </div>
@@ -308,15 +283,15 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
   if (!company) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4" id="error_screen">
-        <AlertCircle className="w-16 h-16 text-rose-500 mb-4" />
-        <h1 className="text-xl font-bold text-foreground mb-2">{lang === 'zh' ? '未找到该企业' : 'Company Not Found'}</h1>
-        <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
+      <div className="text-center py-20 border border-border bg-card rounded-none" id="error_screen">
+        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+        <h1 className="text-lg font-bold text-foreground mb-2">{lang === 'zh' ? '未找到该企业' : 'Company Not Found'}</h1>
+        <p className="text-xs text-muted-foreground mb-6 max-w-sm mx-auto">
           {lang === 'zh' ? '该企业可能尚未创建评价，或者标识符无效。' : 'No records exist under this identifier.'}
         </p>
         <Link
-          href={`/${rawLang}`}
-          className="px-5 py-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500 hover:text-black font-semibold rounded-xl transition-all"
+          href={`/${rawLang}/companies`}
+          className="px-4 py-2 bg-foreground text-background font-bold text-xs rounded-none transition-all"
         >
           {t.backToHome}
         </Link>
@@ -327,811 +302,477 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const overallScorePercent = Math.round(company.avg_rating * 20);
 
   return (
-    <main className="min-h-screen bg-background text-foreground transition-colors duration-200 selection:bg-emerald-500/20" id="company_detail_root">
-      {/* Dynamic Top Banner */}
-      <div className="bg-muted/40 text-muted-foreground py-2.5 px-4 text-xs font-medium border-b border-border" id="top_announcement">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 text-emerald-500" />
-            <span>{t.topBanner}</span>
+    <div className="w-full font-sans" id="company_detail_root">
+      
+      {/* TOP NEWSPAPER COMPANY MASTHEAD (REFERENCE IMAGE MATCH) */}
+      <div className="border-b border-border pb-6 mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4" id="company_masthead">
+        <div>
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-1">
+            {lang === 'zh' ? '企业全景口碑与去中心化存证档案' : 'Corporate Telemetry Dossier'}
           </span>
-          <span className="hidden md:inline text-emerald-500 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest">
-            {t.blockchainSecured}
-          </span>
+          <h1 className="text-3xl sm:text-5xl font-black text-foreground tracking-tighter uppercase font-sans">
+            {company.name}
+          </h1>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground font-mono mt-2">
+            <span>ID: <strong className="text-foreground">{company.id}</strong></span>
+            <span>•</span>
+            <span>{company.review_count} {lang === 'zh' ? '笔存证记录' : 'block entries'}</span>
+            <span>•</span>
+            <span className="text-foreground font-bold flex items-center gap-1">
+              <Star className="w-3.5 h-3.5 fill-foreground text-foreground" />
+              <span>{company.avg_rating} / 5 ({overallScorePercent}%)</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Action CTAs */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setActiveTab('aiReport');
+              if (!aiReport) handleGenerateAIReport(false);
+            }}
+            className="px-3.5 py-2 border border-border hover:bg-muted text-xs font-bold text-foreground flex items-center gap-1.5 cursor-pointer rounded-none"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-foreground" />
+            <span>{t.tabAiReport}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('ledger');
+              handleVerifyLedger();
+            }}
+            className="px-3.5 py-2 bg-foreground text-background font-bold text-xs flex items-center gap-1.5 cursor-pointer rounded-none hover:opacity-90 transition-opacity"
+          >
+            <Lock className="w-3.5 h-3.5 text-background" />
+            <span>{lang === 'zh' ? '验证账本' : 'Verify Ledger'}</span>
+          </button>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-8" id="company_detail_container">
-        {/* Navigation Block */}
-        <div className="flex items-center justify-between mb-8" id="detail_nav">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Link
-              href={`/${rawLang}/companies`}
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-medium text-sm transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>{lang === 'zh' ? '返回公司口碑榜' : 'Back to Rankings'}</span>
-            </Link>
+      {/* TABS ROW */}
+      <div className="flex border-b border-border mb-8 font-mono text-xs" id="detail_tabs_row">
+        <button
+          onClick={() => setActiveTab('reviews')}
+          className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer ${
+            activeTab === 'reviews'
+              ? 'border-foreground text-foreground'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <span className="flex items-center gap-2 uppercase">
+            <FileText className="w-3.5 h-3.5" />
+            <span>{t.tabReviews} ({reviews.length})</span>
+          </span>
+        </button>
 
-            <ThemeToggle />
+        <button
+          onClick={() => {
+            setActiveTab('aiReport');
+            if (!aiReport) handleGenerateAIReport(false);
+          }}
+          className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer ${
+            activeTab === 'aiReport'
+              ? 'border-foreground text-foreground'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <span className="flex items-center gap-2 uppercase">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{t.tabAiReport}</span>
+          </span>
+        </button>
 
-            <button
-              onClick={toggleLang}
-              className="px-2.5 py-1 bg-muted/80 hover:bg-accent border border-border/60 text-muted-foreground hover:text-foreground text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-            >
-              <span>🌐</span>
-              <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
-            </button>
-          </div>
+        <button
+          onClick={() => setActiveTab('ledger')}
+          className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer ${
+            activeTab === 'ledger'
+              ? 'border-foreground text-foreground'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <span className="flex items-center gap-2 uppercase">
+            <Lock className="w-3.5 h-3.5" />
+            <span>{t.tabLedger}</span>
+          </span>
+        </button>
+      </div>
 
-          <div className="text-xs text-muted-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 border border-border rounded-xl font-mono">
-            <span>ID:</span>
-            <span className="text-emerald-500 font-bold">{company.id}</span>
-          </div>
-        </div>
-
-        {/* Brand Display Hero */}
-        <div className="bg-card border border-border rounded-3xl p-6 lg:p-8 mb-8 relative overflow-hidden text-card-foreground shadow-sm" id="company_hero_card">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-3xl rounded-full -translate-y-12 translate-x-12" />
+      {/* MAIN NEWSPAPER TWO-COLUMN LAYOUT (LEFT STATS SIDEBAR + RIGHT WATERFALL REVIEWS) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start" id="detail_layout_grid">
+        
+        {/* LEFT COLUMN: STATS SIDEBAR (MATCHING REFERENCE IMAGE LEFT "LUNARIO" COLUMN) */}
+        <aside className="lg:col-span-4 border-r border-border pr-0 lg:pr-6 space-y-6" id="left_stats_sidebar">
           
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-            <div className="flex items-center gap-5">
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                <Building2 className="w-10 h-10 text-emerald-500" />
-              </div>
-              <div>
-                <h1 className="text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight">
-                  {company.name}
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
-                  <span>{lang === 'zh' ? '累计区块链存证评价' : 'Total block-verified reviews'}</span>
-                  <span className="bg-muted border border-border text-emerald-500 px-2 py-0.5 rounded text-xs font-bold">
-                    {company.review_count} {lang === 'zh' ? '条' : 'records'}
-                  </span>
-                </p>
-              </div>
-            </div>
+          {/* STATS BLOCK 1: CORE SATISFACTION METRICS */}
+          <div className="border border-border p-4 bg-card rounded-none space-y-3">
+            <h3 className="text-xs font-black text-foreground uppercase tracking-wider border-b border-border pb-2 flex items-center justify-between">
+              <span>{lang === 'zh' ? '多维度评价满意度' : 'Satisfaction Metrics'}</span>
+              <span className="font-mono text-muted-foreground">{company.avg_rating} / 5</span>
+            </h3>
 
-            {/* Quick Aggregate Score */}
-            <div className="flex items-center gap-4 bg-muted/60 border border-border backdrop-blur-xs p-4 rounded-2xl w-full lg:w-auto">
-              <div className="flex flex-col">
-                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{t.metricOverall}</span>
-                <span className="text-2xl font-black text-foreground mt-1">{company.avg_rating} <span className="text-xs text-muted-foreground font-normal">/ 5</span></span>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-500 text-lg border border-emerald-500/25">
-                {overallScorePercent}%
-              </div>
-            </div>
-          </div>
-
-          {/* Core Analytics Radar/Bar Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 mt-8 border-t border-border pt-6" id="core_metrics_grid">
-            {/* WLB */}
-            <div className="bg-muted/40 border border-border rounded-xl p-3 flex flex-col justify-between">
-              <span className="text-xs text-muted-foreground font-medium">{t.metricWlb}</span>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-lg font-extrabold text-indigo-500 dark:text-indigo-400">{company.avg_balance}</span>
-                <span className="text-[10px] text-muted-foreground">/ 5</span>
-              </div>
-              <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
-                <div className="bg-indigo-500 dark:bg-indigo-400 h-full rounded-full" style={{ width: `${company.avg_balance * 20}%` }} />
-              </div>
-            </div>
-
-            {/* Career */}
-            <div className="bg-muted/40 border border-border rounded-xl p-3 flex flex-col justify-between">
-              <span className="text-xs text-muted-foreground font-medium">{t.metricCareer}</span>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-lg font-extrabold text-emerald-500 dark:text-emerald-400">{company.avg_career}</span>
-                <span className="text-[10px] text-muted-foreground">/ 5</span>
-              </div>
-              <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
-                <div className="bg-emerald-500 dark:bg-emerald-400 h-full rounded-full" style={{ width: `${company.avg_career * 20}%` }} />
-              </div>
-            </div>
-
-            {/* Management */}
-            <div className="bg-muted/40 border border-border rounded-xl p-3 flex flex-col justify-between">
-              <span className="text-xs text-muted-foreground font-medium">{t.metricManagement}</span>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-lg font-extrabold text-amber-500 dark:text-amber-400">{company.avg_management}</span>
-                <span className="text-[10px] text-muted-foreground">/ 5</span>
-              </div>
-              <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
-                <div className="bg-amber-500 dark:bg-amber-400 h-full rounded-full" style={{ width: `${company.avg_management * 20}%` }} />
-              </div>
-            </div>
-
-            {/* Compensation */}
-            <div className="bg-muted/40 border border-border rounded-xl p-3 flex flex-col justify-between">
-              <span className="text-xs text-muted-foreground font-medium">{t.metricBenefits}</span>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-lg font-extrabold text-rose-500 dark:text-rose-400">{company.avg_compensation}</span>
-                <span className="text-[10px] text-muted-foreground">/ 5</span>
-              </div>
-              <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
-                <div className="bg-rose-500 dark:bg-rose-400 h-full rounded-full" style={{ width: `${company.avg_compensation * 20}%` }} />
-              </div>
-            </div>
-
-            {/* Culture */}
-            <div className="bg-muted/40 border border-border rounded-xl p-3 flex flex-col justify-between">
-              <span className="text-xs text-muted-foreground font-medium">{t.metricCulture}</span>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-lg font-extrabold text-teal-500 dark:text-teal-400">{company.avg_culture}</span>
-                <span className="text-[10px] text-muted-foreground">/ 5</span>
-              </div>
-              <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
-                <div className="bg-teal-500 dark:bg-teal-400 h-full rounded-full" style={{ width: `${company.avg_culture * 20}%` }} />
-              </div>
-            </div>
-          </div>
-
-          {/* Salary aggregates card */}
-          {company.avg_salary > 0 && (
-            <div className="mt-4 p-4 bg-muted/40 rounded-2xl border border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                  <DollarSign className="w-5 h-5 text-emerald-500" />
+            {[
+              { label: t.metricWlb, val: company.avg_balance },
+              { label: t.metricCareer, val: company.avg_career },
+              { label: t.metricManagement, val: company.avg_management },
+              { label: t.metricBenefits, val: company.avg_compensation },
+              { label: t.metricCulture, val: company.avg_culture }
+            ].map((metric) => (
+              <div key={metric.label} className="space-y-1">
+                <div className="flex justify-between text-[11px] font-semibold text-foreground">
+                  <span>{metric.label}</span>
+                  <span className="font-mono font-bold">{metric.val}</span>
                 </div>
+                <div className="w-full bg-muted h-1 rounded-none overflow-hidden">
+                  <div className="bg-foreground h-full" style={{ width: `${(metric.val / 5) * 100}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* STATS BLOCK 2: SALARY & COMPENSATION */}
+          {company.avg_salary > 0 && (
+            <div className="border border-border p-4 bg-card rounded-none space-y-3">
+              <h3 className="text-xs font-black text-foreground uppercase tracking-wider border-b border-border pb-2">
+                {lang === 'zh' ? '基本薪资与年终奖' : 'Salary Telemetry'}
+              </h3>
+              <div className="space-y-2 font-mono">
                 <div>
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{lang === 'zh' ? '基础基本月薪' : 'Base Monthly Salary'}</h4>
-                  <p className="text-lg font-black text-foreground mt-0.5">
-                    {lang === 'zh' ? '平均月薪：' : 'Avg Base: '}
-                    <span className="text-emerald-500">{(company.avg_salary / 1000).toFixed(1)}K</span>
+                  <span className="text-[10px] text-muted-foreground block">{lang === 'zh' ? '平均基本月薪' : 'Avg Base Salary'}</span>
+                  <span className="text-xl font-black text-foreground">{(company.avg_salary / 1000).toFixed(1)}K / M</span>
+                </div>
+                {company.avg_bonus > 0 && (
+                  <div className="border-t border-border pt-2">
+                    <span className="text-[10px] text-muted-foreground block">{lang === 'zh' ? '平均期望年终奖' : 'Avg Annual Bonus'}</span>
+                    <span className="text-lg font-bold text-foreground">{(company.avg_bonus / 1000).toFixed(1)}K / Y</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* STATS BLOCK 3: PRIVACY & BLOCKCHAIN SECURITY ASSURANCE */}
+          <div className="border border-border p-4 bg-muted/20 rounded-none space-y-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 font-bold text-foreground text-xs uppercase tracking-wider mb-1">
+              <ShieldCheck className="w-4 h-4 text-foreground" />
+              <span>{lang === 'zh' ? '密码学存证保障' : 'Ledger Security'}</span>
+            </div>
+            <p className="leading-relaxed text-[11px]">
+              {lang === 'zh'
+                ? '本页面所有评论与薪资数据均已使用 SHA-256 区块链链式散列处理，数据不可篡改。'
+                : 'All reviews and salary data are cryptographically bound via SHA-256 blocks.'}
+            </p>
+          </div>
+        </aside>
+
+        {/* RIGHT COLUMN: WATERFALL NEWSPAPER CONTENT FEED */}
+        <main className="lg:col-span-8 space-y-6" id="right_content_area">
+          
+          {/* TAB 1: REVIEWS WATERFALL FEED */}
+          {activeTab === 'reviews' && (
+            <div className="space-y-6" id="reviews_waterfall">
+              
+              {/* FILTER & SORT TOOLBAR */}
+              <div className="border border-border p-3 bg-card rounded-none flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between" id="local_filters">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={localSearch}
+                    onChange={(e) => setLocalSearch(e.target.value)}
+                    placeholder={lang === 'zh' ? '搜索此公司评价...' : 'Search within reviews...'}
+                    className="w-full pl-9 pr-3 py-1.5 bg-muted/40 border border-border focus:border-foreground outline-none text-xs text-foreground placeholder:text-muted-foreground rounded-none transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
+                  <select
+                    value={filterPosition}
+                    onChange={(e) => setFilterPosition(e.target.value)}
+                    className="bg-muted/40 border border-border outline-none px-2 py-1 text-xs text-foreground cursor-pointer rounded-none"
+                  >
+                    <option value="ALL">{t.allPositions}</option>
+                    {uniquePositions.map(pos => (
+                      <option key={pos} value={pos}>{pos}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="bg-muted/40 border border-border outline-none px-2 py-1 text-xs text-foreground cursor-pointer rounded-none"
+                  >
+                    <option value="ALL">{t.allStatus}</option>
+                    <option value="current">{t.currentEmployee}</option>
+                    <option value="former">{t.formerEmployee}</option>
+                  </select>
+
+                  <div className="flex bg-muted/40 p-0.5 border border-border gap-0.5">
+                    <button
+                      onClick={() => setSortBy('latest')}
+                      className={`px-2 py-0.5 text-[10px] font-bold transition-colors cursor-pointer ${
+                        sortBy === 'latest' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {t.sortLatest}
+                    </button>
+                    <button
+                      onClick={() => setSortBy('salary')}
+                      className={`px-2 py-0.5 text-[10px] font-bold transition-colors cursor-pointer ${
+                        sortBy === 'salary' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {t.sortSalary}
+                    </button>
+                    <button
+                      onClick={() => setSortBy('rating')}
+                      className={`px-2 py-0.5 text-[10px] font-bold transition-colors cursor-pointer ${
+                        sortBy === 'rating' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {t.sortRating}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* REVIEWS WATERFALL MASONRY GRID (MATCHING REFERENCE IMAGE NEWSPAPER LAYOUT) */}
+              {filteredAndSortedReviews.length === 0 ? (
+                <div className="text-center py-16 border border-border bg-card text-card-foreground rounded-none" id="empty_reviews">
+                  <Briefcase className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="text-xs font-bold text-foreground mb-1">
+                    {lang === 'zh' ? '未找到符合条件的评价' : 'No Reviews Found'}
+                  </h3>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id="waterfall_grid">
+                  {filteredAndSortedReviews.map((rev, idx) => {
+                    const ratingAvg = (rev.rating_career + rev.rating_balance + rev.rating_management + rev.rating_compensation + rev.rating_culture) / 5;
+                    
+                    return (
+                      <motion.div
+                        key={rev.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: Math.min(idx * 0.04, 0.3), duration: 0.25 }}
+                        className="border border-border bg-card p-5 rounded-none flex flex-col justify-between hover:bg-muted/20 transition-colors group"
+                      >
+                        <div>
+                          {/* ARTICLE EYEBROW HEADER */}
+                          <div className="flex items-center justify-between border-b border-border pb-2 mb-3 text-[10px] font-mono text-muted-foreground">
+                            <span>{new Date(rev.created_at).toLocaleDateString()}</span>
+                            <span className="border border-border px-1.5 py-0.5 uppercase tracking-wider text-foreground bg-background">
+                              {rev.employment_status === 'current' ? t.currentEmployee : t.formerEmployee}
+                            </span>
+                          </div>
+
+                          {/* ARTICLE HEADLINE */}
+                          <h4 className="text-base font-extrabold text-foreground group-hover:underline tracking-tight mb-2">
+                            {rev.position} · {rev.branch_location}
+                          </h4>
+
+                          {/* SERIF PULL QUOTE REVIEW BODY */}
+                          <p className="text-xs text-foreground/90 leading-relaxed font-sans border-l-2 border-foreground pl-3 py-1 bg-muted/20 mb-4 whitespace-pre-wrap">
+                            {rev.review_text}
+                          </p>
+                        </div>
+
+                        {/* RECTANGULAR SALARY & RATINGS TAGS */}
+                        <div className="border-t border-border pt-3 space-y-2">
+                          <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">
+                            {rev.salary > 0 && (
+                              <span className="border border-border px-2 py-0.5 font-bold text-foreground bg-background">
+                                SALARY: {rev.salary}K
+                              </span>
+                            )}
+                            {rev.bonus > 0 && (
+                              <span className="border border-border px-2 py-0.5 font-bold text-foreground bg-background">
+                                BONUS: {rev.bonus}K
+                              </span>
+                            )}
+                            <span className="border border-border px-2 py-0.5 font-bold text-foreground bg-background flex items-center gap-1">
+                              <Star className="w-3 h-3 fill-foreground text-foreground" />
+                              <span>{ratingAvg.toFixed(1)}</span>
+                            </span>
+                          </div>
+
+                          {/* SHA-256 HASH FOOTER STAMP */}
+                          <div className="text-[9px] font-mono text-muted-foreground pt-1 flex items-center justify-between">
+                            <span className="truncate max-w-[160px]" title={rev.hash}>
+                              HASH: {rev.hash.substring(0, 14)}...
+                            </span>
+                            <span>{rev.experience_years}Y EXP</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 2: AI INSIGHTS REPORT */}
+          {activeTab === 'aiReport' && (
+            <div className="space-y-6" id="ai_report_content">
+              <div className="border border-border p-5 bg-card rounded-none flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-foreground" />
+                    <span>{t.aiTitle}</span>
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t.aiDisclaimer}
                   </p>
                 </div>
+
+                {aiReport && (
+                  <button
+                    onClick={() => handleGenerateAIReport(true)}
+                    disabled={isGeneratingAI}
+                    className="px-3.5 py-2 border border-border hover:bg-muted text-xs font-bold text-foreground flex items-center gap-1.5 cursor-pointer rounded-none"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 text-foreground ${isGeneratingAI ? 'animate-spin' : ''}`} />
+                    <span>{lang === 'zh' ? '刷新报告' : 'Refresh'}</span>
+                  </button>
+                )}
               </div>
 
-              {company.avg_bonus > 0 && (
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
-                    <Activity className="w-5 h-5 text-indigo-500" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{lang === 'zh' ? '年终奖/红利期望' : 'Annual Expected Bonus'}</h4>
-                    <p className="text-lg font-black text-foreground mt-0.5">
-                      {lang === 'zh' ? '平均：' : 'Avg Bonus: '}
-                      <span className="text-indigo-500">{(company.avg_bonus / 1000).toFixed(1)}K</span>
+              {isGeneratingAI ? (
+                <div className="py-16 text-center border border-border bg-card rounded-none flex flex-col items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-foreground animate-spin mb-4" />
+                  <h3 className="text-xs font-bold text-foreground mb-1">{t.aiGenerating}</h3>
+                </div>
+              ) : aiError ? (
+                <div className="p-6 border border-rose-500/30 bg-rose-500/10 text-center rounded-none">
+                  <AlertCircle className="w-8 h-8 text-rose-500 mx-auto mb-2" />
+                  <p className="text-xs text-rose-500 mb-4">{aiError}</p>
+                  <button
+                    onClick={() => handleGenerateAIReport(true)}
+                    className="px-4 py-2 bg-foreground text-background font-bold text-xs rounded-none"
+                  >
+                    {lang === 'zh' ? '重试' : 'Retry'}
+                  </button>
+                </div>
+              ) : !aiReport ? (
+                <div className="py-16 text-center border border-border bg-card rounded-none">
+                  <Sparkles className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                  <button
+                    onClick={() => handleGenerateAIReport(true)}
+                    className="px-5 py-2.5 bg-foreground text-background font-bold text-xs rounded-none cursor-pointer"
+                  >
+                    {lang === 'zh' ? '立即生成 AI 分析报告' : 'Generate AI Report'}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* OVERALL SUMMARY CARD */}
+                  <div className="border border-border p-5 bg-card rounded-none space-y-3">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
+                      {lang === 'zh' ? 'AI 综合职场总结' : 'Executive Overview'}
+                    </h4>
+                    <p className="text-xs text-foreground leading-relaxed font-sans">
+                      {aiReport.overallSummary}
                     </p>
+                  </div>
+
+                  {/* PROS & CONS GRID */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="border border-border p-5 bg-card rounded-none space-y-2">
+                      <h5 className="text-xs font-bold uppercase text-foreground border-b border-border pb-2">
+                        {lang === 'zh' ? '核心优势 (Pros)' : 'Key Advantages'}
+                      </h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        {aiReport.pros.map((pro, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5">
+                            <span className="text-foreground font-mono">+</span>
+                            <span>{pro}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="border border-border p-5 bg-card rounded-none space-y-2">
+                      <h5 className="text-xs font-bold uppercase text-foreground border-b border-border pb-2">
+                        {lang === 'zh' ? '风险与卡点 (Cons)' : 'Potential Friction Points'}
+                      </h5>
+                      <ul className="space-y-1 text-xs text-muted-foreground">
+                        {aiReport.cons.map((con, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5">
+                            <span className="text-foreground font-mono">-</span>
+                            <span>{con}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           )}
-        </div>
 
-        {/* Tabs Control */}
-        <div className="flex border-b border-border mb-8" id="detail_tabs_row">
-          <button
-            onClick={() => setActiveTab('reviews')}
-            className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors relative cursor-pointer ${
-              activeTab === 'reviews'
-                ? 'border-emerald-500 text-foreground font-bold'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <Building className="w-4 h-4" />
-              <span>{t.tabReviews}</span>
-              <span className="text-xs bg-muted px-1.5 py-0.5 rounded border border-border text-muted-foreground">
-                {reviews.length}
-              </span>
-            </span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab('aiReport');
-              if (!aiReport) {
-                handleGenerateAIReport(false);
-              }
-            }}
-            className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors relative cursor-pointer ${
-              activeTab === 'aiReport'
-                ? 'border-emerald-500 text-foreground font-bold'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-500 animate-pulse" />
-              <span>{t.tabAiReport}</span>
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('ledger')}
-            className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors relative cursor-pointer ${
-              activeTab === 'ledger'
-                ? 'border-emerald-500 text-foreground font-bold'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <span className="flex items-center gap-2">
-              <Lock className="w-4 h-4" />
-              <span>{t.tabLedger}</span>
-            </span>
-          </button>
-        </div>
-
-        {/* Tab Contents: reviews */}
-        {activeTab === 'reviews' && (
-          <div className="space-y-6" id="reviews_tab_content">
-            {/* Local Search & filter panels */}
-            <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between" id="local_filters">
-              {/* Search reviews */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={localSearch}
-                  onChange={(e) => setLocalSearch(e.target.value)}
-                  placeholder={lang === 'zh' ? '在这个企业评价中搜索关键字...' : 'Search within these reviews...'}
-                  className="w-full pl-10 pr-4 py-2.5 bg-muted/40 border border-border focus:border-emerald-500/50 outline-none text-sm text-foreground placeholder:text-muted-foreground rounded-xl transition-colors"
-                />
-              </div>
-
-              {/* Filtering / Sort grids */}
-              <div className="flex flex-wrap items-center gap-3">
-                <select
-                  value={filterPosition}
-                  onChange={(e) => setFilterPosition(e.target.value)}
-                  className="bg-muted/40 border border-border outline-none px-3 py-2 text-xs font-semibold rounded-xl text-foreground focus:border-emerald-500 cursor-pointer"
-                >
-                  <option value="ALL">{t.allPositions}</option>
-                  {uniquePositions.map(pos => (
-                    <option key={pos} value={pos}>{pos}</option>
-                  ))}
-                </select>
-
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="bg-muted/40 border border-border outline-none px-3 py-2 text-xs font-semibold rounded-xl text-foreground focus:border-emerald-500 cursor-pointer"
-                >
-                  <option value="ALL">{t.allStatus}</option>
-                  <option value="current">{t.currentEmployee}</option>
-                  <option value="former">{t.formerEmployee}</option>
-                </select>
-
-                <div className="flex bg-muted/40 p-1 border border-border rounded-xl gap-1">
-                  <button
-                    onClick={() => setSortBy('latest')}
-                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors cursor-pointer ${
-                      sortBy === 'latest' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {t.sortLatest}
-                  </button>
-                  <button
-                    onClick={() => setSortBy('salary')}
-                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors cursor-pointer ${
-                      sortBy === 'salary' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {t.sortSalary}
-                  </button>
-                  <button
-                    onClick={() => setSortBy('rating')}
-                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors cursor-pointer ${
-                      sortBy === 'rating' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {t.sortRating}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Reviews Cards List */}
-            {filteredAndSortedReviews.length === 0 ? (
-              <div className="text-center py-16 bg-card border border-border text-card-foreground shadow-sm rounded-2xl" id="empty_reviews">
-                <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <h3 className="text-sm font-semibold text-foreground mb-1">
-                  {lang === 'zh' ? '未找到符合条件的评价' : 'No Reviews Found'}
-                </h3>
-                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                  {lang === 'zh' ? '请尝试清除过滤条件或搜索其他职位词。' : 'Try updating your filters or search query.'}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4" id="reviews_feed">
-                {filteredAndSortedReviews.map((rev, idx) => {
-                  const ratingAvg = (rev.rating_career + rev.rating_balance + rev.rating_management + rev.rating_compensation + rev.rating_culture) / 5;
-                  
-                  return (
-                    <motion.div
-                      key={rev.id}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: Math.min(idx * 0.05, 0.4), duration: 0.3 }}
-                      className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 relative overflow-hidden"
-                    >
-                      {/* Secure watermark block */}
-                      <div className="absolute top-0 right-0 p-2.5 bg-emerald-500/5 text-[9px] text-emerald-500 font-mono tracking-widest border-b border-l border-border select-none rounded-bl-xl uppercase font-bold">
-                        {t.blockchainSecured}
-                      </div>
-
-                      {/* Poster header */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4 mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-muted-foreground text-xs">
-                            {idx + 1}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-foreground text-sm">
-                                {rev.position}
-                              </span>
-                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                                rev.employment_status === 'current'
-                                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                                  : 'bg-muted border-border text-muted-foreground'
-                              }`}>
-                                {rev.employment_status === 'current' ? t.currentEmployee : t.formerEmployee}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2.5 text-xs text-muted-foreground mt-1">
-                              <span className="flex items-center gap-1">
-                                <MapPin className="w-3.5 h-3.5" />
-                                <span>{rev.branch_location}</span>
-                              </span>
-                              <span>•</span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>{rev.experience_years} {lang === 'zh' ? '年经验' : 'yrs exp'}</span>
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Average Rating for review */}
-                        <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-500 font-bold text-xs">
-                          <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" />
-                          <span>{ratingAvg.toFixed(1)} {lang === 'zh' ? '综合分' : 'Avg'}</span>
-                        </div>
-                      </div>
-
-                      {/* Main evaluation review text */}
-                      <div className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap mb-4" id={`text-${rev.id}`}>
-                        {rev.review_text}
-                      </div>
-
-                      {/* Salary Tag & detailed ratings */}
-                      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
-                        {/* Salary and bonus indicators */}
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <span>{lang === 'zh' ? '基本月薪' : 'Monthly Salary'}: <strong className="text-foreground font-bold">{rev.salary}K</strong></span>
-                          </span>
-                          {rev.bonus > 0 && (
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                              <span>{lang === 'zh' ? '年终奖' : 'Annual Bonus'}: <strong className="text-foreground font-bold">{rev.bonus}K</strong></span>
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Individual rating stats row */}
-                        <div className="flex flex-wrap gap-2 text-[10px] font-semibold text-muted-foreground">
-                          <span className="px-2 py-0.5 bg-muted/60 border border-border rounded">WLB: <strong className="text-indigo-500 dark:text-indigo-400">{rev.rating_balance}</strong></span>
-                          <span className="px-2 py-0.5 bg-muted/60 border border-border rounded">{lang === 'zh' ? '成长' : 'Growth'}: <strong className="text-emerald-500 dark:text-emerald-400">{rev.rating_career}</strong></span>
-                          <span className="px-2 py-0.5 bg-muted/60 border border-border rounded">{lang === 'zh' ? '管理' : 'Mgmt'}: <strong className="text-amber-500 dark:text-amber-400">{rev.rating_management}</strong></span>
-                          <span className="px-2 py-0.5 bg-muted/60 border border-border rounded">{lang === 'zh' ? '薪酬' : 'Pay'}: <strong className="text-rose-500 dark:text-rose-400">{rev.rating_compensation}</strong></span>
-                          <span className="px-2 py-0.5 bg-muted/60 border border-border rounded">{lang === 'zh' ? '文化' : 'Culture'}: <strong className="text-teal-500 dark:text-teal-400">{rev.rating_culture}</strong></span>
-                        </div>
-                      </div>
-
-                      {/* Dynamic date tag */}
-                      <div className="text-[10px] text-muted-foreground mt-3 font-mono flex items-center justify-between">
-                        <span>{lang === 'zh' ? '发布于' : 'Posted on'}: {new Date(rev.created_at).toLocaleString()}</span>
-                        <span className="truncate max-w-[200px] hover:text-emerald-500 transition-colors cursor-help" title={rev.hash}>
-                          BLOCK HASH: {rev.hash.substring(0, 16)}...
-                        </span>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab Contents: AI Insights Report */}
-        {activeTab === 'aiReport' && (
-          <div className="space-y-6" id="ai_report_tab_content">
-            {/* Header info card */}
-            <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="absolute top-0 right-0 p-3 bg-emerald-500/5 blur-xl w-32 h-32 rounded-full" />
-              <div>
-                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
-                  <span>{t.aiTitle}</span>
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1 max-w-xl">
-                  {t.aiDisclaimer}
-                </p>
-              </div>
-
-              {/* Force regeneration btn */}
-              {aiReport && (
-                <button
-                  onClick={() => handleGenerateAIReport(true)}
-                  disabled={isGeneratingAI}
-                  className="px-4 py-2.5 bg-muted/80 hover:bg-accent border border-border text-muted-foreground hover:text-foreground font-semibold text-xs rounded-xl flex items-center gap-2 self-start md:self-center transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 text-emerald-500 ${isGeneratingAI ? 'animate-spin' : ''}`} />
-                  <span>{lang === 'zh' ? '强制刷新报告' : 'Refresh Report'}</span>
-                </button>
-              )}
-            </div>
-
-            {/* AI Generator Trigger / Loading status / Render */}
-            {isGeneratingAI ? (
-              <div className="py-20 text-center bg-card border border-border text-card-foreground shadow-sm rounded-2xl flex flex-col items-center justify-center">
-                <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mb-4" />
-                <h3 className="text-sm font-semibold text-foreground mb-1">{t.aiGenerating}</h3>
-                <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                  {lang === 'zh' ? 'Gemini 正在提取、结构化分析、打分并进行逻辑校验。这大约需要几秒钟...' : 'Gemini is loading semantic text models...'}
-                </p>
-              </div>
-            ) : aiError ? (
-              <div className="p-6 bg-rose-500/10 border border-rose-500/25 rounded-2xl text-center">
-                <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-3" />
-                <h3 className="text-sm font-semibold text-rose-600 dark:text-rose-400 mb-1">{lang === 'zh' ? '智能透视生成失败' : 'Failed to Generate Insight'}</h3>
-                <p className="text-xs text-rose-600/90 dark:text-rose-300 mb-4 max-w-sm mx-auto">{aiError}</p>
-                <button
-                  onClick={() => handleGenerateAIReport(true)}
-                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-lg transition-colors cursor-pointer"
-                >
-                  {lang === 'zh' ? '重新生成' : 'Retry'}
-                </button>
-              </div>
-            ) : !aiReport ? (
-              <div className="py-16 text-center bg-card border border-border text-card-foreground shadow-sm rounded-2xl">
-                <Sparkles className="w-12 h-12 text-emerald-500/30 mx-auto mb-4 animate-bounce" />
-                <h3 className="text-sm font-semibold text-foreground mb-1">
-                  {lang === 'zh' ? '暂无生成的 AI 分析报告' : 'No AI Analysis Generated Yet'}
-                </h3>
-                <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-6">
-                  {lang === 'zh' ? '点击下方按钮，由 Gemini 智能模型自动提取员工文字评论，生成结构化口碑报告。' : 'Trigger Google Gemini to scan all evaluations and form an overview.'}
-                </p>
-                <button
-                  onClick={() => handleGenerateAIReport(false)}
-                  className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm rounded-xl transition-colors shadow-lg inline-flex items-center gap-2 cursor-pointer"
-                >
-                  <Sparkles className="w-4 h-4 fill-black" />
-                  <span>{t.aiStartBtn}</span>
-                </button>
-              </div>
-            ) : (
-              // AI Report Is Present!
-              <div className="space-y-6" id="ai_report_renderer">
-                {/* Cache alert banner */}
-                {isReportFromCache && (
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-4 py-2.5 rounded-xl text-xs flex items-center justify-between font-medium">
-                    <span>{t.aiCacheAlert}</span>
-                    <button
-                      onClick={() => handleGenerateAIReport(true)}
-                      className="text-[10px] font-bold underline hover:text-foreground cursor-pointer"
-                    >
-                      {lang === 'zh' ? '刷新' : 'Refresh'}
-                    </button>
-                  </div>
-                )}
-
-                {/* Main summaries blocks */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Left Column: Overall Emotion & Score card */}
-                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{lang === 'zh' ? 'AI 宏观情感画像' : 'AI Sentiment Portrait'}</h4>
-                      <div className="flex items-center gap-3 mt-4">
-                        <div className="text-4xl font-black text-foreground">{aiReport.sentimentScore}</div>
-                        <div>
-                          <div className={`text-xs font-bold px-2 py-0.5 rounded ${
-                            aiReport.overallSentiment === '积极' || aiReport.overallSentiment === 'Positive'
-                              ? 'bg-emerald-500/10 text-emerald-500'
-                              : aiReport.overallSentiment === '消极' || aiReport.overallSentiment === 'Negative'
-                              ? 'bg-rose-500/10 text-rose-500'
-                              : 'bg-amber-500/10 text-amber-500'
-                          }`}>
-                            {aiReport.overallSentiment}
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-1">{lang === 'zh' ? '情感倾向性得分' : 'Sentiment Score'}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Culture Characteristics tag flow */}
-                    <div className="mt-6 border-t border-border pt-4">
-                      <h5 className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2.5">{t.aiCatVibe}</h5>
-                      <div className="flex flex-wrap gap-2">
-                        {aiReport.cultureCharacteristics.map(tag => (
-                          <span
-                            key={tag}
-                            className="text-xs px-2.5 py-1 bg-muted/60 border border-border text-foreground rounded-lg font-medium"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Column: Narrative Executive Summary */}
-                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 md:col-span-2 flex flex-col justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{lang === 'zh' ? '企业深度口碑纪要' : 'Reputation Summary'}</h4>
-                      <p className="text-sm text-foreground/90 leading-relaxed mt-4 whitespace-pre-line font-medium">
-                        {aiReport.overallSummary}
-                      </p>
-                    </div>
-
-                    <div className="text-[10px] text-muted-foreground/60 mt-4 font-mono">
-                      GENERATED SECURELY BY GOOGLE GEMINI COGNITIVE LAYER
-                    </div>
-                  </div>
+          {/* TAB 3: BLOCKCHAIN LINKED TIMELINE VERIFICATION */}
+          {activeTab === 'ledger' && (
+            <div className="space-y-6" id="ledger_audit_content">
+              <div className="border border-border p-5 bg-card rounded-none flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-foreground" />
+                    <span>{lang === 'zh' ? '密码学账本防篡改审计' : 'Blockchain Ledger Audit'}</span>
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {lang === 'zh' ? '依次对每一个区块评论计算 SHA-256 哈希，验证前向指针完整性。' : 'Validate cryptographic previous_hash links.'}
+                  </p>
                 </div>
 
-                {/* Section 2: Detailed dimension evaluation scale rows */}
-                <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-5">{lang === 'zh' ? 'AI 细分维度评估图谱 (0-100)' : 'AI Breakdown Metrics'}</h4>
-                  
-                  <div className="space-y-4">
-                    {/* WLB score */}
-                    <div>
-                      <div className="flex justify-between items-center text-xs text-muted-foreground font-medium mb-1.5">
-                        <span>{lang === 'zh' ? '工作生活平衡 (WLB)' : 'Work Life Balance (WLB)'}</span>
-                        <span className="font-extrabold text-indigo-500 dark:text-indigo-400">{aiReport.wlbScore}</span>
-                      </div>
-                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                        <div className="bg-indigo-500 dark:bg-indigo-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.wlbScore}%` }} />
-                      </div>
-                    </div>
-
-                    {/* Work pressure score */}
-                    <div>
-                      <div className="flex justify-between items-center text-xs text-muted-foreground font-medium mb-1.5">
-                        <span>{lang === 'zh' ? '日常抗压要求与工作负荷' : 'Workload & Stress Intensity'}</span>
-                        <span className="font-extrabold text-amber-500 dark:text-amber-400">{aiReport.pressureScore}</span>
-                      </div>
-                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                        <div className="bg-amber-500 dark:bg-amber-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.pressureScore}%` }} />
-                      </div>
-                    </div>
-
-                    {/* Team collaboration score */}
-                    <div>
-                      <div className="flex justify-between items-center text-xs text-muted-foreground font-medium mb-1.5">
-                        <span>{lang === 'zh' ? '团队协作氛围与沟通效率' : 'Team Collaboration & Vibe'}</span>
-                        <span className="font-extrabold text-teal-500 dark:text-teal-400">{aiReport.collabScore}</span>
-                      </div>
-                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                        <div className="bg-teal-500 dark:bg-teal-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.collabScore}%` }} />
-                      </div>
-                    </div>
-
-                    {/* Trust and leadership */}
-                    <div>
-                      <div className="flex justify-between items-center text-xs text-muted-foreground font-medium mb-1.5">
-                        <span>{lang === 'zh' ? '管理层信任与领导作风' : 'Management Trust & Leadership'}</span>
-                        <span className="font-extrabold text-emerald-500 dark:text-emerald-400">{aiReport.trustScore}</span>
-                      </div>
-                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                        <div className="bg-emerald-500 dark:bg-emerald-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.trustScore}%` }} />
-                      </div>
-                    </div>
-
-                    {/* Compensation score */}
-                    <div>
-                      <div className="flex justify-between items-center text-xs text-muted-foreground font-medium mb-1.5">
-                        <span>{lang === 'zh' ? '薪酬晋升合理度与福利满意度' : 'Compensation & Promotion Satisfaction'}</span>
-                        <span className="font-extrabold text-rose-500 dark:text-rose-400">{aiReport.compScore}</span>
-                      </div>
-                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                        <div className="bg-rose-500 dark:bg-rose-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.compScore}%` }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pros and Cons bullet listings */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Pros card */}
-                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-                    <h4 className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-2 mb-4">
-                      <ThumbsUp className="w-4 h-4 fill-emerald-500 text-emerald-500" />
-                      <span>{t.aiCatStrengths}</span>
-                    </h4>
-                    <ul className="space-y-3">
-                      {aiReport.pros.map((pro, index) => (
-                        <li key={index} className="text-sm text-foreground/90 flex items-start gap-2.5">
-                          <span className="text-emerald-500 font-bold mt-0.5">•</span>
-                          <span>{pro}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Cons card */}
-                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-                    <h4 className="text-xs font-bold text-rose-500 uppercase tracking-wider flex items-center gap-2 mb-4">
-                      <ThumbsDown className="w-4 h-4 fill-rose-500 text-rose-500" />
-                      <span>{t.aiCatPainPoints}</span>
-                    </h4>
-                    <ul className="space-y-3">
-                      {aiReport.cons.map((con, index) => (
-                        <li key={index} className="text-sm text-foreground/90 flex items-start gap-2.5">
-                          <span className="text-rose-500 font-bold mt-0.5">•</span>
-                          <span>{con}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Section 4: Qualitative Advice and Comp Analytics */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Career advice */}
-                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-                    <h4 className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-4">
-                      {lang === 'zh' ? '💡 候选人求职锦囊建议' : '💡 Ideal Candidate & Career Advice'}
-                    </h4>
-                    <p className="text-sm text-foreground/90 leading-relaxed font-medium">
-                      {aiReport.careerAdvice}
-                    </p>
-                  </div>
-
-                  {/* Salary analytics */}
-                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-                    <h4 className="text-xs font-bold text-amber-500 dark:text-amber-400 uppercase tracking-wider mb-4">
-                      {lang === 'zh' ? '💰 薪资性价比与晋升合理度分析' : '💰 Salary Analysis & Fairness'}
-                    </h4>
-                    <p className="text-sm text-foreground/90 leading-relaxed font-medium">
-                      {aiReport.salaryAnalysis}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab Contents: Ledger Auditing */}
-        {activeTab === 'ledger' && (
-          <div className="space-y-6" id="ledger_tab_content">
-            <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-              <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
-                <Lock className="w-5 h-5 text-emerald-500" />
-                <span>{t.ledgerTitle}</span>
-              </h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {t.ledgerDesc}
-              </p>
-
-              <div className="mt-5 flex items-center gap-4">
                 <button
                   onClick={handleVerifyLedger}
-                  disabled={isVerifyingLedger || reviews.length === 0}
-                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  disabled={isVerifyingLedger}
+                  className="px-4 py-2 bg-foreground text-background font-bold text-xs rounded-none cursor-pointer"
                 >
                   {isVerifyingLedger ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
-                      <span>{lang === 'zh' ? '执行密码学核验中...' : 'Auditing chain hashes...'}</span>
-                    </>
+                    <span className="flex items-center gap-1.5">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>{lang === 'zh' ? '审计中...' : 'Auditing...'}</span>
+                    </span>
                   ) : (
-                    <>
-                      <ShieldCheck className="w-3.5 h-3.5 text-black" />
-                      <span>{t.ledgerVerifyBtn}</span>
-                    </>
+                    <span>{lang === 'zh' ? '开始全链审计' : 'Run Audit'}</span>
                   )}
                 </button>
+              </div>
 
-                {verificationResult && (
-                  <div className={`text-xs font-semibold flex items-center gap-1.5 ${
-                    verificationResult.isValid ? 'text-emerald-500' : 'text-rose-500'
-                  }`}>
-                    {verificationResult.isValid ? (
-                      <>
-                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                        <span>{t.ledgerVerifySuccess}</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShieldAlert className="w-4 h-4 text-rose-500" />
-                        <span>{t.ledgerVerifyFail}</span>
-                      </>
-                    )}
+              {/* AUDIT RESULTS DISPLAY */}
+              {verificationResult && (
+                <div className="border border-border p-5 bg-card rounded-none space-y-4 font-mono">
+                  <div className="flex items-center justify-between border-b border-border pb-3">
+                    <span className="text-xs font-bold text-foreground uppercase">
+                      {lang === 'zh' ? '审计结论' : 'Audit Result'}
+                    </span>
+                    <span className={`text-xs font-bold px-2 py-0.5 border ${
+                      verificationResult.isValid
+                        ? 'border-emerald-500 text-emerald-500 bg-emerald-500/10'
+                        : 'border-rose-500 text-rose-500 bg-rose-500/10'
+                    }`}>
+                      {verificationResult.isValid ? '100% VALID & SECURE' : 'HASH MISMATCH DETECTED'}
+                    </span>
                   </div>
-                )}
-              </div>
-            </div>
 
-            {/* Blockchain visual chain track layout */}
-            {reviews.length > 0 && (
-              <div className="relative border-l-2 border-border pl-6 ml-4 py-2 space-y-6" id="ledger_chain_timeline">
-                {reviews.map((rev, idx) => {
-                  const checkDetail = verificationResult?.details.find(d => d.reviewId === rev.id);
-                  const isTampered = checkDetail?.status === 'chain_broken' || checkDetail?.status === 'hash_mismatch';
-
-                  return (
-                    <div key={rev.id} className="relative" id={`block-${idx + 1}`}>
-                      {/* Left timeline dot indicator */}
-                      <span className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-2 bg-background transition-all ${
-                        verificationResult
-                          ? isTampered
-                            ? 'border-rose-500 bg-rose-500/20'
-                            : 'border-emerald-500 bg-emerald-500/20'
-                          : 'border-border'
-                      }`} />
-
-                      <div className={`bg-card border rounded-2xl p-4 transition-all text-card-foreground shadow-sm ${
-                        verificationResult
-                          ? isTampered
-                            ? 'border-rose-500/50 shadow-md shadow-rose-500/5'
-                            : 'border-emerald-500/30'
-                          : 'border-border'
-                      }`}>
-                        {/* Header metadata row */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3 mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-muted-foreground font-mono uppercase">
-                              {t.ledgerBlockHeight}: #{idx + 1}
-                            </span>
-                            <span className="text-xs text-muted-foreground font-medium">
-                              {rev.position}
-                            </span>
-                          </div>
-
-                          {/* verification status badge */}
-                          {verificationResult && (
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 font-mono uppercase ${
-                              isTampered
-                                ? 'bg-rose-500/10 border-rose-500/20 text-rose-500'
-                                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                            }`}>
-                              {isTampered ? (
-                                <>
-                                  <ShieldAlert className="w-3 h-3 text-rose-500" />
-                                  <span>TAMPERED</span>
-                                </>
-                              ) : (
-                                <>
-                                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
-                                  <span>VERIFIED OK</span>
-                                </>
-                              )}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Hash details */}
-                        <div className="space-y-2 text-[11px] font-mono leading-relaxed">
-                          <div>
-                            <span className="text-muted-foreground block sm:inline mr-2">{t.ledgerHash}:</span>
-                            <span className="text-foreground font-bold break-all bg-muted/60 px-1.5 py-0.5 rounded border border-border">{rev.hash}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground block sm:inline mr-2">{t.ledgerPrevHash}:</span>
-                            <span className="text-muted-foreground break-all bg-muted/60 px-1.5 py-0.5 rounded border border-border">{rev.previous_hash}</span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground block sm:inline mr-2">{t.ledgerValidator}:</span>
-                            <span className="text-emerald-500 font-medium">{t.ledgerNodeVerified}</span>
-                          </div>
-                        </div>
+                  <div className="divide-y divide-border border-t border-border">
+                    {verificationResult.details.map(item => (
+                      <div key={item.reviewId} className="py-2 text-xs flex items-center justify-between">
+                        <span>BLOCK #{item.index}</span>
+                        <span className="text-muted-foreground truncate max-w-[240px]">{item.computedHash.substring(0, 18)}...</span>
+                        <span className="text-foreground font-bold">PASS</span>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </main>
       </div>
-    </main>
+    </div>
   );
 }
