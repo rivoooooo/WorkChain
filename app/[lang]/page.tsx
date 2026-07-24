@@ -302,16 +302,7 @@ export default function Home({ params }: PageProps) {
                 priority
                 className="object-cover object-center transform hover:scale-105 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-              
-              {/* Floating Live Ledger Assurance Badge */}
-              <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 bg-zinc-950/80 text-white backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/10 flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{t.topBanner}</span>
-                <span className="hidden sm:inline text-emerald-400 font-mono text-[10px] uppercase font-bold border-l border-white/20 pl-2">
-                  {t.blockchainSecured}
-                </span>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
             </motion.div>
 
             {/* TYPOGRAPHY AS ART + HERO SPLIT SEARCH LAYOUT */}
