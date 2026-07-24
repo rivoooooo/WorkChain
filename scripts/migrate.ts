@@ -34,10 +34,13 @@ async function runMigration() {
     await sql`CREATE INDEX IF NOT EXISTS idx_companies_credit_code ON companies (credit_code);`;
     await sql`CREATE INDEX IF NOT EXISTS idx_companies_location ON companies (country_code, province, city);`;
 
-    // Update policies for companies
+    // Update policies for companies to guarantee public select
     await sql`
       DO $$
       BEGIN
+        DROP POLICY IF EXISTS "Allow select for companies" ON companies;
+        CREATE POLICY "Allow select for companies" ON companies FOR SELECT TO public USING (true);
+
         IF NOT EXISTS (
           SELECT 1 FROM pg_policies WHERE tablename = 'companies' AND policyname = 'Allow update for companies'
         ) THEN
