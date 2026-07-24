@@ -2,51 +2,27 @@
 
 import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'motion/react';
 import { i18n, Language } from '../../../lib/i18n';
-import { ThemeToggle } from '../../../components/theme-toggle';
 import {
   Building,
-  ArrowLeft,
   Search,
   ArrowUpDown,
   TrendingUp,
   Star,
-  Clock,
   DollarSign,
-  ChevronRight,
-  Database,
-  Lock,
   Loader2,
   SlidersHorizontal,
-  ChevronDown,
-  Sparkles,
-  Award
+  Lock,
+  ChevronRight,
+  Database
 } from 'lucide-react';
-
-interface Review {
-  id: string;
-  company_name: string;
-  branch_location: string;
-  position: string;
-  employment_status: string;
-  salary: number;
-  bonus: number;
-  experience_years: number;
-  rating_career: number;
-  rating_balance: number;
-  rating_management: number;
-  rating_compensation: number;
-  rating_culture: number;
-  review_text: string;
-  created_at: string;
-  previous_hash: string;
-  hash: string;
-}
 
 interface CompanyStats {
   id: string;
   name: string;
+  logoUrl?: string;
   reviewCount: number;
   avgRating: number;
   avgCareer: number;
@@ -56,6 +32,8 @@ interface CompanyStats {
   avgCulture: number;
   avgSalary: number;
   avgBonus: number;
+  latestReviewSnippet?: string;
+  location?: string;
 }
 
 type SortField = 'avgRating' | 'reviewCount' | 'avgSalary' | 'avgBalance' | 'avgCareer' | 'avgCompensation' | 'avgCulture';
@@ -71,11 +49,6 @@ export default function CompaniesPage({ params }: PageProps) {
 
   const [companiesList, setCompaniesList] = useState<CompanyStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const toggleLang = () => {
-    const nextLangPath = lang === 'zh' ? '/en/companies' : '/zh-cn/companies';
-    window.location.href = nextLangPath;
-  };
 
   const t = i18n[lang];
 
@@ -93,6 +66,7 @@ export default function CompaniesPage({ params }: PageProps) {
           const stats: CompanyStats[] = (json.data || []).map((c: any) => ({
             id: c.id,
             name: c.name,
+            logoUrl: c.logo_url || null,
             reviewCount: c.review_count,
             avgRating: c.avg_rating,
             avgCareer: c.avg_career,
@@ -101,25 +75,27 @@ export default function CompaniesPage({ params }: PageProps) {
             avgCompensation: c.avg_compensation,
             avgCulture: c.avg_culture,
             avgSalary: Math.round(c.avg_salary / 1000),
-            avgBonus: Math.round(c.avg_bonus / 1000)
+            avgBonus: Math.round(c.avg_bonus / 1000),
+            latestReviewSnippet: c.latest_review_snippet || (lang === 'zh' ? '包含已归档存证的匿名员工真实职场与薪资评价。' : 'Cryptographically verified anonymous corporate reviews & salary telemetry.'),
+            location: c.branch_location || (lang === 'zh' ? '全部分部' : 'All Locations')
           }));
           setCompaniesList(stats);
         }
       } catch (err) {
-        console.error('Failed to load companies for companies directory:', err);
+        console.error('Failed to load companies:', err);
       } finally {
         setIsLoading(false);
       }
     }
     fetchCompanies();
-  }, []);
+  }, [lang]);
 
   // Filter & Sort
   const filteredAndSortedCompanies = companiesList
     .filter(comp => comp.name.toLowerCase().includes(searchQuery.toLowerCase().trim()))
     .sort((a, b) => {
-      let valA = a[sortField];
-      let valB = b[sortField];
+      const valA = a[sortField];
+      const valB = b[sortField];
       
       if (sortOrder === 'desc') {
         return valB - valA;
@@ -141,242 +117,201 @@ export default function CompaniesPage({ params }: PageProps) {
     { label: lang === 'zh' ? '综合评分' : 'Overall Score', field: 'avgRating' },
     { label: lang === 'zh' ? '评价数量' : 'Reviews Count', field: 'reviewCount' },
     { label: lang === 'zh' ? '平均月薪' : 'Avg Monthly Salary', field: 'avgSalary' },
-    { label: lang === 'zh' ? '工作生活平衡(WLB)' : 'Work-Life Balance (WLB)', field: 'avgBalance' },
+    { label: lang === 'zh' ? '工作平衡(WLB)' : 'Work-Life Balance', field: 'avgBalance' },
     { label: lang === 'zh' ? '职业发展' : 'Career Growth', field: 'avgCareer' },
     { label: lang === 'zh' ? '福利待遇' : 'Benefits & Perks', field: 'avgCompensation' },
     { label: lang === 'zh' ? '企业文化' : 'Company Culture', field: 'avgCulture' }
   ];
 
   return (
-    <main className="min-h-screen bg-background text-foreground transition-colors duration-200 selection:bg-emerald-500/20" id="companies_directory_root">
-      {/* Top Banner indicating absolute anonymity */}
-      <div className="bg-muted/40 text-muted-foreground py-2.5 px-4 text-xs font-medium border-b border-border" id="top_announcement">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 text-emerald-500" />
-            <span>{t.topBanner}</span>
+    <div className="w-full font-sans" id="companies_directory_root">
+      
+      {/* NEWSPAPER MASTHEAD TITLE SECTION (REFERENCE IMAGE MATCH) */}
+      <div className="border-b border-border pb-6 mb-8 flex items-end justify-between" id="directory_heading">
+        <div>
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-1">
+            {lang === 'zh' ? '全行业公司口碑与存证索引' : 'Corporate Index & Ratings'}
           </span>
-          <span className="hidden md:inline text-emerald-500 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest">
-            {t.blockchainSecured}
+          <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight uppercase">
+            {lang === 'zh' ? '企业口碑龙虎榜' : 'Company Ratings Index'}
+          </h1>
+        </div>
+
+        {/* Big Newspaper Year / Header Label on Right */}
+        <div className="text-right">
+          <span className="text-3xl sm:text-6xl font-black text-foreground font-sans tracking-tighter block leading-none">
+            2026
           </span>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-8" id="companies_directory_container">
-        {/* Navigation back */}
-        <div className="flex items-center justify-between mb-8" id="directory_nav">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Link
-              href={`/${rawLang}`}
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-medium text-sm transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>{t.backToHome}</span>
-            </Link>
-
-            <ThemeToggle />
-
-            {/* Language Switcher */}
-            <button
-              onClick={toggleLang}
-              className="px-2.5 py-1 bg-muted/80 hover:bg-accent border border-border/60 text-muted-foreground hover:text-foreground text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-            >
-              <span>🌐</span>
-              <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
-            </button>
-
-            <Link
-              href={`/${rawLang}/download`}
-              className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground font-semibold text-xs bg-muted/80 hover:bg-accent border border-border/60 px-2.5 py-1 rounded-lg transition-colors"
-            >
-              <Database className="w-3.5 h-3.5 text-emerald-500" />
-              <span>{t.downloadNavLabel}</span>
-            </Link>
+      {/* SEARCH AND FILTERS BAR */}
+      <div className="border border-border bg-card p-4 mb-8 text-card-foreground rounded-none" id="directory_filters_panel">
+        <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+          {/* Quick Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t.dirSearchPlaceholder}
+              className="w-full pl-10 pr-4 py-2 bg-muted/40 border border-border focus:border-foreground outline-none text-xs text-foreground placeholder:text-muted-foreground rounded-none transition-colors"
+              autoComplete="off"
+            />
           </div>
 
-          <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-            <Database className="w-3.5 h-3.5 text-emerald-500" />
-            <span>{t.allReviewsCount}: {companiesList.length}</span>
+          {/* Quick Indicator of Sort Mode */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 border border-border px-3 py-2 rounded-none font-mono">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-foreground" />
+            <span>
+              {t.dirSortModeLabel}
+              <strong className="text-foreground font-bold ml-1">
+                {sortOptions.find(opt => opt.field === sortField)?.label}
+              </strong>
+              （{sortOrder === 'desc' ? (lang === 'zh' ? '降序' : 'Desc') : (lang === 'zh' ? '升序' : 'Asc')}）
+            </span>
           </div>
         </div>
 
-        {/* Title Block */}
-        <div className="mb-8" id="directory_heading">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full shadow-xs text-xs text-emerald-500 font-medium mb-3">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-            <span>{t.dirTitle}</span>
+        {/* Sort Toggles Grid */}
+        <div className="mt-4 border-t border-border pt-3">
+          <div className="flex flex-wrap gap-2">
+            {sortOptions.map((opt) => {
+              const isActive = sortField === opt.field;
+              return (
+                <button
+                  key={opt.field}
+                  onClick={() => handleSort(opt.field)}
+                  className={`text-xs px-3 py-1 border rounded-none transition-all flex items-center gap-1.5 font-medium cursor-pointer ${
+                    isActive
+                      ? 'bg-foreground text-background border-foreground font-bold'
+                      : 'bg-muted/30 border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
+                >
+                  <span>{opt.label}</span>
+                  {isActive && (
+                    <ArrowUpDown className={`w-3 h-3 ${sortOrder === 'desc' ? 'rotate-180' : ''} transition-transform duration-200`} />
+                  )}
+                </button>
+              );
+            })}
           </div>
-          <h1 className="text-3xl font-extrabold text-foreground tracking-tight">
-            {t.dirMainHeader}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-            {t.dirSub}
+        </div>
+      </div>
+
+      {/* NEWSPAPER ROW TABLE LIST (MATCHING REFERENCE IMAGE STRUCTURE) */}
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center py-20 border border-border" id="loading_state">
+          <Loader2 className="w-8 h-8 text-foreground animate-spin mb-4" />
+          <p className="text-xs text-muted-foreground font-mono">
+            {lang === 'zh' ? '正在拉取链上企业榜单数据...' : 'Syncing enterprise ledger stats...'}
           </p>
         </div>
-
-        {/* Search and Filters Block */}
-        <div className="bg-card border border-border rounded-2xl p-4 mb-6 text-card-foreground shadow-sm" id="directory_filters_panel">
-          <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-            {/* Quick Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t.dirSearchPlaceholder}
-                className="w-full pl-10 pr-4 py-2.5 bg-muted/40 border border-border focus:border-emerald-500/50 outline-none text-sm text-foreground placeholder:text-muted-foreground rounded-xl transition-colors"
-                autoComplete="off"
-              />
-            </div>
-
-            {/* Quick Indicator of Sort Mode */}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 border border-border px-3 py-2 rounded-xl">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-500" />
-              <span>
-                {t.dirSortModeLabel}
-                <strong className="text-emerald-500 font-bold">
-                  {sortOptions.find(opt => opt.field === sortField)?.label}
-                </strong>
-                （{sortOrder === 'desc' ? (lang === 'zh' ? '降序' : 'Desc') : (lang === 'zh' ? '升序' : 'Asc')}）
-              </span>
-            </div>
-          </div>
-
-          {/* Sort Toggles Grid */}
-          <div className="mt-4 border-t border-border pt-4">
-            <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">
-              {t.dirSortFieldLabel}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {sortOptions.map((opt) => {
-                const isActive = sortField === opt.field;
-                return (
-                  <button
-                    key={opt.field}
-                    onClick={() => handleSort(opt.field)}
-                    className={`text-xs px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 font-medium cursor-pointer ${
-                      isActive
-                        ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500 font-bold'
-                        : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-accent'
-                    }`}
-                  >
-                    <span>{opt.label}</span>
-                    {isActive && (
-                      <ArrowUpDown className={`w-3 h-3 ${sortOrder === 'desc' ? 'rotate-180' : ''} transition-transform duration-200`} />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+      ) : filteredAndSortedCompanies.length === 0 ? (
+        <div className="text-center py-16 border border-border bg-card text-card-foreground rounded-none" id="empty_state">
+          <Building className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+          <h3 className="text-sm font-bold text-foreground mb-1">{t.dirNoResults}</h3>
+          <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+            {t.dirNoResultsDesc}
+          </p>
         </div>
-
-        {/* List Section */}
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20" id="loading_state">
-            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
-            <p className="text-sm text-muted-foreground">
-              {lang === 'zh' ? '正在链上拉取并汇总企业评价数据...' : 'Syncing and aggregating anonymous ledger reviews...'}
-            </p>
-          </div>
-        ) : filteredAndSortedCompanies.length === 0 ? (
-          <div className="text-center py-16 bg-card border border-border rounded-2xl text-card-foreground" id="empty_state">
-            <Building className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-sm font-semibold text-foreground mb-1">{t.dirNoResults}</h3>
-            <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-              {t.dirNoResultsDesc}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3.5" id="companies_list">
-            {filteredAndSortedCompanies.map((comp, idx) => (
+      ) : (
+        <div className="divide-y divide-border border-y border-border" id="companies_list">
+          {filteredAndSortedCompanies.map((comp, idx) => {
+            const rankFormatted = String(idx + 1).padStart(2, '0');
+            return (
               <motion.div
                 key={comp.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(idx * 0.04, 0.4), duration: 0.3 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: Math.min(idx * 0.03, 0.3), duration: 0.2 }}
               >
                 <Link
                   href={`/${rawLang}/companies/${comp.id}`}
-                  className="block bg-card hover:bg-accent/40 border border-border hover:border-emerald-500/40 rounded-2xl p-5 transition-all group text-card-foreground shadow-xs"
+                  className="group py-5 px-2 sm:px-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6 hover:bg-muted/30 transition-colors block"
                 >
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    {/* Brand Info & Basic Rating */}
-                    <div className="flex items-start gap-4">
-                      <div className="p-3 bg-muted group-hover:bg-emerald-500/10 border border-border group-hover:border-emerald-500/20 rounded-xl transition-all">
-                        <Building className="w-6 h-6 text-emerald-500" />
+                  {/* COL 1: THUMBNAIL IMAGE OR PLACEHOLDER (RECTANGLE SQUARE) */}
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 border border-border rounded-none bg-muted/60 overflow-hidden relative flex items-center justify-center">
+                    {comp.logoUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={comp.logoUrl}
+                        alt={comp.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      /* Elegant Sharp Geometric Monogram Placeholder */
+                      <div className="w-full h-full bg-muted/80 flex flex-col items-center justify-center p-2 text-center">
+                        <Building className="w-6 h-6 text-muted-foreground mb-0.5 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-black font-mono text-muted-foreground uppercase tracking-widest truncate max-w-full">
+                          {comp.name.substring(0, 3)}
+                        </span>
                       </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-foreground group-hover:text-emerald-500 transition-colors flex items-center gap-2">
-                          <span>{comp.name}</span>
-                          <span className="text-[10px] font-bold bg-muted text-muted-foreground px-2 py-0.5 rounded border border-border">
-                            {comp.reviewCount} {lang === 'zh' ? '笔评价' : 'reviews'}
-                          </span>
-                        </h3>
-                        <div className="flex items-center gap-3 mt-1.5">
-                          {/* Aggregate Star Badge */}
-                          <div className="flex items-center gap-1 text-sm text-emerald-500 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
-                            <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" />
-                            <span>{comp.avgRating} {lang === 'zh' ? '综合分' : 'Rating'}</span>
-                          </div>
-                          
-                          {/* Avg Salary info */}
-                          {comp.avgSalary > 0 && (
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
-                              <span>{lang === 'zh' ? '平均月薪' : 'Avg Salary'}: <strong className="text-foreground font-bold">{comp.avgSalary}K</strong></span>
-                              {comp.avgBonus > 0 && (
-                                <span className="text-muted-foreground">
-                                  （{lang === 'zh' ? '年终奖' : 'Bonus'}: <strong className="text-foreground/80 font-semibold">{comp.avgBonus}K</strong>）
-                                </span>
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                    )}
+                  </div>
+
+                  {/* COL 2: RANK & RATING INDEX (WITH 1PX VERTICAL RIGHT BORDER) */}
+                  <div className="w-24 sm:w-28 shrink-0 border-r border-border pr-4 sm:pr-6 flex flex-col justify-between h-16 sm:h-20 py-0.5">
+                    <div>
+                      <span className="text-xl sm:text-2xl font-black font-mono text-foreground tracking-tight block leading-none">
+                        {rankFormatted}
+                      </span>
+                      <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block mt-1">
+                        RANK
+                      </span>
                     </div>
 
-                    {/* Breakdown Ratings row */}
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 border-t lg:border-t-0 border-border pt-4 lg:pt-0">
-                      {/* WLB */}
-                      <div className="flex flex-col bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border text-center min-w-[76px]">
-                        <span className="text-[9px] text-muted-foreground font-medium">{lang === 'zh' ? '工作生活平衡' : 'WLB'}</span>
-                        <span className="text-xs font-extrabold text-indigo-500 dark:text-indigo-400 mt-0.5">{comp.avgBalance}</span>
-                      </div>
-                      {/* Career */}
-                      <div className="flex flex-col bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border text-center min-w-[76px]">
-                        <span className="text-[9px] text-muted-foreground font-medium">{lang === 'zh' ? '职业成长' : 'Career'}</span>
-                        <span className="text-xs font-extrabold text-emerald-500 dark:text-emerald-400 mt-0.5">{comp.avgCareer}</span>
-                      </div>
-                      {/* Management */}
-                      <div className="flex flex-col bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border text-center min-w-[76px]">
-                        <span className="text-[9px] text-muted-foreground font-medium">{lang === 'zh' ? '管理层满意' : 'Management'}</span>
-                        <span className="text-xs font-extrabold text-amber-500 dark:text-amber-400 mt-0.5">{comp.avgManagement}</span>
-                      </div>
-                      {/* Compensation */}
-                      <div className="flex flex-col bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border text-center min-w-[76px]">
-                        <span className="text-[9px] text-muted-foreground font-medium">{lang === 'zh' ? '福利待遇' : 'Benefits'}</span>
-                        <span className="text-xs font-extrabold text-rose-500 dark:text-rose-400 mt-0.5">{comp.avgCompensation}</span>
-                      </div>
-                      {/* Culture */}
-                      <div className="flex flex-col bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border text-center min-w-[76px]">
-                        <span className="text-[9px] text-muted-foreground font-medium">{lang === 'zh' ? '企业文化' : 'Culture'}</span>
-                        <span className="text-xs font-extrabold text-teal-500 dark:text-teal-400 mt-0.5">{comp.avgCulture}</span>
-                      </div>
+                    <div className="flex items-center gap-1 text-xs font-extrabold font-mono text-foreground">
+                      <Star className="w-3 h-3 fill-foreground text-foreground" />
+                      <span>{comp.avgRating}</span>
+                      <span className="text-muted-foreground text-[10px]">/ 5</span>
+                    </div>
+                  </div>
+
+                  {/* COL 3: COMPANY TITLE & TAGS */}
+                  <div className="flex-1 min-w-[180px] flex flex-col justify-between h-auto sm:h-20 py-0.5 space-y-2">
+                    <div>
+                      <h3 className="text-base sm:text-lg font-extrabold text-foreground group-hover:underline tracking-tight flex items-center gap-2">
+                        <span>{comp.name}</span>
+                      </h3>
+                      <span className="text-[11px] text-muted-foreground font-mono block mt-0.5">
+                        {comp.location} · {comp.reviewCount} {lang === 'zh' ? '笔存证评价' : 'ledger entries'}
+                      </span>
                     </div>
 
-                    {/* Action Arrow (desktop and hover visual) */}
-                    <div className="hidden lg:flex items-center text-muted-foreground group-hover:text-emerald-500 transition-colors pl-2">
-                      <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    {/* SHARP RECTANGLE TAGS */}
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="border border-border text-[10px] font-mono px-2 py-0.5 uppercase tracking-wider text-foreground bg-background">
+                        WLB: {comp.avgBalance}
+                      </span>
+                      <span className="border border-border text-[10px] font-mono px-2 py-0.5 uppercase tracking-wider text-foreground bg-background">
+                        {lang === 'zh' ? '成长' : 'Growth'}: {comp.avgCareer}
+                      </span>
+                      {comp.avgSalary > 0 && (
+                        <span className="border border-border text-[10px] font-mono px-2 py-0.5 uppercase tracking-wider text-foreground bg-background">
+                          {comp.avgSalary}K/M
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* COL 4: REVIEW SUMMARY & TELEMETRY TEXT */}
+                  <div className="flex-1 min-w-[220px] flex flex-col justify-between h-auto sm:h-20 py-0.5 space-y-2 border-t sm:border-t-0 border-border pt-2 sm:pt-0">
+                    <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed font-sans">
+                      {comp.latestReviewSnippet}
+                    </p>
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
+                      <span>SHA-256 VERIFIED</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                     </div>
                   </div>
                 </Link>
               </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
-    </main>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
