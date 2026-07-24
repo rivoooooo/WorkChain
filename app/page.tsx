@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Search,
@@ -558,6 +559,43 @@ export default function Home() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-8 md:py-16" id="app_container">
+        {/* Navigation Header */}
+        <header className="flex items-center justify-between border-b border-white/5 pb-5 mb-8 md:mb-12" id="main_header">
+          <Link
+            href="/"
+            onClick={() => {
+              setSubmittedQuery('');
+              setSearchQuery('');
+              if (typeof window !== 'undefined') {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('company');
+                window.history.pushState({}, '', url.pathname + url.search);
+              }
+            }}
+            className="flex items-center gap-2 group"
+          >
+            <Building className="w-5.5 h-5.5 text-emerald-400 group-hover:scale-105 transition-transform" />
+            <span className="font-extrabold text-white text-base md:text-lg tracking-tight group-hover:text-emerald-400 transition-colors">职场口碑网</span>
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link 
+              href="/companies"
+              className="text-xs md:text-sm font-semibold text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-1.5"
+            >
+              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              <span>浏览公司龙虎榜</span>
+            </Link>
+            {!submittedQuery && !showSubmitForm && (
+              <button
+                onClick={() => setShowSubmitForm(true)}
+                className="hidden sm:inline-block px-3.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl transition-colors"
+              >
+                提供新评价
+              </button>
+            )}
+          </div>
+        </header>
+
         {/* Render HOME state if no search query has been successfully submitted */}
         {!submittedQuery ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] max-w-2xl mx-auto text-center" id="search_home">
