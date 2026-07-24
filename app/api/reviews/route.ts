@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('API Error in POST reviews:', error);
     return NextResponse.json(
-      { success: false, error: '提交评价失败，请检查数据后重试。' },
+      { success: false, error: error.message || '提交评价失败，请检查数据后重试。' },
       { status: 500 }
     );
   }

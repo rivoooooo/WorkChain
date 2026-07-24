@@ -402,7 +402,27 @@ export async function getCompanies(search?: string): Promise<Company[]> {
 // Get single company details by its ID
 export async function getCompanyById(companyId: string): Promise<Company | null> {
   const companies = await getCompanies();
-  return companies.find(c => c.id === companyId) || null;
+  const found = companies.find(c => c.id === companyId);
+  if (found) {
+    return found;
+  }
+
+  // Robust fallback: if not found in the cached/database list, check if reviews exist
+  // and construct the company stats dynamically. This prevents "Company Not Found"
+  const reviews = await getCompanyReviewsById(companyId);
+  if (reviews.length > 0) {
+    const name = reviews[0].company_name;
+    const stats = calculateStatsForReviews(reviews);
+    const calculated: Company = {
+      id: companyId,
+      name,
+      created_at: reviews[0].created_at || new Date().toISOString(),
+      ...stats
+    };
+    return calculated;
+  }
+
+  return null;
 }
 
 // Recalculate company metrics for robust local consistency
@@ -552,6 +572,7 @@ export async function addReview(reviewData: Omit<Review, 'id' | 'company_id' | '
 
       if (compError) {
         console.error('Error inserting company into Supabase:', compError);
+        throw new Error(`创建或更新公司失败: ${compError.message}. 请确保已执行最新的数据库迁移 SQL。`);
       } else {
         console.log('Successfully saved company info to Supabase');
       }
@@ -560,6 +581,7 @@ export async function addReview(reviewData: Omit<Review, 'id' | 'company_id' | '
       const { error: revError } = await supabase.from('reviews').insert([newReview]);
       if (revError) {
         console.error('Error inserting review into Supabase:', revError);
+        throw new Error(`创建评价失败: ${revError.message}. 请确保已执行最新的数据库迁移 SQL。`);
       } else {
         console.log('Successfully saved review to Supabase');
       }
