@@ -313,7 +313,7 @@ export default function Home({ params }: PageProps) {
               <BeforeAfterCanvas
                 beforeSrc="/before.png"
                 afterSrc="/after.png"
-                className="w-full aspect-[16/9] sm:aspect-[21/9]"
+                className="w-full aspect-[16/9]"
               />
             </motion.div>
 
