@@ -20,12 +20,12 @@ export const companies = pgTable('companies', {
   pgPolicy('Allow select for companies', {
     for: 'select',
     to: 'public',
-    using: sql`true`,
+    using: sql.raw('true'),
   }),
   pgPolicy('Allow insert for companies', {
     for: 'insert',
     to: 'public',
-    withCheck: sql`true`,
+    withCheck: sql.raw('true'),
   }),
 ]).enableRLS();
 
@@ -60,12 +60,12 @@ export const reviews = pgTable('reviews', {
   pgPolicy('Allow select for reviews', {
     for: 'select',
     to: 'public',
-    using: sql`true`,
+    using: sql.raw('true'),
   }),
   pgPolicy('Allow insert for reviews', {
     for: 'insert',
     to: 'public',
-    withCheck: sql`true`,
+    withCheck: sql.raw('true'),
   }),
 ]).enableRLS();
 
@@ -83,12 +83,12 @@ export const backupsMetadata = pgTable('backups_metadata', {
   pgPolicy('Allow select for backups_metadata', {
     for: 'select',
     to: 'public',
-    using: sql`true`,
+    using: sql.raw('true'),
   }),
   pgPolicy('Allow insert for backups_metadata', {
     for: 'insert',
     to: 'public',
-    withCheck: sql`true`,
+    withCheck: sql.raw('true'),
   }),
 ]).enableRLS();
 
@@ -102,11 +102,11 @@ export const backupsBinary = pgTable('backups_binary', {
   pgPolicy('Allow select for backups_binary', {
     for: 'select',
     to: 'public',
-    using: sql`true`,
+    using: sql.raw('true'),
   }),
   pgPolicy('Allow insert for backups_binary', {
     for: 'insert',
     to: 'public',
-    withCheck: sql`true`,
+    withCheck: sql.raw('true'),
   }),
 ]).enableRLS();
