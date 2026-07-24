@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import { StandardCompanyDTO } from './types';
-import { crypto } from 'crypto';
+import crypto from 'crypto';
 
 const connectionString = process.env.DATABASE_URL || '';
 
@@ -60,8 +60,18 @@ export async function importCompanyData(
           existingMap.set(row.credit_code, row.id);
         }
 
+        interface CompanyRow {
+          id: string;
+          credit_code: string;
+          name: string;
+          country_code: string;
+          country_name: string;
+          province: string | null;
+          city: string | null;
+        }
+
         // 构造 companies 表待插入/更新记录
-        const companyBatch = uniqueChunk.map((dto) => {
+        const companyBatch: CompanyRow[] = uniqueChunk.map((dto) => {
           const existingId = existingMap.get(dto.creditCode);
           const companyId = existingId || generateCompanyId();
           // 更新 existingMap 方便给 company_details 使用
@@ -98,8 +108,19 @@ export async function importCompanyData(
             city = COALESCE(EXCLUDED.city, companies.city);
         `;
 
+        interface DetailRow {
+          id: string;
+          company_id: string;
+          legal_representative: string | null;
+          registered_capital: string | null;
+          business_scope: string | null;
+          registered_address: string | null;
+          establishment_date: string | null;
+          company_type: string | null;
+        }
+
         // 构造 company_details 表待插入/更新记录 (仅包含有扩展属性的数据)
-        const detailBatch = uniqueChunk
+        const detailBatch: DetailRow[] = uniqueChunk
           .map((dto) => {
             const companyId = existingMap.get(dto.creditCode);
             if (!companyId) return null;
@@ -127,7 +148,7 @@ export async function importCompanyData(
               company_type: dto.companyType || null,
             };
           })
-          .filter(Boolean) as any[];
+          .filter((item): item is DetailRow => item !== null);
 
         if (detailBatch.length > 0) {
           await tx`

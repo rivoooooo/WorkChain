@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Languages, Plus, Loader2, AlertCircle, ShieldCheck, X, Search, Building2, Star, ArrowRight } from 'lucide-react';
 import { Language, i18n } from '../lib/i18n';
 import { ThemeToggle } from './theme-toggle';
+import { CitySelect } from './city-select';
 
 interface CompanyItem {
   id: string;
@@ -75,6 +76,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
 
   const [formData, setFormData] = useState({
     company_name: '',
+    country_code: 'CN',
     branch_location: '',
     position: '',
     employment_status: 'current',
@@ -137,6 +139,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
   const openReviewModal = () => {
     setFormData({
       company_name: '',
+      country_code: 'CN',
       branch_location: '',
       position: '',
       employment_status: 'current',
@@ -379,7 +382,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                       <form onSubmit={handleSubmit} className="space-y-4 flex-1">
                         {/* Form Fields */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
+                          <div className="md:col-span-2">
                             <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
                               {t.formLabelCompany} <span className="text-rose-500">*</span>
                             </label>
@@ -392,16 +395,14 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                               className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
                             />
                           </div>
-                          <div>
-                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
-                              {t.formLabelLocation}
-                            </label>
-                            <input
-                              type="text"
-                              value={formData.branch_location}
-                              onChange={(e) => setFormData(prev => ({ ...prev, branch_location: e.target.value }))}
-                              placeholder={t.formPlaceholderLocation}
-                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
+
+                          <div className="md:col-span-2 border-t border-border/50 pt-2">
+                            <CitySelect
+                              countryValue={formData.country_code}
+                              cityValue={formData.branch_location}
+                              onCountryChange={(code) => setFormData(prev => ({ ...prev, country_code: code }))}
+                              onCityChange={(city) => setFormData(prev => ({ ...prev, branch_location: city }))}
+                              lang={lang}
                             />
                           </div>
                         </div>
