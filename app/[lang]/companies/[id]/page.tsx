@@ -469,16 +469,16 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
           {/* Salary aggregates card */}
           {company.avg_salary > 0 && (
-            <div className="mt-4 p-4 bg-white/2 rounded-2xl border border-white/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="mt-4 p-4 bg-muted/40 rounded-2xl border border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                  <DollarSign className="w-5 h-5 text-emerald-400" />
+                  <DollarSign className="w-5 h-5 text-emerald-500" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{lang === 'zh' ? '基础基本月薪' : 'Base Monthly Salary'}</h4>
-                  <p className="text-lg font-black text-white mt-0.5">
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{lang === 'zh' ? '基础基本月薪' : 'Base Monthly Salary'}</h4>
+                  <p className="text-lg font-black text-foreground mt-0.5">
                     {lang === 'zh' ? '平均月薪：' : 'Avg Base: '}
-                    <span className="text-emerald-400">{(company.avg_salary / 1000).toFixed(1)}K</span>
+                    <span className="text-emerald-500">{(company.avg_salary / 1000).toFixed(1)}K</span>
                   </p>
                 </div>
               </div>
@@ -486,13 +486,13 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
               {company.avg_bonus > 0 && (
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
-                    <Activity className="w-5 h-5 text-indigo-400" />
+                    <Activity className="w-5 h-5 text-indigo-500" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{lang === 'zh' ? '年终奖/红利期望' : 'Annual Expected Bonus'}</h4>
-                    <p className="text-lg font-black text-white mt-0.5">
+                    <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{lang === 'zh' ? '年终奖/红利期望' : 'Annual Expected Bonus'}</h4>
+                    <p className="text-lg font-black text-foreground mt-0.5">
                       {lang === 'zh' ? '平均：' : 'Avg Bonus: '}
-                      <span className="text-indigo-400">{(company.avg_bonus / 1000).toFixed(1)}K</span>
+                      <span className="text-indigo-500">{(company.avg_bonus / 1000).toFixed(1)}K</span>
                     </p>
                   </div>
                 </div>
@@ -502,19 +502,19 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
         {/* Tabs Control */}
-        <div className="flex border-b border-white/10 mb-8" id="detail_tabs_row">
+        <div className="flex border-b border-border mb-8" id="detail_tabs_row">
           <button
             onClick={() => setActiveTab('reviews')}
-            className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors relative ${
+            className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors relative cursor-pointer ${
               activeTab === 'reviews'
-                ? 'border-emerald-500 text-white'
-                : 'border-transparent text-gray-400 hover:text-white'
+                ? 'border-emerald-500 text-foreground font-bold'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
             <span className="flex items-center gap-2">
               <Building className="w-4 h-4" />
               <span>{t.tabReviews}</span>
-              <span className="text-xs bg-[#121212] px-1.5 py-0.5 rounded border border-white/5 text-gray-400">
+              <span className="text-xs bg-muted px-1.5 py-0.5 rounded border border-border text-muted-foreground">
                 {reviews.length}
               </span>
             </span>
@@ -527,24 +527,24 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 handleGenerateAIReport(false);
               }
             }}
-            className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors relative ${
+            className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors relative cursor-pointer ${
               activeTab === 'aiReport'
-                ? 'border-emerald-500 text-white'
-                : 'border-transparent text-gray-400 hover:text-white'
+                ? 'border-emerald-500 text-foreground font-bold'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
             <span className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
+              <Sparkles className="w-4 h-4 text-emerald-500 animate-pulse" />
               <span>{t.tabAiReport}</span>
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('ledger')}
-            className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors relative ${
+            className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors relative cursor-pointer ${
               activeTab === 'ledger'
-                ? 'border-emerald-500 text-white'
-                : 'border-transparent text-gray-400 hover:text-white'
+                ? 'border-emerald-500 text-foreground font-bold'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
             <span className="flex items-center gap-2">
@@ -561,13 +561,13 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
             <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between" id="local_filters">
               {/* Search reviews */}
               <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
                   value={localSearch}
                   onChange={(e) => setLocalSearch(e.target.value)}
                   placeholder={lang === 'zh' ? '在这个企业评价中搜索关键字...' : 'Search within these reviews...'}
-                  className="w-full pl-10 pr-4 py-2.5 bg-[#121212] border border-white/5 focus:border-emerald-500/50 outline-none text-sm text-[#e0e0e0] placeholder:text-gray-600 rounded-xl transition-colors"
+                  className="w-full pl-10 pr-4 py-2.5 bg-muted/40 border border-border focus:border-emerald-500/50 outline-none text-sm text-foreground placeholder:text-muted-foreground rounded-xl transition-colors"
                 />
               </div>
 
@@ -576,7 +576,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <select
                   value={filterPosition}
                   onChange={(e) => setFilterPosition(e.target.value)}
-                  className="bg-[#121212] border border-white/5 outline-none px-3 py-2 text-xs font-semibold rounded-xl text-gray-300 focus:border-emerald-500"
+                  className="bg-muted/40 border border-border outline-none px-3 py-2 text-xs font-semibold rounded-xl text-foreground focus:border-emerald-500 cursor-pointer"
                 >
                   <option value="ALL">{t.allPositions}</option>
                   {uniquePositions.map(pos => (
@@ -587,34 +587,34 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="bg-[#121212] border border-white/5 outline-none px-3 py-2 text-xs font-semibold rounded-xl text-gray-300 focus:border-emerald-500"
+                  className="bg-muted/40 border border-border outline-none px-3 py-2 text-xs font-semibold rounded-xl text-foreground focus:border-emerald-500 cursor-pointer"
                 >
                   <option value="ALL">{t.allStatus}</option>
                   <option value="current">{t.currentEmployee}</option>
                   <option value="former">{t.formerEmployee}</option>
                 </select>
 
-                <div className="flex bg-[#121212] p-1 border border-white/5 rounded-xl gap-1">
+                <div className="flex bg-muted/40 p-1 border border-border rounded-xl gap-1">
                   <button
                     onClick={() => setSortBy('latest')}
-                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors ${
-                      sortBy === 'latest' ? 'bg-emerald-500/15 text-emerald-400' : 'text-gray-400 hover:text-white'
+                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors cursor-pointer ${
+                      sortBy === 'latest' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {t.sortLatest}
                   </button>
                   <button
                     onClick={() => setSortBy('salary')}
-                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors ${
-                      sortBy === 'salary' ? 'bg-emerald-500/15 text-emerald-400' : 'text-gray-400 hover:text-white'
+                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors cursor-pointer ${
+                      sortBy === 'salary' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {t.sortSalary}
                   </button>
                   <button
                     onClick={() => setSortBy('rating')}
-                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors ${
-                      sortBy === 'rating' ? 'bg-emerald-500/15 text-emerald-400' : 'text-gray-400 hover:text-white'
+                    className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors cursor-pointer ${
+                      sortBy === 'rating' ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {t.sortRating}
@@ -626,11 +626,11 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
             {/* Reviews Cards List */}
             {filteredAndSortedReviews.length === 0 ? (
               <div className="text-center py-16 bg-card border border-border text-card-foreground shadow-sm rounded-2xl" id="empty_reviews">
-                <Briefcase className="w-12 h-12 text-gray-700 mx-auto mb-3" />
-                <h3 className="text-sm font-semibold text-white mb-1">
+                <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <h3 className="text-sm font-semibold text-foreground mb-1">
                   {lang === 'zh' ? '未找到符合条件的评价' : 'No Reviews Found'}
                 </h3>
-                <p className="text-xs text-gray-500 max-w-xs mx-auto">
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto">
                   {lang === 'zh' ? '请尝试清除过滤条件或搜索其他职位词。' : 'Try updating your filters or search query.'}
                 </p>
               </div>
@@ -648,30 +648,30 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                       className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 relative overflow-hidden"
                     >
                       {/* Secure watermark block */}
-                      <div className="absolute top-0 right-0 p-2.5 bg-emerald-500/5 text-[9px] text-emerald-500 font-mono tracking-widest border-b border-l border-white/5 select-none rounded-bl-xl uppercase font-bold">
+                      <div className="absolute top-0 right-0 p-2.5 bg-emerald-500/5 text-[9px] text-emerald-500 font-mono tracking-widest border-b border-l border-border select-none rounded-bl-xl uppercase font-bold">
                         {t.blockchainSecured}
                       </div>
 
                       {/* Poster header */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-4 mb-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4 mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#151515] border border-white/5 flex items-center justify-center font-bold text-gray-400 text-xs">
+                          <div className="w-8 h-8 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-muted-foreground text-xs">
                             {idx + 1}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-white text-sm">
+                              <span className="font-bold text-foreground text-sm">
                                 {rev.position}
                               </span>
                               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
                                 rev.employment_status === 'current'
-                                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                  : 'bg-gray-500/10 border-white/5 text-gray-400'
+                                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+                                  : 'bg-muted border-border text-muted-foreground'
                               }`}>
                                 {rev.employment_status === 'current' ? t.currentEmployee : t.formerEmployee}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2.5 text-xs text-gray-500 mt-1">
+                            <div className="flex items-center gap-2.5 text-xs text-muted-foreground mt-1">
                               <span className="flex items-center gap-1">
                                 <MapPin className="w-3.5 h-3.5" />
                                 <span>{rev.branch_location}</span>
@@ -686,47 +686,47 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                         </div>
 
                         {/* Average Rating for review */}
-                        <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/5 border border-emerald-500/10 rounded-lg text-emerald-400 font-bold text-xs">
-                          <Star className="w-3.5 h-3.5 fill-emerald-400 text-emerald-400" />
+                        <div className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-500 font-bold text-xs">
+                          <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" />
                           <span>{ratingAvg.toFixed(1)} {lang === 'zh' ? '综合分' : 'Avg'}</span>
                         </div>
                       </div>
 
                       {/* Main evaluation review text */}
-                      <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap mb-4" id={`text-${rev.id}`}>
+                      <div className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap mb-4" id={`text-${rev.id}`}>
                         {rev.review_text}
                       </div>
 
                       {/* Salary Tag & detailed ratings */}
-                      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/5 pt-4">
+                      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
                         {/* Salary and bonus indicators */}
                         <div className="flex items-center gap-3">
-                          <span className="text-xs text-gray-400 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            <span>{lang === 'zh' ? '基本月薪' : 'Monthly Salary'}: <strong className="text-white font-bold">{rev.salary}K</strong></span>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <span>{lang === 'zh' ? '基本月薪' : 'Monthly Salary'}: <strong className="text-foreground font-bold">{rev.salary}K</strong></span>
                           </span>
                           {rev.bonus > 0 && (
-                            <span className="text-xs text-gray-400 flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                              <span>{lang === 'zh' ? '年终奖' : 'Annual Bonus'}: <strong className="text-white font-bold">{rev.bonus}K</strong></span>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                              <span>{lang === 'zh' ? '年终奖' : 'Annual Bonus'}: <strong className="text-foreground font-bold">{rev.bonus}K</strong></span>
                             </span>
                           )}
                         </div>
 
                         {/* Individual rating stats row */}
-                        <div className="flex flex-wrap gap-2 text-[10px] font-semibold text-gray-400">
-                          <span className="px-2 py-0.5 bg-[#121212] border border-white/5 rounded">WLB: <strong className="text-indigo-400">{rev.rating_balance}</strong></span>
-                          <span className="px-2 py-0.5 bg-[#121212] border border-white/5 rounded">{lang === 'zh' ? '成长' : 'Growth'}: <strong className="text-emerald-400">{rev.rating_career}</strong></span>
-                          <span className="px-2 py-0.5 bg-[#121212] border border-white/5 rounded">{lang === 'zh' ? '管理' : 'Mgmt'}: <strong className="text-amber-400">{rev.rating_management}</strong></span>
-                          <span className="px-2 py-0.5 bg-[#121212] border border-white/5 rounded">{lang === 'zh' ? '薪酬' : 'Pay'}: <strong className="text-rose-400">{rev.rating_compensation}</strong></span>
-                          <span className="px-2 py-0.5 bg-[#121212] border border-white/5 rounded">{lang === 'zh' ? '文化' : 'Culture'}: <strong className="text-teal-400">{rev.rating_culture}</strong></span>
+                        <div className="flex flex-wrap gap-2 text-[10px] font-semibold text-muted-foreground">
+                          <span className="px-2 py-0.5 bg-muted/60 border border-border rounded">WLB: <strong className="text-indigo-500 dark:text-indigo-400">{rev.rating_balance}</strong></span>
+                          <span className="px-2 py-0.5 bg-muted/60 border border-border rounded">{lang === 'zh' ? '成长' : 'Growth'}: <strong className="text-emerald-500 dark:text-emerald-400">{rev.rating_career}</strong></span>
+                          <span className="px-2 py-0.5 bg-muted/60 border border-border rounded">{lang === 'zh' ? '管理' : 'Mgmt'}: <strong className="text-amber-500 dark:text-amber-400">{rev.rating_management}</strong></span>
+                          <span className="px-2 py-0.5 bg-muted/60 border border-border rounded">{lang === 'zh' ? '薪酬' : 'Pay'}: <strong className="text-rose-500 dark:text-rose-400">{rev.rating_compensation}</strong></span>
+                          <span className="px-2 py-0.5 bg-muted/60 border border-border rounded">{lang === 'zh' ? '文化' : 'Culture'}: <strong className="text-teal-500 dark:text-teal-400">{rev.rating_culture}</strong></span>
                         </div>
                       </div>
 
                       {/* Dynamic date tag */}
-                      <div className="text-[10px] text-gray-600 mt-3 font-mono flex items-center justify-between">
+                      <div className="text-[10px] text-muted-foreground mt-3 font-mono flex items-center justify-between">
                         <span>{lang === 'zh' ? '发布于' : 'Posted on'}: {new Date(rev.created_at).toLocaleString()}</span>
-                        <span className="truncate max-w-[200px] hover:text-emerald-400 transition-colors cursor-help" title={rev.hash}>
+                        <span className="truncate max-w-[200px] hover:text-emerald-500 transition-colors cursor-help" title={rev.hash}>
                           BLOCK HASH: {rev.hash.substring(0, 16)}...
                         </span>
                       </div>
@@ -745,11 +745,11 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
             <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="absolute top-0 right-0 p-3 bg-emerald-500/5 blur-xl w-32 h-32 rounded-full" />
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-emerald-400 animate-pulse" />
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-emerald-500 animate-pulse" />
                   <span>{t.aiTitle}</span>
                 </h3>
-                <p className="text-xs text-gray-500 mt-1 max-w-xl">
+                <p className="text-xs text-muted-foreground mt-1 max-w-xl">
                   {t.aiDisclaimer}
                 </p>
               </div>
@@ -759,9 +759,9 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <button
                   onClick={() => handleGenerateAIReport(true)}
                   disabled={isGeneratingAI}
-                  className="px-4 py-2.5 bg-[#121212] hover:bg-[#1a1a1a] border border-white/5 text-gray-300 hover:text-white font-semibold text-xs rounded-xl flex items-center gap-2 self-start md:self-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2.5 bg-muted/80 hover:bg-accent border border-border text-muted-foreground hover:text-foreground font-semibold text-xs rounded-xl flex items-center gap-2 self-start md:self-center transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 text-emerald-400 ${isGeneratingAI ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 text-emerald-500 ${isGeneratingAI ? 'animate-spin' : ''}`} />
                   <span>{lang === 'zh' ? '强制刷新报告' : 'Refresh Report'}</span>
                 </button>
               )}
@@ -771,19 +771,19 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
             {isGeneratingAI ? (
               <div className="py-20 text-center bg-card border border-border text-card-foreground shadow-sm rounded-2xl flex flex-col items-center justify-center">
                 <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mb-4" />
-                <h3 className="text-sm font-semibold text-white mb-1">{t.aiGenerating}</h3>
-                <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
+                <h3 className="text-sm font-semibold text-foreground mb-1">{t.aiGenerating}</h3>
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
                   {lang === 'zh' ? 'Gemini 正在提取、结构化分析、打分并进行逻辑校验。这大约需要几秒钟...' : 'Gemini is loading semantic text models...'}
                 </p>
               </div>
             ) : aiError ? (
-              <div className="p-6 bg-rose-500/5 border border-rose-500/20 rounded-2xl text-center">
+              <div className="p-6 bg-rose-500/10 border border-rose-500/25 rounded-2xl text-center">
                 <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-3" />
-                <h3 className="text-sm font-semibold text-white mb-1">{lang === 'zh' ? '智能透视生成失败' : 'Failed to Generate Insight'}</h3>
-                <p className="text-xs text-rose-400 mb-4 max-w-sm mx-auto">{aiError}</p>
+                <h3 className="text-sm font-semibold text-rose-600 dark:text-rose-400 mb-1">{lang === 'zh' ? '智能透视生成失败' : 'Failed to Generate Insight'}</h3>
+                <p className="text-xs text-rose-600/90 dark:text-rose-300 mb-4 max-w-sm mx-auto">{aiError}</p>
                 <button
                   onClick={() => handleGenerateAIReport(true)}
-                  className="px-4 py-2 bg-[#121212] hover:bg-[#1a1a1a] border border-white/5 text-white font-semibold text-xs rounded-lg transition-colors"
+                  className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-lg transition-colors cursor-pointer"
                 >
                   {lang === 'zh' ? '重新生成' : 'Retry'}
                 </button>
@@ -791,17 +791,17 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
             ) : !aiReport ? (
               <div className="py-16 text-center bg-card border border-border text-card-foreground shadow-sm rounded-2xl">
                 <Sparkles className="w-12 h-12 text-emerald-500/30 mx-auto mb-4 animate-bounce" />
-                <h3 className="text-sm font-semibold text-white mb-1">
+                <h3 className="text-sm font-semibold text-foreground mb-1">
                   {lang === 'zh' ? '暂无生成的 AI 分析报告' : 'No AI Analysis Generated Yet'}
                 </h3>
-                <p className="text-xs text-gray-500 max-w-xs mx-auto mb-6">
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-6">
                   {lang === 'zh' ? '点击下方按钮，由 Gemini 智能模型自动提取员工文字评论，生成结构化口碑报告。' : 'Trigger Google Gemini to scan all evaluations and form an overview.'}
                 </p>
                 <button
                   onClick={() => handleGenerateAIReport(false)}
-                  className="px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm rounded-xl transition-colors shadow-lg shadow-emerald-500/10 inline-flex items-center gap-2"
+                  className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm rounded-xl transition-colors shadow-lg inline-flex items-center gap-2 cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4 fill-white" />
+                  <Sparkles className="w-4 h-4 fill-black" />
                   <span>{t.aiStartBtn}</span>
                 </button>
               </div>
@@ -810,11 +810,11 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
               <div className="space-y-6" id="ai_report_renderer">
                 {/* Cache alert banner */}
                 {isReportFromCache && (
-                  <div className="bg-emerald-500/5 border border-emerald-500/10 text-emerald-400 px-4 py-2.5 rounded-xl text-xs flex items-center justify-between">
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-4 py-2.5 rounded-xl text-xs flex items-center justify-between font-medium">
                     <span>{t.aiCacheAlert}</span>
                     <button
                       onClick={() => handleGenerateAIReport(true)}
-                      className="text-[10px] font-bold underline hover:text-white"
+                      className="text-[10px] font-bold underline hover:text-foreground cursor-pointer"
                     >
                       {lang === 'zh' ? '刷新' : 'Refresh'}
                     </button>
@@ -826,32 +826,32 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   {/* Left Column: Overall Emotion & Score card */}
                   <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 flex flex-col justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{lang === 'zh' ? 'AI 宏观情感画像' : 'AI Sentiment Portrait'}</h4>
+                      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{lang === 'zh' ? 'AI 宏观情感画像' : 'AI Sentiment Portrait'}</h4>
                       <div className="flex items-center gap-3 mt-4">
-                        <div className="text-4xl font-black text-white">{aiReport.sentimentScore}</div>
+                        <div className="text-4xl font-black text-foreground">{aiReport.sentimentScore}</div>
                         <div>
                           <div className={`text-xs font-bold px-2 py-0.5 rounded ${
                             aiReport.overallSentiment === '积极' || aiReport.overallSentiment === 'Positive'
-                              ? 'bg-emerald-500/10 text-emerald-400'
+                              ? 'bg-emerald-500/10 text-emerald-500'
                               : aiReport.overallSentiment === '消极' || aiReport.overallSentiment === 'Negative'
-                              ? 'bg-rose-500/10 text-rose-400'
-                              : 'bg-amber-500/10 text-amber-400'
+                              ? 'bg-rose-500/10 text-rose-500'
+                              : 'bg-amber-500/10 text-amber-500'
                           }`}>
                             {aiReport.overallSentiment}
                           </div>
-                          <div className="text-[10px] text-gray-500 mt-1">{lang === 'zh' ? '情感倾向性得分' : 'Sentiment Score'}</div>
+                          <div className="text-[10px] text-muted-foreground mt-1">{lang === 'zh' ? '情感倾向性得分' : 'Sentiment Score'}</div>
                         </div>
                       </div>
                     </div>
 
                     {/* Culture Characteristics tag flow */}
-                    <div className="mt-6 border-t border-white/5 pt-4">
-                      <h5 className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2.5">{t.aiCatVibe}</h5>
+                    <div className="mt-6 border-t border-border pt-4">
+                      <h5 className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2.5">{t.aiCatVibe}</h5>
                       <div className="flex flex-wrap gap-2">
                         {aiReport.cultureCharacteristics.map(tag => (
                           <span
                             key={tag}
-                            className="text-xs px-2.5 py-1 bg-[#121212] border border-white/5 text-gray-300 rounded-lg font-medium"
+                            className="text-xs px-2.5 py-1 bg-muted/60 border border-border text-foreground rounded-lg font-medium"
                           >
                             #{tag}
                           </span>
@@ -863,13 +863,13 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   {/* Right Column: Narrative Executive Summary */}
                   <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 md:col-span-2 flex flex-col justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{lang === 'zh' ? '企业深度口碑纪要' : 'Reputation Summary'}</h4>
-                      <p className="text-sm text-gray-300 leading-relaxed mt-4 whitespace-pre-line font-medium">
+                      <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{lang === 'zh' ? '企业深度口碑纪要' : 'Reputation Summary'}</h4>
+                      <p className="text-sm text-foreground/90 leading-relaxed mt-4 whitespace-pre-line font-medium">
                         {aiReport.overallSummary}
                       </p>
                     </div>
 
-                    <div className="text-[10px] text-gray-600 mt-4 font-mono">
+                    <div className="text-[10px] text-muted-foreground/60 mt-4 font-mono">
                       GENERATED SECURELY BY GOOGLE GEMINI COGNITIVE LAYER
                     </div>
                   </div>
@@ -877,61 +877,61 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
                 {/* Section 2: Detailed dimension evaluation scale rows */}
                 <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-5">{lang === 'zh' ? 'AI 细分维度评估图谱 (0-100)' : 'AI Breakdown Metrics'}</h4>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-5">{lang === 'zh' ? 'AI 细分维度评估图谱 (0-100)' : 'AI Breakdown Metrics'}</h4>
                   
                   <div className="space-y-4">
                     {/* WLB score */}
                     <div>
-                      <div className="flex justify-between items-center text-xs text-gray-400 font-medium mb-1.5">
+                      <div className="flex justify-between items-center text-xs text-muted-foreground font-medium mb-1.5">
                         <span>{lang === 'zh' ? '工作生活平衡 (WLB)' : 'Work Life Balance (WLB)'}</span>
-                        <span className="font-extrabold text-indigo-400">{aiReport.wlbScore}</span>
+                        <span className="font-extrabold text-indigo-500 dark:text-indigo-400">{aiReport.wlbScore}</span>
                       </div>
-                      <div className="w-full bg-[#121212] h-2 rounded-full overflow-hidden">
-                        <div className="bg-indigo-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.wlbScore}%` }} />
+                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                        <div className="bg-indigo-500 dark:bg-indigo-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.wlbScore}%` }} />
                       </div>
                     </div>
 
                     {/* Work pressure score */}
                     <div>
-                      <div className="flex justify-between items-center text-xs text-gray-400 font-medium mb-1.5">
+                      <div className="flex justify-between items-center text-xs text-muted-foreground font-medium mb-1.5">
                         <span>{lang === 'zh' ? '日常抗压要求与工作负荷' : 'Workload & Stress Intensity'}</span>
-                        <span className="font-extrabold text-amber-400">{aiReport.pressureScore}</span>
+                        <span className="font-extrabold text-amber-500 dark:text-amber-400">{aiReport.pressureScore}</span>
                       </div>
-                      <div className="w-full bg-[#121212] h-2 rounded-full overflow-hidden">
-                        <div className="bg-amber-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.pressureScore}%` }} />
+                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                        <div className="bg-amber-500 dark:bg-amber-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.pressureScore}%` }} />
                       </div>
                     </div>
 
                     {/* Team collaboration score */}
                     <div>
-                      <div className="flex justify-between items-center text-xs text-gray-400 font-medium mb-1.5">
+                      <div className="flex justify-between items-center text-xs text-muted-foreground font-medium mb-1.5">
                         <span>{lang === 'zh' ? '团队协作氛围与沟通效率' : 'Team Collaboration & Vibe'}</span>
-                        <span className="font-extrabold text-teal-400">{aiReport.collabScore}</span>
+                        <span className="font-extrabold text-teal-500 dark:text-teal-400">{aiReport.collabScore}</span>
                       </div>
-                      <div className="w-full bg-[#121212] h-2 rounded-full overflow-hidden">
-                        <div className="bg-teal-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.collabScore}%` }} />
+                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                        <div className="bg-teal-500 dark:bg-teal-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.collabScore}%` }} />
                       </div>
                     </div>
 
                     {/* Trust and leadership */}
                     <div>
-                      <div className="flex justify-between items-center text-xs text-gray-400 font-medium mb-1.5">
+                      <div className="flex justify-between items-center text-xs text-muted-foreground font-medium mb-1.5">
                         <span>{lang === 'zh' ? '管理层信任与领导作风' : 'Management Trust & Leadership'}</span>
-                        <span className="font-extrabold text-emerald-400">{aiReport.trustScore}</span>
+                        <span className="font-extrabold text-emerald-500 dark:text-emerald-400">{aiReport.trustScore}</span>
                       </div>
-                      <div className="w-full bg-[#121212] h-2 rounded-full overflow-hidden">
-                        <div className="bg-emerald-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.trustScore}%` }} />
+                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                        <div className="bg-emerald-500 dark:bg-emerald-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.trustScore}%` }} />
                       </div>
                     </div>
 
                     {/* Compensation score */}
                     <div>
-                      <div className="flex justify-between items-center text-xs text-gray-400 font-medium mb-1.5">
+                      <div className="flex justify-between items-center text-xs text-muted-foreground font-medium mb-1.5">
                         <span>{lang === 'zh' ? '薪酬晋升合理度与福利满意度' : 'Compensation & Promotion Satisfaction'}</span>
-                        <span className="font-extrabold text-rose-400">{aiReport.compScore}</span>
+                        <span className="font-extrabold text-rose-500 dark:text-rose-400">{aiReport.compScore}</span>
                       </div>
-                      <div className="w-full bg-[#121212] h-2 rounded-full overflow-hidden">
-                        <div className="bg-rose-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.compScore}%` }} />
+                      <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                        <div className="bg-rose-500 dark:bg-rose-400 h-full rounded-full transition-all duration-500" style={{ width: `${aiReport.compScore}%` }} />
                       </div>
                     </div>
                   </div>
@@ -941,14 +941,14 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Pros card */}
                   <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-                    <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2 mb-4">
-                      <ThumbsUp className="w-4 h-4 fill-emerald-400 text-emerald-400" />
+                    <h4 className="text-xs font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-2 mb-4">
+                      <ThumbsUp className="w-4 h-4 fill-emerald-500 text-emerald-500" />
                       <span>{t.aiCatStrengths}</span>
                     </h4>
                     <ul className="space-y-3">
                       {aiReport.pros.map((pro, index) => (
-                        <li key={index} className="text-sm text-gray-300 flex items-start gap-2.5">
-                          <span className="text-emerald-400 font-bold mt-0.5">•</span>
+                        <li key={index} className="text-sm text-foreground/90 flex items-start gap-2.5">
+                          <span className="text-emerald-500 font-bold mt-0.5">•</span>
                           <span>{pro}</span>
                         </li>
                       ))}
@@ -957,14 +957,14 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
                   {/* Cons card */}
                   <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-                    <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2 mb-4">
-                      <ThumbsDown className="w-4 h-4 fill-rose-400 text-rose-400" />
+                    <h4 className="text-xs font-bold text-rose-500 uppercase tracking-wider flex items-center gap-2 mb-4">
+                      <ThumbsDown className="w-4 h-4 fill-rose-500 text-rose-500" />
                       <span>{t.aiCatPainPoints}</span>
                     </h4>
                     <ul className="space-y-3">
                       {aiReport.cons.map((con, index) => (
-                        <li key={index} className="text-sm text-gray-300 flex items-start gap-2.5">
-                          <span className="text-rose-400 font-bold mt-0.5">•</span>
+                        <li key={index} className="text-sm text-foreground/90 flex items-start gap-2.5">
+                          <span className="text-rose-500 font-bold mt-0.5">•</span>
                           <span>{con}</span>
                         </li>
                       ))}
@@ -976,20 +976,20 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Career advice */}
                   <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-                    <h4 className="text-xs font-bold text-[#b0a8ff] uppercase tracking-wider mb-4">
+                    <h4 className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider mb-4">
                       {lang === 'zh' ? '💡 候选人求职锦囊建议' : '💡 Ideal Candidate & Career Advice'}
                     </h4>
-                    <p className="text-sm text-gray-300 leading-relaxed font-medium">
+                    <p className="text-sm text-foreground/90 leading-relaxed font-medium">
                       {aiReport.careerAdvice}
                     </p>
                   </div>
 
                   {/* Salary analytics */}
                   <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-                    <h4 className="text-xs font-bold text-[#ffd0a8] uppercase tracking-wider mb-4">
+                    <h4 className="text-xs font-bold text-amber-500 dark:text-amber-400 uppercase tracking-wider mb-4">
                       {lang === 'zh' ? '💰 薪资性价比与晋升合理度分析' : '💰 Salary Analysis & Fairness'}
                     </h4>
-                    <p className="text-sm text-gray-300 leading-relaxed font-medium">
+                    <p className="text-sm text-foreground/90 leading-relaxed font-medium">
                       {aiReport.salaryAnalysis}
                     </p>
                   </div>
@@ -1003,11 +1003,11 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         {activeTab === 'ledger' && (
           <div className="space-y-6" id="ledger_tab_content">
             <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-2">
-                <Lock className="w-5 h-5 text-emerald-400" />
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+                <Lock className="w-5 h-5 text-emerald-500" />
                 <span>{t.ledgerTitle}</span>
               </h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 {t.ledgerDesc}
               </p>
 
@@ -1015,16 +1015,16 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <button
                   onClick={handleVerifyLedger}
                   disabled={isVerifyingLedger || reviews.length === 0}
-                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isVerifyingLedger ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
                       <span>{lang === 'zh' ? '执行密码学核验中...' : 'Auditing chain hashes...'}</span>
                     </>
                   ) : (
                     <>
-                      <ShieldCheck className="w-3.5 h-3.5 text-white" />
+                      <ShieldCheck className="w-3.5 h-3.5 text-black" />
                       <span>{t.ledgerVerifyBtn}</span>
                     </>
                   )}
@@ -1032,16 +1032,16 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
                 {verificationResult && (
                   <div className={`text-xs font-semibold flex items-center gap-1.5 ${
-                    verificationResult.isValid ? 'text-emerald-400' : 'text-rose-400'
+                    verificationResult.isValid ? 'text-emerald-500' : 'text-rose-500'
                   }`}>
                     {verificationResult.isValid ? (
                       <>
-                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
                         <span>{t.ledgerVerifySuccess}</span>
                       </>
                     ) : (
                       <>
-                        <ShieldAlert className="w-4 h-4 text-rose-400" />
+                        <ShieldAlert className="w-4 h-4 text-rose-500" />
                         <span>{t.ledgerVerifyFail}</span>
                       </>
                     )}
@@ -1052,7 +1052,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Blockchain visual chain track layout */}
             {reviews.length > 0 && (
-              <div className="relative border-l-2 border-white/5 pl-6 ml-4 py-2 space-y-6" id="ledger_chain_timeline">
+              <div className="relative border-l-2 border-border pl-6 ml-4 py-2 space-y-6" id="ledger_chain_timeline">
                 {reviews.map((rev, idx) => {
                   const checkDetail = verificationResult?.details.find(d => d.reviewId === rev.id);
                   const isTampered = checkDetail?.status === 'chain_broken' || checkDetail?.status === 'hash_mismatch';
@@ -1060,28 +1060,28 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   return (
                     <div key={rev.id} className="relative" id={`block-${idx + 1}`}>
                       {/* Left timeline dot indicator */}
-                      <span className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-2 bg-black transition-all ${
+                      <span className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-2 bg-background transition-all ${
                         verificationResult
                           ? isTampered
                             ? 'border-rose-500 bg-rose-500/20'
                             : 'border-emerald-500 bg-emerald-500/20'
-                          : 'border-white/15'
+                          : 'border-border'
                       }`} />
 
-                      <div className={`bg-[#0c0c0c] border rounded-2xl p-4 transition-all ${
+                      <div className={`bg-card border rounded-2xl p-4 transition-all text-card-foreground shadow-sm ${
                         verificationResult
                           ? isTampered
                             ? 'border-rose-500/50 shadow-md shadow-rose-500/5'
                             : 'border-emerald-500/30'
-                          : 'border-white/10'
+                          : 'border-border'
                       }`}>
                         {/* Header metadata row */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3 mb-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3 mb-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-gray-500 font-mono uppercase">
+                            <span className="text-xs font-bold text-muted-foreground font-mono uppercase">
                               {t.ledgerBlockHeight}: #{idx + 1}
                             </span>
-                            <span className="text-xs text-gray-400 font-medium">
+                            <span className="text-xs text-muted-foreground font-medium">
                               {rev.position}
                             </span>
                           </div>
@@ -1090,17 +1090,17 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                           {verificationResult && (
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 font-mono uppercase ${
                               isTampered
-                                ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                ? 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+                                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
                             }`}>
                               {isTampered ? (
                                 <>
-                                  <ShieldAlert className="w-3 h-3 text-rose-400" />
+                                  <ShieldAlert className="w-3 h-3 text-rose-500" />
                                   <span>TAMPERED</span>
                                 </>
                               ) : (
                                 <>
-                                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                                  <ShieldCheck className="w-3 h-3 text-emerald-500" />
                                   <span>VERIFIED OK</span>
                                 </>
                               )}
@@ -1111,16 +1111,16 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                         {/* Hash details */}
                         <div className="space-y-2 text-[11px] font-mono leading-relaxed">
                           <div>
-                            <span className="text-gray-500 block sm:inline mr-2">{t.ledgerHash}:</span>
-                            <span className="text-gray-300 font-bold break-all bg-white/2 px-1.5 py-0.5 rounded border border-white/5">{rev.hash}</span>
+                            <span className="text-muted-foreground block sm:inline mr-2">{t.ledgerHash}:</span>
+                            <span className="text-foreground font-bold break-all bg-muted/60 px-1.5 py-0.5 rounded border border-border">{rev.hash}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500 block sm:inline mr-2">{t.ledgerPrevHash}:</span>
-                            <span className="text-gray-400 break-all bg-white/2 px-1.5 py-0.5 rounded border border-white/5">{rev.previous_hash}</span>
+                            <span className="text-muted-foreground block sm:inline mr-2">{t.ledgerPrevHash}:</span>
+                            <span className="text-muted-foreground break-all bg-muted/60 px-1.5 py-0.5 rounded border border-border">{rev.previous_hash}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500 block sm:inline mr-2">{t.ledgerValidator}:</span>
-                            <span className="text-emerald-500/85 font-medium">{t.ledgerNodeVerified}</span>
+                            <span className="text-muted-foreground block sm:inline mr-2">{t.ledgerValidator}:</span>
+                            <span className="text-emerald-500 font-medium">{t.ledgerNodeVerified}</span>
                           </div>
                         </div>
                       </div>
