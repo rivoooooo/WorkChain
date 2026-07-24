@@ -298,14 +298,14 @@ function escapeSQL(val: any): string {
 // Generate CSV string
 function generateCSV(reviews: Review[]): string {
   const headers = [
-    'id', 'company_name', 'branch_location', 'position', 'employment_status',
+    'id', 'company_id', 'company_name', 'branch_location', 'position', 'employment_status',
     'salary', 'bonus', 'experience_years', 'rating_career', 'rating_balance',
     'rating_management', 'rating_compensation', 'rating_culture', 'review_text',
     'created_at', 'previous_hash', 'hash'
   ];
 
   const rows = reviews.map(r => [
-    r.id, r.company_name, r.branch_location, r.position, r.employment_status,
+    r.id, r.company_id, r.company_name, r.branch_location, r.position, r.employment_status,
     r.salary, r.bonus, r.experience_years, r.rating_career, r.rating_balance,
     r.rating_management, r.rating_compensation, r.rating_culture, r.review_text,
     r.created_at, r.previous_hash, r.hash
@@ -322,6 +322,7 @@ function generateSQL(reviews: Review[], dateStr: string): string {
 
   sql += `CREATE TABLE IF NOT EXISTS reviews (\n`;
   sql += `  id VARCHAR(255) PRIMARY KEY,\n`;
+  sql += `  company_id VARCHAR(255),\n`;
   sql += `  company_name VARCHAR(255) NOT NULL,\n`;
   sql += `  branch_location VARCHAR(255) NOT NULL,\n`;
   sql += `  position VARCHAR(255) NOT NULL,\n`;
@@ -345,10 +346,10 @@ function generateSQL(reviews: Review[], dateStr: string): string {
     return sql;
   }
 
-  sql += `INSERT INTO reviews (id, company_name, branch_location, position, employment_status, salary, bonus, experience_years, rating_career, rating_balance, rating_management, rating_compensation, rating_culture, review_text, created_at, previous_hash, hash) VALUES\n`;
+  sql += `INSERT INTO reviews (id, company_id, company_name, branch_location, position, employment_status, salary, bonus, experience_years, rating_career, rating_balance, rating_management, rating_compensation, rating_culture, review_text, created_at, previous_hash, hash) VALUES\n`;
 
   const valuesList = reviews.map(r => {
-    return `  (${escapeSQL(r.id)}, ${escapeSQL(r.company_name)}, ${escapeSQL(r.branch_location)}, ${escapeSQL(r.position)}, ${escapeSQL(r.employment_status)}, ${r.salary}, ${r.bonus}, ${r.experience_years}, ${r.rating_career}, ${r.rating_balance}, ${r.rating_management}, ${r.rating_compensation}, ${r.rating_culture}, ${escapeSQL(r.review_text)}, ${escapeSQL(r.created_at)}, ${escapeSQL(r.previous_hash)}, ${escapeSQL(r.hash)})`;
+    return `  (${escapeSQL(r.id)}, ${escapeSQL(r.company_id)}, ${escapeSQL(r.company_name)}, ${escapeSQL(r.branch_location)}, ${escapeSQL(r.position)}, ${escapeSQL(r.employment_status)}, ${r.salary}, ${r.bonus}, ${r.experience_years}, ${r.rating_career}, ${r.rating_balance}, ${r.rating_management}, ${r.rating_compensation}, ${r.rating_culture}, ${escapeSQL(r.review_text)}, ${escapeSQL(r.created_at)}, ${escapeSQL(r.previous_hash)}, ${escapeSQL(r.hash)})`;
   });
 
   sql += valuesList.join(',\n') + ';\n';
@@ -359,6 +360,7 @@ function generateSQL(reviews: Review[], dateStr: string): string {
 function generateXLSXBuffer(reviews: Review[]): Buffer {
   const formattedData = reviews.map(r => ({
     'ID': r.id,
+    '公司唯一ID': r.company_id,
     '公司名称': r.company_name,
     '分部/地点': r.branch_location,
     '职位名称': r.position,
@@ -380,7 +382,7 @@ function generateXLSXBuffer(reviews: Review[]): Buffer {
   const worksheet = XLSX.utils.json_to_sheet(formattedData);
   
   const colWidths = [
-    { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 10 },
+    { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 10 },
     { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
     { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 45 }, { wch: 25 },
     { wch: 30 }, { wch: 30 }

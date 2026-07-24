@@ -44,6 +44,7 @@ interface Review {
 }
 
 interface CompanyStats {
+  id: string;
   name: string;
   reviewCount: number;
   avgRating: number;
@@ -69,7 +70,7 @@ export default function CompaniesPage() {
     }
     return 'zh';
   });
-  const [allReviews, setAllReviews] = useState<Review[]>([]);
+  const [companiesList, setCompaniesList] = useState<CompanyStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const toggleLang = () => {
@@ -87,67 +88,35 @@ export default function CompaniesPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   useEffect(() => {
-    async function fetchReviews() {
+    async function fetchCompanies() {
       setIsLoading(true);
       try {
-        const res = await fetch('/api/reviews');
+        const res = await fetch('/api/companies');
         const json = await res.json();
         if (json.success) {
-          setAllReviews(json.data || []);
+          const stats: CompanyStats[] = (json.data || []).map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            reviewCount: c.review_count,
+            avgRating: c.avg_rating,
+            avgCareer: c.avg_career,
+            avgBalance: c.avg_balance,
+            avgManagement: c.avg_management,
+            avgCompensation: c.avg_compensation,
+            avgCulture: c.avg_culture,
+            avgSalary: Math.round(c.avg_salary / 1000),
+            avgBonus: Math.round(c.avg_bonus / 1000)
+          }));
+          setCompaniesList(stats);
         }
       } catch (err) {
-        console.error('Failed to load reviews for companies directory:', err);
+        console.error('Failed to load companies for companies directory:', err);
       } finally {
         setIsLoading(false);
       }
     }
-    fetchReviews();
+    fetchCompanies();
   }, []);
-
-  // Compute stats for each company
-  const calculateCompaniesStats = (): CompanyStats[] => {
-    const companiesMap = new Map<string, Review[]>();
-    
-    allReviews.forEach(r => {
-      const name = r.company_name.trim();
-      if (!companiesMap.has(name)) {
-        companiesMap.set(name, []);
-      }
-      companiesMap.get(name)!.push(r);
-    });
-
-    return Array.from(companiesMap.entries()).map(([name, reviews]) => {
-      const len = reviews.length;
-      const career = reviews.reduce((sum, r) => sum + r.rating_career, 0) / len;
-      const balance = reviews.reduce((sum, r) => sum + r.rating_balance, 0) / len;
-      const management = reviews.reduce((sum, r) => sum + r.rating_management, 0) / len;
-      const compensation = reviews.reduce((sum, r) => sum + r.rating_compensation, 0) / len;
-      const culture = reviews.reduce((sum, r) => sum + r.rating_culture, 0) / len;
-
-      const salaries = reviews.map(r => r.salary).filter(s => s > 0);
-      const avgSalary = salaries.length > 0 ? salaries.reduce((sum, s) => sum + s, 0) / salaries.length : 0;
-
-      const bonuses = reviews.map(r => r.bonus).filter(b => b > 0);
-      const avgBonus = bonuses.length > 0 ? bonuses.reduce((sum, b) => sum + b, 0) / bonuses.length : 0;
-
-      const avgRating = (career + balance + management + compensation + culture) / 5;
-
-      return {
-        name,
-        reviewCount: len,
-        avgRating: Number(avgRating.toFixed(1)),
-        avgCareer: Number(career.toFixed(1)),
-        avgBalance: Number(balance.toFixed(1)),
-        avgManagement: Number(management.toFixed(1)),
-        avgCompensation: Number(compensation.toFixed(1)),
-        avgCulture: Number(culture.toFixed(1)),
-        avgSalary: Math.round(avgSalary),
-        avgBonus: Math.round(avgBonus)
-      };
-    });
-  };
-
-  const companiesList = calculateCompaniesStats();
 
   // Filter & Sort
   const filteredAndSortedCompanies = companiesList
@@ -325,13 +294,13 @@ export default function CompaniesPage() {
           <div className="space-y-3.5" id="companies_list">
             {filteredAndSortedCompanies.map((comp, idx) => (
               <motion.div
-                key={comp.name}
+                key={comp.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(idx * 0.04, 0.4), duration: 0.3 }}
               >
                 <Link
-                  href={`/?company=${encodeURIComponent(comp.name)}`}
+                  href={`/companies/${comp.id}`}
                   className="block bg-[#0d0d0d] hover:bg-[#111111] border border-white/10 hover:border-emerald-500/30 rounded-2xl p-5 transition-all group"
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

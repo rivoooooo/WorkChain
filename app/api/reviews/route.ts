@@ -4,7 +4,14 @@ import { getCompanyReviews, addReview, getReviews } from '../../../lib/db';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const companyId = searchParams.get('company_id');
     const company = searchParams.get('company');
+
+    if (companyId) {
+      const { getCompanyReviewsById } = require('../../../lib/db');
+      const reviews = await getCompanyReviewsById(companyId);
+      return NextResponse.json({ success: true, data: reviews });
+    }
 
     if (company) {
       const reviews = await getCompanyReviews(company);
@@ -13,7 +20,7 @@ export async function GET(req: NextRequest) {
 
     const allReviews = await getReviews();
     
-    // Also extract the list of distinct company names for search autocomplete!
+    // Also extract the list of distinct company names and IDs for autocomplete!
     const distinctCompanies = Array.from(new Set(allReviews.map(r => r.company_name)));
 
     return NextResponse.json({ success: true, data: allReviews, companies: distinctCompanies });

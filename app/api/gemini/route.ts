@@ -25,16 +25,29 @@ function getGeminiClient(): GoogleGenAI | null {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { companyName } = body;
+    const { companyId, companyName: passedCompanyName } = body;
+
+    let companyName = passedCompanyName;
+    let reviews = [];
+
+    if (companyId) {
+      const { getCompanyById, getCompanyReviewsById } = require('../../../lib/db');
+      const company = await getCompanyById(companyId);
+      if (company) {
+        companyName = company.name;
+      }
+      reviews = await getCompanyReviewsById(companyId);
+    } else if (companyName) {
+      reviews = await getCompanyReviews(companyName);
+    }
 
     if (!companyName) {
       return NextResponse.json(
-        { success: false, error: '缺少公司名称参数。' },
+        { success: false, error: '缺少公司标识或名称参数。' },
         { status: 400 }
       );
     }
 
-    const reviews = await getCompanyReviews(companyName);
     if (reviews.length === 0) {
       return NextResponse.json(
         { success: false, error: `没有找到关于 ${companyName} 的评价记录，无法生成分析。` },
@@ -43,18 +56,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Heuristically calculate scores from reviews for both fallback and as context
-    const avgCareer = reviews.reduce((acc, r) => acc + r.rating_career, 0) / reviews.length;
-    const avgBalance = reviews.reduce((acc, r) => acc + r.rating_balance, 0) / reviews.length;
-    const avgMgmt = reviews.reduce((acc, r) => acc + r.rating_management, 0) / reviews.length;
-    const avgComp = reviews.reduce((acc, r) => acc + r.rating_compensation, 0) / reviews.length;
-    const avgCulture = reviews.reduce((acc, r) => acc + r.rating_culture, 0) / reviews.length;
-    const avgSalary = reviews.reduce((acc, r) => acc + r.salary, 0) / reviews.length;
+    const avgCareer = reviews.reduce((acc: number, r: any) => acc + r.rating_career, 0) / reviews.length;
+    const avgBalance = reviews.reduce((acc: number, r: any) => acc + r.rating_balance, 0) / reviews.length;
+    const avgMgmt = reviews.reduce((acc: number, r: any) => acc + r.rating_management, 0) / reviews.length;
+    const avgComp = reviews.reduce((acc: number, r: any) => acc + r.rating_compensation, 0) / reviews.length;
+    const avgCulture = reviews.reduce((acc: number, r: any) => acc + r.rating_culture, 0) / reviews.length;
+    const avgSalary = reviews.reduce((acc: number, r: any) => acc + r.salary, 0) / reviews.length;
 
     // Build default fallback data in case AI is not configured or fails
     const fallbackReport = {
       sentimentScore: Math.round(((avgCareer + avgBalance + avgMgmt + avgComp + avgCulture) / 25) * 100),
       overallSentiment: avgBalance >= 3.5 ? '积极' : avgBalance >= 2.5 ? '中立' : '消极',
-      overallSummary: `基于该公司的 ${reviews.length} 份匿名员工评价，公司在薪资待遇、职业成长、企业文化等维度各具特点。职场环境的整体满意度评分适中，主要由于员工对于工作负荷和管理效率的态度存在一定分化。`,
+      overallSummary: `基于该公司的 ${reviews.length} 份匿名员工评价，公司在薪资待遇、职业成长、企业文化等维度各具特点。职场环境的整体满意度评分适中，主要由于员工对于工作负荷 and 管理效率的态度存在一定分化。`,
       wlbScore: Math.round(avgBalance * 20),
       pressureScore: Math.round((6 - avgBalance) * 20), // More pressure if balance is lower
       collabScore: Math.round(avgCulture * 20),
@@ -76,7 +89,7 @@ export async function POST(req: NextRequest) {
         '数据/结果导向'
       ],
       careerAdvice: `建议求职者在面试时充分沟通该组别的具体加班情况。若看重职业成长速度与薪资包，且对高强度工作节奏适应力强，该公司是极佳选择；若更重视生活平衡，需慎重选择高压业务线。`,
-      salaryAnalysis: `平均月薪约为 ${(avgSalary / 1000).toFixed(1)}K，其中年终奖平均在 ${(reviews.reduce((acc, r) => acc + r.bonus, 0) / reviews.length / 10000).toFixed(1)} 万左右。薪资分布符合行业大厂常态，高级岗位溢价明显，且普遍具有长期激励（股票）。`
+      salaryAnalysis: `平均月薪约为 ${(avgSalary / 1000).toFixed(1)}K，其中年终奖平均在 ${(reviews.reduce((acc: number, r: any) => acc + r.bonus, 0) / reviews.length / 10000).toFixed(1)} 万左右。薪资分布符合行业大厂常态，高级岗位溢价明显，且普遍具有长期激励（股票）。`
     };
 
     const ai = getGeminiClient();
@@ -87,7 +100,7 @@ export async function POST(req: NextRequest) {
 
     try {
       // Compile reviews context for Gemini
-      const reviewsContext = reviews.map((r, i) => {
+      const reviewsContext = reviews.map((r: any, i: number) => {
         return `评价 ${i + 1} (${r.position} - ${r.branch_location}):
 - 月薪: ${r.salary}元, 年终奖: ${r.bonus}元
 - 评分: 职业发展 ${r.rating_career}/5, WLB ${r.rating_balance}/5, 管理层 ${r.rating_management}/5, 薪酬福利 ${r.rating_compensation}/5, 团队文化 ${r.rating_culture}/5
