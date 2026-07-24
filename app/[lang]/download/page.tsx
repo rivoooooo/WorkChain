@@ -136,7 +136,7 @@ export default function DownloadPage({ params }: PageProps) {
       <div className="py-6 sm:py-10">
         
         {/* Top Title Masthead Section (Reference Image "Invoice" Header) */}
-        <div className="flex flex-col md:flex-row md:items-baseline md:justify-between border-b-2 border-foreground pb-6 mb-8 gap-4">
+        <div className="flex flex-col md:flex-row md:items-baseline md:justify-between border-b border-border pb-6 mb-8 gap-4">
           <div>
             <span className="text-xs font-extrabold tracking-widest text-muted-foreground uppercase block mb-1">
               {t.downloadArchiveTag}
@@ -249,7 +249,7 @@ export default function DownloadPage({ params }: PageProps) {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto border-t-2 border-b-2 border-foreground" id="backups_table_wrapper">
+            <div className="overflow-x-auto border-t border-b border-border" id="backups_table_wrapper">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-border bg-muted/40 text-[10px] text-muted-foreground font-extrabold uppercase tracking-wider">
