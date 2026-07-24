@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language } from '../../lib/i18n';
 import { ThemeToggle } from '../../components/theme-toggle';
@@ -34,20 +35,6 @@ interface Company {
   avg_rating: number;
 }
 
-const ROTATING_HEADLINES_ZH = [
-  "匿名查询公司口碑，职场环境更透明",
-  "不限大厂，让大小厂真实薪资重见天日",
-  "打破信息不对称，寻找有温度的企业",
-  "全行业覆盖，还原最真实的工作体验"
-];
-
-const ROTATING_HEADLINES_EN = [
-  "Anonymous reviews for all companies, creating workplace transparency",
-  "Beyond big tech, bringing true compensation to light",
-  "Break information asymmetry, discover warm workplaces",
-  "Industry-wide coverage, revealing the authentic working experience"
-];
-
 interface PageProps {
   params: Promise<{ lang: string }>;
 }
@@ -55,15 +42,6 @@ interface PageProps {
 export default function Home({ params }: PageProps) {
   const { lang: rawLang } = use(params);
   const lang: Language = (rawLang === 'zh-cn' || rawLang === 'zh') ? 'zh' : 'en';
-
-  const [headlineIndex, setHeadlineIndex] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setHeadlineIndex((prev) => (prev + 1) % 4);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
 
   const toggleLang = () => {
     const nextLangPath = lang === 'zh' ? '/en' : '/zh-cn';
@@ -184,11 +162,9 @@ export default function Home({ params }: PageProps) {
       const json = await res.json();
       if (json.success) {
         setFormSuccess(true);
-        // Get the newly created or updated review
         const createdReview = json.data;
         const targetCompanyId = createdReview.company_id;
 
-        // Redirect to the newly created company's details page after 1.5s
         setTimeout(() => {
           window.location.href = `/${rawLang}/companies/${targetCompanyId}`;
         }, 1500);
@@ -211,23 +187,17 @@ export default function Home({ params }: PageProps) {
     : [];
 
   return (
-    <main className="min-h-screen bg-background text-foreground transition-colors duration-200 selection:bg-emerald-500/20" id="main_root">
-      {/* Top Banner indicating absolute anonymity */}
-      <div className="bg-muted/40 text-muted-foreground py-2.5 px-4 text-xs font-medium border-b border-border" id="top_announcement">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 text-emerald-500" />
-            <span>{t.topBanner}</span>
-          </span>
-          <span className="hidden md:inline text-emerald-500 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest">
-            {t.blockchainSecured}
-          </span>
-        </div>
-      </div>
+    <main className="min-h-screen bg-background text-foreground transition-colors duration-200 relative overflow-hidden font-sans selection:bg-emerald-500/20" id="main_root">
+      
+      {/* Ambient Atmospheric Mesh Glows */}
+      <div className="absolute top-1/3 left-[-10%] w-[500px] h-[500px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-5%] right-[-5%] w-[600px] h-[600px] bg-amber-500/5 blur-[140px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-rose-500/5 blur-[140px] rounded-full pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto px-4 py-8 md:py-16" id="app_container">
-        {/* Navigation Header */}
-        <header className="flex items-center justify-between border-b border-border pb-5 mb-8 md:mb-12" id="main_header">
+      {/* FLOATING CAPSULE NAVBAR */}
+      <div className="sticky top-6 z-50 px-4 mb-8 sm:mb-12">
+        <header className="max-w-4xl mx-auto bg-zinc-950 text-white rounded-full p-2 pl-6 pr-3 shadow-2xl border border-white/10 backdrop-blur-md flex items-center justify-between" id="floating_navbar">
+          {/* Logo */}
           <Link
             href={`/${rawLang}`}
             onClick={() => {
@@ -236,41 +206,47 @@ export default function Home({ params }: PageProps) {
             }}
             className="flex items-center gap-2 group"
           >
-            <Building className="w-5.5 h-5.5 text-emerald-500 group-hover:scale-105 transition-transform" />
-            <span className="font-extrabold text-foreground text-base md:text-lg tracking-tight group-hover:text-emerald-500 transition-colors">
-              {t.brandName}
+            <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <Building className="w-4 h-4 text-emerald-400" />
+            </div>
+            <span className="font-extrabold text-white text-base tracking-tight group-hover:text-emerald-400 transition-colors">
+              work<span className="text-emerald-400">chain</span>
             </span>
           </Link>
-          <div className="flex items-center gap-2.5 sm:gap-3.5">
-            {/* Theme Switcher Toggle */}
+
+          {/* Nav links */}
+          <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-zinc-300">
+            <Link 
+              href={`/${rawLang}/companies`}
+              className="hover:text-white transition-colors flex items-center gap-1.5"
+            >
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{t.viewRankings}</span>
+            </Link>
+            <Link 
+              href={`/${rawLang}/download`}
+              className="hover:text-white transition-colors flex items-center gap-1.5"
+            >
+              <Database className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{t.downloadNavLabel}</span>
+            </Link>
+          </div>
+
+          {/* Action CTAs & Controls */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Theme Toggle */}
             <ThemeToggle />
 
             {/* Language Switcher */}
             <button
               onClick={toggleLang}
-              className="px-3 py-1.5 bg-muted/80 hover:bg-accent border border-border/60 text-muted-foreground hover:text-foreground text-xs font-bold rounded-xl transition-colors flex items-center gap-1 cursor-pointer"
-              title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
+              className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-full transition-colors flex items-center gap-1 cursor-pointer"
             >
               <span>🌐</span>
               <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
             </button>
 
-            <Link 
-              href={`/${rawLang}/companies`}
-              className="text-xs md:text-sm font-semibold text-muted-foreground hover:text-emerald-500 transition-colors flex items-center gap-1.5"
-            >
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
-              <span>{t.viewRankings}</span>
-            </Link>
-
-            <Link 
-              href={`/${rawLang}/download`}
-              className="text-xs md:text-sm font-semibold text-muted-foreground hover:text-emerald-500 transition-colors flex items-center gap-1.5"
-            >
-              <Database className="w-4 h-4 text-emerald-500" />
-              <span>{t.downloadNavLabel}</span>
-            </Link>
-            
+            {/* Write Review Capsule Button */}
             <button
               onClick={() => {
                 setFormData({
@@ -290,167 +266,235 @@ export default function Home({ params }: PageProps) {
                 });
                 setShowSubmitForm(true);
               }}
-              className="px-3.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl transition-colors"
+              className="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-full transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
             >
-              {t.addReview}
+              <Plus className="w-3.5 h-3.5" />
+              <span>{t.addReview}</span>
             </button>
           </div>
         </header>
+      </div>
 
-        {/* SEARCH AND INTERACTION CONTAINER */}
+      <div className="max-w-6xl mx-auto px-4 pb-16" id="app_container">
+
         {!hasSearched ? (
-          <div className="flex flex-col items-center justify-center min-h-[50vh] max-w-2xl mx-auto text-center" id="search_home">
+          <div className="space-y-12 sm:space-y-16">
+            
+            {/* HERO PIXEL ART IMAGE BANNER */}
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mb-8 w-full"
+              transition={{ duration: 0.6 }}
+              className="w-full rounded-3xl overflow-hidden shadow-2xl border border-border bg-card relative aspect-[16/9] sm:aspect-[21/9]"
+              id="hero_banner_container"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/5 border border-emerald-500/20 rounded-full shadow-xs text-xs text-emerald-400 font-medium mb-4">
-                <Database className="w-3 h-3 text-emerald-500" />
-                <span>{t.heroBadge}</span>
+              <Image
+                src="/hero_pixel_art.jpg"
+                alt="WorkChain Mediterranean Garden Pixel Art"
+                fill
+                priority
+                className="object-cover object-center transform hover:scale-102 transition-transform duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+              
+              {/* Floating Live Ledger Assurance Badge */}
+              <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 bg-zinc-950/80 text-white backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-medium border border-white/10 flex items-center gap-2">
+                <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{t.topBanner}</span>
+                <span className="hidden sm:inline text-emerald-400 font-mono text-[10px] uppercase font-bold border-l border-white/20 pl-2">
+                  {t.blockchainSecured}
+                </span>
               </div>
-              <div className="h-[96px] sm:h-[80px] flex items-center justify-center overflow-hidden mb-4">
-                <AnimatePresence mode="wait">
-                  <motion.h1
-                    key={`${lang}-${headlineIndex}`}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground px-2"
-                  >
-                    {lang === 'zh' ? ROTATING_HEADLINES_ZH[headlineIndex] : ROTATING_HEADLINES_EN[headlineIndex]}
-                  </motion.h1>
-                </AnimatePresence>
-              </div>
-              <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
-                {t.heroSub}
-              </p>
             </motion.div>
 
-            {/* Main Search Input Form */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1, duration: 0.4 }}
-              className="w-full bg-card p-2 rounded-2xl shadow-xl border border-border mb-6 relative"
-              id="search_box_container"
-            >
-              <div className="relative flex items-center">
-                <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setShowSearchSuggestions(true);
-                    setSearchActiveSuggestionIndex(-1);
-                  }}
-                  onFocus={() => setShowSearchSuggestions(true)}
-                  onBlur={() => {
-                    setTimeout(() => setShowSearchSuggestions(false), 200);
-                  }}
-                  onKeyDown={(e) => {
-                    if (showSearchSuggestions && filteredSearchSuggestions.length > 0) {
-                      if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        setSearchActiveSuggestionIndex(prev => 
-                          prev < filteredSearchSuggestions.length - 1 ? prev + 1 : 0
-                        );
-                      } else if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        setSearchActiveSuggestionIndex(prev => 
-                          prev > 0 ? prev - 1 : filteredSearchSuggestions.length - 1
-                        );
-                      } else if (e.key === 'Enter') {
-                        if (searchActiveSuggestionIndex >= 0 && searchActiveSuggestionIndex < filteredSearchSuggestions.length) {
-                          e.preventDefault();
-                          const selected = filteredSearchSuggestions[searchActiveSuggestionIndex];
-                          setSearchQuery(selected);
-                          handleSearch(selected);
-                          setShowSearchSuggestions(false);
-                        } else {
-                          handleSearch();
-                          setShowSearchSuggestions(false);
-                        }
-                      } else if (e.key === 'Escape') {
-                        setShowSearchSuggestions(false);
-                      }
-                    } else if (e.key === 'Enter') {
-                      handleSearch();
-                    }
-                  }}
-                  placeholder={t.searchPlaceholder}
-                  className="w-full pl-12 pr-32 py-4 bg-transparent outline-none text-foreground placeholder:text-muted-foreground font-medium text-base rounded-xl"
-                  id="main_search_input"
-                  autoComplete="off"
-                />
-                <button
-                  onClick={() => {
-                    handleSearch();
-                    setShowSearchSuggestions(false);
-                  }}
-                  className="absolute right-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-sm font-bold transition-colors duration-200 shadow-sm cursor-pointer"
-                  id="search_btn"
+            {/* TYPOGRAPHY AS ART + HERO SPLIT SEARCH LAYOUT */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-end pt-4" id="hero_split_layout">
+              
+              {/* Left Column: Bold Neo-Grotesque Headline with Italic Serif Accent */}
+              <div className="lg:col-span-7 space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  {t.searchBtn}
-                </button>
+                  <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-foreground tracking-tight leading-[1.15]">
+                    {lang === 'zh' ? (
+                      <>
+                        去中心化匿名点评，<br className="hidden sm:inline" />让真相 <span className="font-serif-italic text-emerald-500 font-normal underline decoration-emerald-500/30 underline-offset-8">永不褪色</span>
+                      </>
+                    ) : (
+                      <>
+                        Say it once, watch truth stay <span className="font-serif-italic text-emerald-500 font-normal underline decoration-emerald-500/30 underline-offset-8">forever</span>
+                      </>
+                    )}
+                  </h1>
+                </motion.div>
+
+                {/* Corporate Endorsement Logos Strip */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="pt-4 space-y-3"
+                >
+                  <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                    {lang === 'zh' ? '涵盖知名大厂与高成长科技企业' : 'Used by employees from top companies'}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-muted-foreground/80 font-bold text-sm">
+                    <span className="flex items-center gap-1 hover:text-foreground transition-colors font-mono">
+                      <span className="text-emerald-500 text-lg">M</span> monzo
+                    </span>
+                    <span className="hover:text-foreground transition-colors font-serif font-bold">
+                      Guild
+                    </span>
+                    <span className="hover:text-foreground transition-colors tracking-widest text-xs border border-border px-1.5 py-0.5 rounded font-black">
+                      CLEO
+                    </span>
+                    <span className="hover:text-foreground transition-colors font-sans lowercase font-extrabold">
+                      trade<span className="text-emerald-500">me</span>
+                    </span>
+                    <span className="hover:text-foreground transition-colors font-mono text-xs flex items-center gap-1">
+                      <span className="w-2 h-2 bg-emerald-500 rounded-sm" /> Paradigm
+                    </span>
+                  </div>
+                </motion.div>
               </div>
 
-              {/* Suggestions Dropdown */}
-              {showSearchSuggestions && filteredSearchSuggestions.length > 0 && (
-                <div 
-                  className="absolute left-0 right-0 top-full mt-2 bg-popover text-popover-foreground border border-border rounded-xl overflow-hidden shadow-2xl z-50 py-1 max-h-60 overflow-y-auto"
-                  id="search_suggestions_dropdown"
+              {/* Right Column: Narrative Subtitle & Capsule Search Form */}
+              <div className="lg:col-span-5 space-y-6">
+                <motion.p 
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                  className="text-sm sm:text-base text-muted-foreground leading-relaxed font-normal"
                 >
-                  <div className="px-3 py-1.5 text-[10px] text-muted-foreground font-bold uppercase tracking-wider border-b border-border">
-                    {t.dropdownTitle}
-                  </div>
-                  {filteredSearchSuggestions.map((comp, idx) => (
+                  {t.heroSub}
+                </motion.p>
+
+                {/* Capsule Search Bar Container */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="relative w-full"
+                  id="search_box_container"
+                >
+                  <div className="bg-muted/70 backdrop-blur-md p-1.5 rounded-full border border-border shadow-lg flex items-center">
+                    <Search className="w-5 h-5 text-muted-foreground ml-4 mr-2 flex-shrink-0" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setShowSearchSuggestions(true);
+                        setSearchActiveSuggestionIndex(-1);
+                      }}
+                      onFocus={() => setShowSearchSuggestions(true)}
+                      onBlur={() => {
+                        setTimeout(() => setShowSearchSuggestions(false), 200);
+                      }}
+                      onKeyDown={(e) => {
+                        if (showSearchSuggestions && filteredSearchSuggestions.length > 0) {
+                          if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            setSearchActiveSuggestionIndex(prev => 
+                              prev < filteredSearchSuggestions.length - 1 ? prev + 1 : 0
+                            );
+                          } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            setSearchActiveSuggestionIndex(prev => 
+                              prev > 0 ? prev - 1 : filteredSearchSuggestions.length - 1
+                            );
+                          } else if (e.key === 'Enter') {
+                            if (searchActiveSuggestionIndex >= 0 && searchActiveSuggestionIndex < filteredSearchSuggestions.length) {
+                              e.preventDefault();
+                              const selected = filteredSearchSuggestions[searchActiveSuggestionIndex];
+                              setSearchQuery(selected);
+                              handleSearch(selected);
+                              setShowSearchSuggestions(false);
+                            } else {
+                              handleSearch();
+                              setShowSearchSuggestions(false);
+                            }
+                          } else if (e.key === 'Escape') {
+                            setShowSearchSuggestions(false);
+                          }
+                        } else if (e.key === 'Enter') {
+                          handleSearch();
+                        }
+                      }}
+                      placeholder={t.searchPlaceholder}
+                      className="w-full bg-transparent outline-none text-foreground placeholder:text-muted-foreground font-medium text-sm rounded-full pr-2"
+                      id="main_search_input"
+                      autoComplete="off"
+                    />
                     <button
-                      key={comp}
                       onClick={() => {
-                        setSearchQuery(comp);
-                        handleSearch(comp);
+                        handleSearch();
                         setShowSearchSuggestions(false);
                       }}
-                      onMouseEnter={() => setSearchActiveSuggestionIndex(idx)}
-                      className={`w-full text-left px-4 py-3 text-sm flex items-center justify-between transition-colors ${
-                        idx === searchActiveSuggestionIndex 
-                          ? 'bg-emerald-500/10 text-emerald-500 font-medium' 
-                          : 'text-foreground hover:bg-accent'
-                      }`}
+                      className="px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full text-xs font-bold transition-all shadow-md flex-shrink-0 cursor-pointer"
+                      id="search_btn"
                     >
-                      <span className="flex items-center gap-2">
-                        <Building className="w-4 h-4 text-muted-foreground" />
-                        <span>{comp}</span>
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 opacity-50 text-muted-foreground" />
+                      {t.searchBtn}
                     </button>
-                  ))}
-                </div>
-              )}
-            </motion.div>
+                  </div>
 
-            {/* Quick Suggestions / Top Companies */}
+                  {/* Suggestions Dropdown */}
+                  {showSearchSuggestions && filteredSearchSuggestions.length > 0 && (
+                    <div 
+                      className="absolute left-0 right-0 top-full mt-2 bg-popover text-popover-foreground border border-border rounded-2xl overflow-hidden shadow-2xl z-50 py-1 max-h-60 overflow-y-auto"
+                      id="search_suggestions_dropdown"
+                    >
+                      <div className="px-3 py-1.5 text-[10px] text-muted-foreground font-bold uppercase tracking-wider border-b border-border">
+                        {t.dropdownTitle}
+                      </div>
+                      {filteredSearchSuggestions.map((comp, idx) => (
+                        <button
+                          key={comp}
+                          onClick={() => {
+                            setSearchQuery(comp);
+                            handleSearch(comp);
+                            setShowSearchSuggestions(false);
+                          }}
+                          onMouseEnter={() => setSearchActiveSuggestionIndex(idx)}
+                          className={`w-full text-left px-4 py-3 text-sm flex items-center justify-between transition-colors cursor-pointer ${
+                            idx === searchActiveSuggestionIndex 
+                              ? 'bg-emerald-500/10 text-emerald-500 font-medium' 
+                              : 'text-foreground hover:bg-accent'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Building className="w-4 h-4 text-muted-foreground" />
+                            <span>{comp}</span>
+                          </span>
+                          <ChevronRight className="w-3.5 h-3.5 opacity-50 text-muted-foreground" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Quick Trending Companies List */}
             {companies.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="flex flex-wrap items-center justify-center gap-2"
+                transition={{ delay: 0.5 }}
+                className="flex flex-wrap items-center gap-2 pt-2"
                 id="search_suggestions"
               >
-                <span className="text-xs text-muted-foreground font-medium mr-1">{t.trendingSearch}</span>
-                {companies.slice(0, 5).map((comp) => (
+                <span className="text-xs text-muted-foreground font-semibold mr-1">{t.trendingSearch}</span>
+                {companies.slice(0, 6).map((comp) => (
                   <button
                     key={comp.id}
                     onClick={() => {
                       setSearchQuery(comp.name);
                       handleSearch(comp.name);
                     }}
-                    className="text-xs px-3 py-1.5 bg-muted/60 border border-border hover:border-emerald-500/40 hover:text-emerald-500 rounded-lg text-muted-foreground font-medium shadow-xs transition-colors cursor-pointer"
+                    className="text-xs px-3.5 py-1.5 bg-muted/50 border border-border hover:border-emerald-500/40 hover:text-emerald-500 rounded-full text-muted-foreground font-medium transition-all shadow-2xs cursor-pointer"
                   >
                     {comp.name}
                   </button>
@@ -458,46 +502,49 @@ export default function Home({ params }: PageProps) {
               </motion.div>
             )}
 
-            {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-6 mt-16 w-full pt-8 border-t border-border" id="trust_badges">
-              <div className="flex flex-col items-center">
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-full mb-3">
+            {/* Core Trust & Security Pillars */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 border-t border-border" id="trust_badges">
+              <div className="bg-card border border-border p-6 rounded-3xl shadow-xs transition-all hover:shadow-md">
+                <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mb-4">
                   <ShieldCheck className="w-5 h-5 text-emerald-500" />
                 </div>
-                <h3 className="text-sm font-semibold text-foreground mb-1">
-                  {lang === 'zh' ? '完全匿名' : '100% Anonymous'}
+                <h3 className="text-base font-extrabold text-foreground mb-1.5">
+                  {lang === 'zh' ? '100% 密码学匿名' : '100% Anonymous'}
                 </h3>
-                <p className="text-xs text-muted-foreground text-center">
-                  {lang === 'zh' ? '不留IP、不留账号，极速提交' : 'No logs, no trackers, submit instantly'}
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {lang === 'zh' ? '无追踪代码，无需注册登录账号，不记录 IP 地址与设备指纹。' : 'No account needed, zero trackers, IP logging disabled.'}
                 </p>
               </div>
-              <div className="flex flex-col items-center">
-                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-3">
+
+              <div className="bg-card border border-border p-6 rounded-3xl shadow-xs transition-all hover:shadow-md">
+                <div className="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center mb-4">
                   <Lock className="w-5 h-5 text-indigo-500" />
                 </div>
-                <h3 className="text-sm font-semibold text-foreground mb-1">
-                  {lang === 'zh' ? '链上存证' : 'Ledger Verified'}
+                <h3 className="text-base font-extrabold text-foreground mb-1.5">
+                  {lang === 'zh' ? '区块链 Hash 存证' : 'Ledger Verified'}
                 </h3>
-                <p className="text-xs text-muted-foreground text-center">
-                  {lang === 'zh' ? '哈希链接防篡改，公开透明' : 'Chained cryptographically to ensure integrity'}
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {lang === 'zh' ? '基于 SHA-256 算法生成区块哈希与链式前导指针，防篡改防撤回。' : 'Linked via SHA-256 block hashes ensuring immutable audit trail.'}
                 </p>
               </div>
-              <div className="flex flex-col items-center">
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-full mb-3">
+
+              <div className="bg-card border border-border p-6 rounded-3xl shadow-xs transition-all hover:shadow-md">
+                <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mb-4">
                   <Sparkles className="w-5 h-5 text-amber-500" />
                 </div>
-                <h3 className="text-sm font-semibold text-foreground mb-1">
-                  {lang === 'zh' ? 'AI 语义分析' : 'AI Culture Auditor'}
+                <h3 className="text-base font-extrabold text-foreground mb-1.5">
+                  {lang === 'zh' ? 'Gemini 智能文化透视' : 'AI Culture Auditor'}
                 </h3>
-                <p className="text-xs text-muted-foreground text-center">
-                  {lang === 'zh' ? '自动解析职场真实满意度与文化' : 'Aggregates employee sentiment & vibe checks'}
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {lang === 'zh' ? '自动分析生成宏观口碑画像、WLB打分、薪资合理度与求职锦囊。' : 'Aggregates employee sentiment, WLB scores and salary fairness.'}
                 </p>
               </div>
             </div>
+
           </div>
         ) : (
           /* NO COMPANY DETECTED WITH THAT NAME STATE */
-          <div className="max-w-xl mx-auto" id="no_company_view">
+          <div className="max-w-xl mx-auto py-12" id="no_company_view">
             <button
               onClick={() => setHasSearched(false)}
               className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-medium text-sm mb-8 transition-colors cursor-pointer"
@@ -525,7 +572,7 @@ export default function Home({ params }: PageProps) {
 
               <button
                 onClick={() => setShowSubmitForm(true)}
-                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-sm rounded-2xl transition-all shadow-lg shadow-emerald-500/10 inline-flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-sm rounded-2xl transition-all shadow-lg inline-flex items-center justify-center gap-2 cursor-pointer"
               >
                 <PlusCircle className="w-5 h-5 text-black" />
                 <span>{lang === 'zh' ? '创建该公司并提供第一条匿名口碑' : 'Create & Submit Pioneer Review'}</span>
@@ -548,7 +595,7 @@ export default function Home({ params }: PageProps) {
                 initial={{ scale: 0.95, y: 15 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 15 }}
-                className="bg-card text-card-foreground w-full max-w-2xl rounded-2xl border border-border shadow-2xl overflow-hidden my-8"
+                className="bg-card text-card-foreground w-full max-w-2xl rounded-3xl border border-border shadow-2xl overflow-hidden my-8"
               >
                 {/* Modal Header */}
                 <div className="bg-muted/60 border-b border-border text-foreground p-6 flex justify-between items-center">
@@ -660,7 +707,7 @@ export default function Home({ params }: PageProps) {
                           <select
                             value={formData.employment_status}
                             onChange={(e) => setFormData(prev => ({ ...prev, employment_status: e.target.value }))}
-                            className="w-full px-3 py-2.5 bg-muted/40 border border-border rounded-xl text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2.5 bg-muted/40 border border-border rounded-xl text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none cursor-pointer"
                           >
                             <option value="current" className="bg-popover text-popover-foreground">{lang === 'zh' ? '目前在职' : 'Current'}</option>
                             <option value="former" className="bg-popover text-popover-foreground">{lang === 'zh' ? '已经离职' : 'Former'}</option>

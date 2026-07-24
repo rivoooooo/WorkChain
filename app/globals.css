@@ -1,4 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
 @import "tailwindcss";
+
+.font-serif-italic {
+  font-family: 'Instrument Serif', Georgia, Cambria, "Times New Roman", Times, serif;
+  font-style: italic;
+}
 
 @layer base {
   :root {
