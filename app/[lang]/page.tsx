@@ -211,45 +211,27 @@ export default function Home({ params }: PageProps) {
               className="flex items-center gap-2 group"
             >
               <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Building className="w-4 h-4 text-emerald-400" />
+                <Building className="w-4 h-4 text-white" />
               </div>
-              <span className="font-extrabold text-white text-base tracking-tight group-hover:text-emerald-400 transition-colors">
-                work<span className="text-emerald-400">chain</span>
+              <span className="font-extrabold text-white text-base tracking-tight transition-colors">
+                workchain
               </span>
             </Link>
-
-            {/* Nav links */}
-            <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-zinc-300">
-              <Link 
-                href={`/${rawLang}/companies`}
-                className="hover:text-white transition-colors flex items-center gap-1.5"
-              >
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{t.viewRankings}</span>
-              </Link>
-              <Link 
-                href={`/${rawLang}/download`}
-                className="hover:text-white transition-colors flex items-center gap-1.5"
-              >
-                <Database className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{t.downloadNavLabel}</span>
-              </Link>
-            </div>
 
             {/* Action CTAs & Controls */}
             <div className="flex items-center gap-1.5 sm:gap-2">
               {/* Theme Toggle (Circular Ghost) */}
-              <ThemeToggle className="w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center" />
+              <ThemeToggle className="w-9 h-9 rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer flex items-center justify-center" />
 
               {/* Language Switcher (Circular Ghost) */}
               <button
                 type="button"
                 onClick={toggleLang}
-                className="w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center relative group"
+                className="w-9 h-9 rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer flex items-center justify-center relative group"
                 title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
                 aria-label="Toggle Language"
               >
-                <Languages className="w-4 h-4 text-emerald-400" />
+                <Languages className="w-4 h-4 text-white" />
               </button>
 
               {/* Write Review Capsule Button */}
@@ -274,7 +256,7 @@ export default function Home({ params }: PageProps) {
                 }}
                 className="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-full transition-all shadow-md flex items-center gap-1.5 cursor-pointer ml-1"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-3.5 h-3.5 text-black" />
                 <span>{t.addReview}</span>
               </button>
             </div>
@@ -827,18 +809,80 @@ export default function Home({ params }: PageProps) {
         </AnimatePresence>
         </div>
 
-        {/* Footer inside container */}
-        <footer className="bg-muted/30 border-t border-border mt-20 py-8 px-4 text-xs text-muted-foreground text-center space-y-2" id="footer">
-          <p>
-            {lang === 'zh'
-              ? '© 2026 WorkChain · 基于密码学 SHA-256 区块链链式防篡改存证的公司匿名评价与薪资分析系统'
-              : '© 2026 WorkChain · Cryptographic SHA-256 Chain Ledger Secure Corporate Review System'}
-          </p>
-          <p>
-            {lang === 'zh'
-              ? '不存储任何账号、姓名、手机、IP、设备标识等可能推断真实身份的任何用户隐私。数据实时存证并同步。'
-              : 'Does not store any user accounts, names, phone numbers, IPs, device fingerprints, or tracking telemetry. Data is cryptographically hashed and validated in real-time.'}
-          </p>
+        {/* Newspaper Editorial Footer inside container */}
+        <footer className="mt-20 border-t border-border font-sans" id="footer">
+          {/* Newspaper Horizontal Rule Navigation Stack */}
+          <div className="divide-y divide-border border-b border-border">
+            {/* Item 1: Companies Ranking */}
+            <Link 
+              href={`/${rawLang}/companies`}
+              className="group py-5 px-4 sm:px-8 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors"
+            >
+              <span className="text-xl sm:text-2xl font-bold tracking-tight">
+                {lang === 'zh' ? '全行业公司口碑龙虎榜' : 'Corporate Ratings & Rankings'}
+              </span>
+              <span className="text-muted-foreground group-hover:text-foreground text-lg sm:text-xl font-mono transition-colors">
+                +
+              </span>
+            </Link>
+
+            {/* Item 2: Data Ledger Download */}
+            <Link 
+              href={`/${rawLang}/download`}
+              className="group py-5 px-4 sm:px-8 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors"
+            >
+              <span className="text-xl sm:text-2xl font-bold tracking-tight">
+                {lang === 'zh' ? '密码学数据链式归档下载' : 'Ledger Data Archives'}
+              </span>
+              <span className="text-muted-foreground group-hover:text-foreground text-lg sm:text-xl font-mono transition-colors">
+                +
+              </span>
+            </Link>
+
+            {/* Item 3: Submit Pioneer Review */}
+            <button 
+              onClick={() => {
+                setFormData({
+                  company_name: '',
+                  branch_location: '',
+                  position: '',
+                  employment_status: 'current',
+                  salary: '',
+                  bonus: '',
+                  experience_years: '3',
+                  rating_career: 4,
+                  rating_balance: 3,
+                  rating_management: 3,
+                  rating_compensation: 3,
+                  rating_culture: 4,
+                  review_text: ''
+                });
+                setShowSubmitForm(true);
+              }}
+              className="w-full group py-5 px-4 sm:px-8 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors text-left cursor-pointer"
+            >
+              <span className="text-xl sm:text-2xl font-bold tracking-tight">
+                {lang === 'zh' ? '添加企业匿名评价 & 薪资数据' : 'Submit Anonymous Review & Salary'}
+              </span>
+              <span className="text-muted-foreground group-hover:text-foreground text-lg sm:text-xl font-mono transition-colors">
+                +
+              </span>
+            </button>
+          </div>
+
+          {/* Footer Copyright & Privacy Meta */}
+          <div className="py-8 px-4 sm:px-8 text-xs text-muted-foreground space-y-2 text-center sm:text-left bg-muted/20">
+            <p>
+              {lang === 'zh'
+                ? '© 2026 WorkChain · 基于密码学 SHA-256 区块链链式防篡改存证的公司匿名评价与薪资分析系统'
+                : '© 2026 WorkChain · Cryptographic SHA-256 Chain Ledger Secure Corporate Review System'}
+            </p>
+            <p>
+              {lang === 'zh'
+                ? '不存储任何账号、姓名、手机、IP、设备标识等可能推断真实身份的任何用户隐私。数据实时存证并同步。'
+                : 'Does not store any user accounts, names, phone numbers, IPs, device fingerprints, or tracking telemetry. Data is cryptographically hashed and validated in real-time.'}
+            </p>
+          </div>
         </footer>
       </div>
     </main>
