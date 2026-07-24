@@ -7,6 +7,7 @@ import { Languages, Plus, Loader2, AlertCircle, ShieldCheck, X, Search, Building
 import { Language, i18n } from '../lib/i18n';
 import { ThemeToggle } from './theme-toggle';
 import { CitySelect } from './city-select';
+import { CompanySelect, CompanyItem as SelectedCompanyItem } from './company-select';
 
 interface CompanyItem {
   id: string;
@@ -386,13 +387,19 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                             <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
                               {t.formLabelCompany} <span className="text-rose-500">*</span>
                             </label>
-                            <input
-                              type="text"
+                            <CompanySelect
                               required
                               value={formData.company_name}
-                              onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                              onChange={(val) => setFormData(prev => ({ ...prev, company_name: val }))}
+                              onCompanySelect={(comp: SelectedCompanyItem) => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  company_name: comp.name,
+                                  country_code: comp.country_code || prev.country_code,
+                                  branch_location: comp.city || comp.province || prev.branch_location,
+                                }));
+                              }}
                               placeholder={t.formPlaceholderCompany}
-                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
                             />
                           </div>
 

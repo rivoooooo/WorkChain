@@ -27,6 +27,11 @@ export interface Review {
 export interface Company {
   id: string;
   name: string;
+  credit_code?: string | null;
+  country_code?: string | null;
+  country_name?: string | null;
+  province?: string | null;
+  city?: string | null;
   created_at: string;
   review_count: number;
   avg_rating: number;
@@ -258,6 +263,11 @@ export async function getCompanies(search?: string): Promise<Company[]> {
           .map((item: any) => ({
             id: item.id,
             name: item.name,
+            credit_code: item.credit_code || null,
+            country_code: item.country_code || null,
+            country_name: item.country_name || null,
+            province: item.province || null,
+            city: item.city || null,
             created_at: item.created_at || item.createdAt,
             review_count: item.review_count !== undefined ? item.review_count : item.reviewCount,
             avg_rating: Number(item.avg_rating !== undefined ? item.avg_rating : item.avgRating || 0),
