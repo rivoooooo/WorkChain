@@ -73,6 +73,22 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showSubmitForm, showSearchModal]);
 
+  const [formData, setFormData] = useState({
+    company_name: '',
+    branch_location: '',
+    position: '',
+    employment_status: 'current',
+    salary: '',
+    bonus: '',
+    experience_years: '3',
+    rating_career: 4,
+    rating_balance: 3,
+    rating_management: 3,
+    rating_compensation: 3,
+    rating_culture: 4,
+    review_text: ''
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.company_name.trim()) {
