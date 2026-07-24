@@ -198,10 +198,10 @@ export default function Home({ params }: PageProps) {
       <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-rose-500/5 blur-[140px] rounded-full pointer-events-none" />
 
       {/* NEWSPAPER EDITORIAL MAX-W CONTAINER (ENTIRE PAGE: HEADER + CONTENT + FOOTER) */}
-      <div className="max-w-6xl mx-auto border-x border-border min-h-screen flex flex-col justify-between relative z-10 px-2" id="app_container">
+      <div className="max-w-6xl mx-auto border-x border-border min-h-screen flex flex-col justify-between relative z-10 px-0" id="app_container">
         
         {/* FLOATING CAPSULE NAVBAR INSIDE CONTAINER */}
-        <div className="sticky top-6 z-50 px-2 sm:px-4 mb-8 sm:mb-12">
+        <div className="sticky top-6 z-50 px-2 mb-8 sm:mb-12">
           <header className="max-w-4xl mx-auto bg-zinc-950 text-white rounded-full p-2 pl-6 pr-3 shadow-2xl border border-white/10 backdrop-blur-md flex items-center justify-between" id="floating_navbar">
             {/* Pure Text Logo */}
             <Link
@@ -297,7 +297,7 @@ export default function Home({ params }: PageProps) {
         </div>
 
         {/* MAIN BODY CONTENT */}
-        <div className="flex-1 px-2 sm:px-4">
+        <div className="flex-1 px-1">
 
         {!hasSearched ? (
           <div className="space-y-12 sm:space-y-16">
@@ -839,14 +839,14 @@ export default function Home({ params }: PageProps) {
         </AnimatePresence>
         </div>
 
-        {/* Newspaper Editorial Footer inside container */}
-        <footer className="mt-20 border-t border-border font-sans" id="footer">
+        {/* Newspaper Editorial Footer inside container - Flush Lines with Container Borders */}
+        <footer className="mt-20 border-t border-border font-sans px-0 w-full" id="footer">
           {/* Newspaper Horizontal Rule Navigation Stack */}
           <div className="divide-y divide-border border-b border-border">
             {/* Item 1: Companies Ranking */}
             <Link 
               href={`/${rawLang}/companies`}
-              className="group py-5 px-4 sm:px-8 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors"
+              className="group py-4 px-4 sm:px-6 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors"
             >
               <span className="text-xl sm:text-2xl font-bold tracking-tight">
                 {lang === 'zh' ? '全行业公司口碑龙虎榜' : 'Corporate Ratings & Rankings'}
@@ -859,7 +859,7 @@ export default function Home({ params }: PageProps) {
             {/* Item 2: Data Ledger Download */}
             <Link 
               href={`/${rawLang}/download`}
-              className="group py-5 px-4 sm:px-8 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors"
+              className="group py-4 px-4 sm:px-6 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors"
             >
               <span className="text-xl sm:text-2xl font-bold tracking-tight">
                 {lang === 'zh' ? '密码学数据链式归档下载' : 'Ledger Data Archives'}
@@ -889,7 +889,7 @@ export default function Home({ params }: PageProps) {
                 });
                 setShowSubmitForm(true);
               }}
-              className="w-full group py-5 px-4 sm:px-8 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors text-left cursor-pointer"
+              className="w-full group py-4 px-4 sm:px-6 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors text-left cursor-pointer"
             >
               <span className="text-xl sm:text-2xl font-bold tracking-tight">
                 {lang === 'zh' ? '添加企业匿名评价 & 薪资数据' : 'Submit Anonymous Review & Salary'}
@@ -901,7 +901,7 @@ export default function Home({ params }: PageProps) {
           </div>
 
           {/* Footer Copyright & Privacy Meta */}
-          <div className="py-8 px-4 sm:px-8 text-xs text-muted-foreground space-y-2 text-center sm:text-left bg-muted/20">
+          <div className="py-6 px-4 sm:px-6 text-xs text-muted-foreground space-y-2 text-center sm:text-left bg-muted/20">
             <p>
               {lang === 'zh'
                 ? '© 2026 WorkChain · 基于密码学 SHA-256 区块链链式防篡改存证的公司匿名评价与薪资分析系统'
