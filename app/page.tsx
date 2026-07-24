@@ -71,6 +71,14 @@ export default function Home() {
   const [distinctCompanies, setDistinctCompanies] = useState<string[]>([]);
   const [allReviews, setAllReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Autocomplete / Search suggestion state
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [searchActiveSuggestionIndex, setSearchActiveSuggestionIndex] = useState(-1);
+
+  // Form suggestion state
+  const [showFormSuggestions, setShowFormSuggestions] = useState(false);
+  const [formActiveSuggestionIndex, setFormActiveSuggestionIndex] = useState(-1);
   
   // Selected Company State
   const [currentCompanyReviews, setCurrentCompanyReviews] = useState<Review[]>([]);
@@ -357,6 +365,19 @@ export default function Home() {
 
   const stats = calculateStats();
 
+  // Filtered lists for suggestions
+  const filteredSearchSuggestions = searchQuery.trim()
+    ? distinctCompanies.filter(comp =>
+        comp.toLowerCase().includes(searchQuery.toLowerCase().trim())
+      )
+    : [];
+
+  const filteredFormSuggestions = formData.company_name.trim()
+    ? distinctCompanies.filter(comp =>
+        comp.toLowerCase().includes(formData.company_name.toLowerCase().trim())
+      )
+    : [];
+
   return (
     <main className="min-h-screen bg-[#050505] text-[#e0e0e0] selection:bg-emerald-500/20" id="main_root">
       {/* Top Banner indicating absolute anonymity */}
@@ -399,7 +420,7 @@ export default function Home() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1, duration: 0.4 }}
-              className="w-full bg-[#0d0d0d] p-2 rounded-2xl shadow-2xl border border-white/10 mb-6"
+              className="w-full bg-[#0d0d0d] p-2 rounded-2xl shadow-2xl border border-white/10 mb-6 relative"
               id="search_box_container"
             >
               <div className="relative flex items-center">
@@ -407,20 +428,95 @@ export default function Home() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowSearchSuggestions(true);
+                    setSearchActiveSuggestionIndex(-1);
+                  }}
+                  onFocus={() => setShowSearchSuggestions(true)}
+                  onBlur={() => {
+                    setTimeout(() => setShowSearchSuggestions(false), 200);
+                  }}
+                  onKeyDown={(e) => {
+                    if (showSearchSuggestions && filteredSearchSuggestions.length > 0) {
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setSearchActiveSuggestionIndex(prev => 
+                          prev < filteredSearchSuggestions.length - 1 ? prev + 1 : 0
+                        );
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setSearchActiveSuggestionIndex(prev => 
+                          prev > 0 ? prev - 1 : filteredSearchSuggestions.length - 1
+                        );
+                      } else if (e.key === 'Enter') {
+                        if (searchActiveSuggestionIndex >= 0 && searchActiveSuggestionIndex < filteredSearchSuggestions.length) {
+                          e.preventDefault();
+                          const selected = filteredSearchSuggestions[searchActiveSuggestionIndex];
+                          setSearchQuery(selected);
+                          handleSearch(selected);
+                          setShowSearchSuggestions(false);
+                        } else {
+                          handleSearch();
+                          setShowSearchSuggestions(false);
+                        }
+                      } else if (e.key === 'Escape') {
+                        setShowSearchSuggestions(false);
+                      }
+                    } else if (e.key === 'Enter') {
+                      handleSearch();
+                    }
+                  }}
                   placeholder="输入公司名称（如：阿里巴巴、腾讯、字节跳动）"
-                  className="w-full pl-12 pr-32 py-4 bg-transparent outline-hidden text-[#e0e0e0] placeholder:text-gray-500 font-medium text-base rounded-xl"
+                  className="w-full pl-12 pr-32 py-4 bg-transparent outline-none text-[#e0e0e0] placeholder:text-gray-500 font-medium text-base rounded-xl"
                   id="main_search_input"
+                  autoComplete="off"
                 />
                 <button
-                  onClick={() => handleSearch()}
+                  onClick={() => {
+                    handleSearch();
+                    setShowSearchSuggestions(false);
+                  }}
                   className="absolute right-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-sm font-bold transition-colors duration-200 shadow-sm"
                   id="search_btn"
                 >
                   检索口碑
                 </button>
               </div>
+
+              {/* Suggestions Dropdown */}
+              {showSearchSuggestions && filteredSearchSuggestions.length > 0 && (
+                <div 
+                  className="absolute left-0 right-0 top-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 py-1 max-h-60 overflow-y-auto"
+                  id="search_suggestions_dropdown"
+                >
+                  <div className="px-3 py-1.5 text-[10px] text-gray-500 font-bold uppercase tracking-wider border-b border-white/5">
+                    推荐存在的公司名称 (回车或点击直接检索)
+                  </div>
+                  {filteredSearchSuggestions.map((comp, idx) => (
+                    <button
+                      key={comp}
+                      onClick={() => {
+                        setSearchQuery(comp);
+                        handleSearch(comp);
+                        setShowSearchSuggestions(false);
+                      }}
+                      onMouseEnter={() => setSearchActiveSuggestionIndex(idx)}
+                      className={`w-full text-left px-4 py-3 text-sm flex items-center justify-between transition-colors ${
+                        idx === searchActiveSuggestionIndex 
+                          ? 'bg-emerald-500/10 text-emerald-400 font-medium' 
+                          : 'text-gray-300 hover:bg-white/5'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Building className="w-4 h-4 text-gray-500" />
+                        <span>{comp}</span>
+                      </span>
+                      <ChevronRight className="w-3.5 h-3.5 opacity-50 text-gray-500" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </motion.div>
 
             {/* Quick Suggestions / Top Companies */}
@@ -1140,7 +1236,7 @@ export default function Home() {
 
                       {/* Brand Info Inputs */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                        <div className="relative">
                           <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">
                             公司名称 <span className="text-rose-500">*</span>
                           </label>
@@ -1149,10 +1245,74 @@ export default function Home() {
                             required
                             disabled={!!submittedQuery}
                             value={formData.company_name}
-                            onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                            onChange={(e) => {
+                              setFormData(prev => ({ ...prev, company_name: e.target.value }));
+                              setShowFormSuggestions(true);
+                              setFormActiveSuggestionIndex(-1);
+                            }}
+                            onFocus={() => setShowFormSuggestions(true)}
+                            onBlur={() => {
+                              setTimeout(() => setShowFormSuggestions(false), 200);
+                            }}
+                            onKeyDown={(e) => {
+                              if (showFormSuggestions && filteredFormSuggestions.length > 0) {
+                                if (e.key === 'ArrowDown') {
+                                  e.preventDefault();
+                                  setFormActiveSuggestionIndex(prev => 
+                                    prev < filteredFormSuggestions.length - 1 ? prev + 1 : 0
+                                  );
+                                } else if (e.key === 'ArrowUp') {
+                                  e.preventDefault();
+                                  setFormActiveSuggestionIndex(prev => 
+                                    prev > 0 ? prev - 1 : filteredFormSuggestions.length - 1
+                                  );
+                                } else if (e.key === 'Enter') {
+                                  if (formActiveSuggestionIndex >= 0 && formActiveSuggestionIndex < filteredFormSuggestions.length) {
+                                    e.preventDefault();
+                                    const selected = filteredFormSuggestions[formActiveSuggestionIndex];
+                                    setFormData(prev => ({ ...prev, company_name: selected }));
+                                    setShowFormSuggestions(false);
+                                  }
+                                } else if (e.key === 'Escape') {
+                                  setShowFormSuggestions(false);
+                                }
+                              }
+                            }}
                             placeholder="如: 阿里巴巴"
                             className="w-full px-3 py-2 bg-[#151515] disabled:opacity-50 disabled:bg-[#101010] border border-white/5 rounded-xl text-sm text-[#e0e0e0] placeholder-gray-600 focus:bg-[#1a1a1a] focus:border-emerald-500 outline-none"
+                            autoComplete="off"
                           />
+
+                          {/* Suggestions Dropdown */}
+                          {showFormSuggestions && filteredFormSuggestions.length > 0 && !submittedQuery && (
+                            <div 
+                              className="absolute left-0 right-0 top-full mt-1 bg-[#101010] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 py-1 max-h-48 overflow-y-auto"
+                              id="form_suggestions_dropdown"
+                            >
+                              <div className="px-3 py-1.5 text-[9px] text-gray-500 font-bold uppercase tracking-wider border-b border-white/5">
+                                推荐选择已有公司名（防止拼写不一）
+                              </div>
+                              {filteredFormSuggestions.map((comp, idx) => (
+                                <button
+                                  type="button"
+                                  key={comp}
+                                  onClick={() => {
+                                    setFormData(prev => ({ ...prev, company_name: comp }));
+                                    setShowFormSuggestions(false);
+                                  }}
+                                  onMouseEnter={() => setFormActiveSuggestionIndex(idx)}
+                                  className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 transition-colors ${
+                                    idx === formActiveSuggestionIndex 
+                                      ? 'bg-emerald-500/10 text-emerald-400 font-medium' 
+                                      : 'text-gray-300 hover:bg-white/5'
+                                  }`}
+                                >
+                                  <Building className="w-3.5 h-3.5 text-gray-500" />
+                                  <span>{comp}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
 
                         <div>
