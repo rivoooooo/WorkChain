@@ -5,3 +5,11 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Runtime generated backup files
+data/backups/
+data/backups.json
+data/backups_binary.json
+
+# Supabase CLI temp files
+supabase/.temp/

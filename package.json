@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "clean": "next clean"
+    "clean": "next clean",
+    "db:push": "bunx supabase db push",
+    "db:pull": "bunx supabase db pull",
+    "db:diff": "bunx supabase db diff"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

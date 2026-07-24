@@ -1,6 +1,7 @@
 -- ==========================================================
--- 数据库迁移与初始化 SQL 脚本 (适用于 Supabase / PostgreSQL)
--- 请在 Supabase 的 SQL Editor 中运行此脚本以创建或更新表结构
+-- Supabase CLI 数据库初始化迁移文件
+-- 文件名: supabase/migrations/20260724000000_init_tables.sql
+-- 说明: 包含 4 张主表 (companies, reviews, backups_metadata, backups_binary)
 -- ==========================================================
 
 -- 1. 创建公司主表 (companies)
@@ -19,7 +20,7 @@ CREATE TABLE IF NOT EXISTS companies (
     avg_bonus INTEGER DEFAULT 0
 );
 
--- 2. 创建评价子表 (reviews)
+-- 2. 创建评价表 (reviews)
 CREATE TABLE IF NOT EXISTS reviews (
     id VARCHAR(255) PRIMARY KEY,
     company_id VARCHAR(255) NOT NULL,
@@ -41,10 +42,35 @@ CREATE TABLE IF NOT EXISTS reviews (
     hash VARCHAR(255) NOT NULL
 );
 
--- 3. 安全兼容更新：若 reviews 表已存在但缺失 company_id 字段或外键关联
+-- 3. 创建自动归档备份元数据表 (backups_metadata)
+CREATE TABLE IF NOT EXISTS backups_metadata (
+    id VARCHAR(255) PRIMARY KEY,
+    date VARCHAR(50) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    review_count INTEGER DEFAULT 0,
+    csv_size INTEGER DEFAULT 0,
+    xlsx_size INTEGER DEFAULT 0,
+    sql_size INTEGER DEFAULT 0
+);
+
+-- 4. 创建自动归档备份二进制存储表 (backups_binary)
+CREATE TABLE IF NOT EXISTS backups_binary (
+    id VARCHAR(255) PRIMARY KEY,
+    csv_base64 TEXT,
+    xlsx_base64 TEXT,
+    sql_base64 TEXT
+);
+
+-- 5. 索引优化 (提高高频查询性能)
+CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
+CREATE INDEX IF NOT EXISTS idx_reviews_company_id ON reviews(company_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_backups_metadata_date ON backups_metadata(date DESC);
+
+-- 6. 安全兼容升级：若旧表中缺失字段或外键关联，自动修补
 DO $$
 BEGIN
-    -- 确保 reviews 表中包含 company_id 字段
+    -- 确保 reviews 表包含 company_id 字段
     IF EXISTS (
         SELECT 1 FROM information_schema.tables 
         WHERE table_name = 'reviews' AND table_schema = 'public'
@@ -57,7 +83,7 @@ BEGIN
         END IF;
     END IF;
 
-    -- 确保外键约束存在
+    -- 确保外键约束 fk_reviews_company 存在
     IF EXISTS (
         SELECT 1 FROM information_schema.tables 
         WHERE table_name = 'reviews' AND table_schema = 'public'
@@ -69,16 +95,6 @@ BEGIN
             SELECT 1 FROM information_schema.table_constraints 
             WHERE constraint_name = 'fk_reviews_company' AND table_schema = 'public'
         ) THEN
-            -- 如果需要，可以清理任何不合法的空数据（如有）
-            -- UPDATE reviews SET company_id = 'comp-unknown' WHERE company_id IS NULL;
-            -- 以前为了防止违反外键约束，创建了兜底的 '未知公司' 记录。
-            -- 如果是干净的新数据库，您可以直接在 Supabase 中运行 DELETE FROM companies WHERE id = 'comp-unknown'; 删除它。
-            -- INSERT INTO companies (id, name, review_count, avg_rating)
-            -- VALUES ('comp-unknown', '未知公司', 0, 0)
-            -- ON CONFLICT (id) DO NOTHING;
-
-            -- 设为 NOT NULL 并添加外键约束
-            -- ALTER TABLE reviews ALTER COLUMN company_id SET NOT NULL;
             ALTER TABLE reviews 
             ADD CONSTRAINT fk_reviews_company 
             FOREIGN KEY (company_id) 
@@ -88,23 +104,8 @@ BEGIN
     END IF;
 END $$;
 
--- 4. 解决 Row Level Security (RLS) 报错：
--- 方式 A (推荐且最简单直接)：直接关闭两张表的 RLS 行级安全限制，允许完全公开读写
+-- 7. 配置 Row Level Security (RLS) 行级安全权限
 ALTER TABLE companies DISABLE ROW LEVEL SECURITY;
 ALTER TABLE reviews DISABLE ROW LEVEL SECURITY;
-
--- 方式 B (如果您一定要保持 RLS 开启，请运行以下策略代码以允许匿名/公开用户读写)：
--- DROP POLICY IF EXISTS "Allow public select on companies" ON companies;
--- CREATE POLICY "Allow public select on companies" ON companies FOR SELECT USING (true);
--- DROP POLICY IF EXISTS "Allow public insert on companies" ON companies;
--- CREATE POLICY "Allow public insert on companies" ON companies FOR INSERT WITH CHECK (true);
--- DROP POLICY IF EXISTS "Allow public update on companies" ON companies;
--- CREATE POLICY "Allow public update on companies" ON companies FOR UPDATE USING (true);
--- 
--- DROP POLICY IF EXISTS "Allow public select on reviews" ON reviews;
--- CREATE POLICY "Allow public select on reviews" ON reviews FOR SELECT USING (true);
--- DROP POLICY IF EXISTS "Allow public insert on reviews" ON reviews;
--- CREATE POLICY "Allow public insert on reviews" ON reviews FOR INSERT WITH CHECK (true);
--- DROP POLICY IF EXISTS "Allow public update on reviews" ON reviews;
--- CREATE POLICY "Allow public update on reviews" ON reviews FOR UPDATE USING (true);
-
+ALTER TABLE backups_metadata DISABLE ROW LEVEL SECURITY;
+ALTER TABLE backups_binary DISABLE ROW LEVEL SECURITY;
