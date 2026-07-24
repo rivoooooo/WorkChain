@@ -5,7 +5,7 @@ export const i18n = {
   zh: {
     // Search modal
     searchModalTitle: '全网公司口碑搜索',
-    searchModalInputPlaceholder: '输入公司全称搜索 (例如: 腾讯 / 字节跳动 / 阿里巴巴 / 华为)...',
+    searchModalInputPlaceholder: '输入公司名称 (如: 阿里巴巴、腾讯)...',
     searchModalTrending: '热门检索公司',
     searchModalResults: '匹配的公司口碑记录',
     searchModalNoResults: '未找到匹配的公司记录',
@@ -23,7 +23,7 @@ export const i18n = {
     // Home Hero
     heroBadge: '基于区块链技术的防篡改 WorkChain',
     heroSub: '一键检索匿名评价、多维度打分与职场文化报告，所有评价记录均链式关联，确保真实不可篡改。',
-    searchPlaceholder: '输入公司名称（如：阿里巴巴、腾讯、字节跳动、特斯拉、微软等）',
+    searchPlaceholder: '输入公司名称（如：阿里巴巴、腾讯）',
     searchBtn: '检索口碑',
     trendingSearch: '大家都在搜：',
     
@@ -183,7 +183,7 @@ export const i18n = {
   en: {
     // Search modal
     searchModalTitle: 'Search Company Ledger',
-    searchModalInputPlaceholder: 'Type company name (e.g. Google, Apple, ByteDance)...',
+    searchModalInputPlaceholder: 'Type company name (e.g. Google, Apple)...',
     searchModalTrending: 'Trending Companies',
     searchModalResults: 'Matching Company Records',
     searchModalNoResults: 'No matching company found',
@@ -201,7 +201,7 @@ export const i18n = {
     // Home Hero
     heroBadge: 'Tamper-Proof Job Review Ledger Secured by Blockchain',
     heroSub: 'Instantly retrieve anonymous reviews, multi-dimensional ratings, and cultural analysis reports. All records are chain-linked to ensure absolute authenticity.',
-    searchPlaceholder: 'Enter company name (e.g., Google, Apple, Microsoft, Tesla, ByteDance)',
+    searchPlaceholder: 'Enter company name (e.g. Google, Apple)',
     searchBtn: 'Search Reviews',
     trendingSearch: 'Trending:',
     
