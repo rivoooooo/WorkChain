@@ -3,23 +3,57 @@ import path from 'path';
 import { KinginsunEnterpriseConverter } from '../lib/converters/kinginsun-converter';
 import { importCompanyData } from '../lib/converters/importer';
 
+// 递归扫描目录下的所有 CSV / TXT 文件
+function scanDirectoryRecursively(dirPath: string): string[] {
+  let results: string[] = [];
+  const list = fs.readdirSync(dirPath);
+
+  for (const file of list) {
+    const fullPath = path.join(dirPath, file);
+    const stat = fs.statSync(fullPath);
+
+    if (stat && stat.isDirectory()) {
+      results = results.concat(scanDirectoryRecursively(fullPath));
+    } else if (file.endsWith('.csv') || file.endsWith('.txt')) {
+      results.push(fullPath);
+    }
+  }
+
+  return results;
+}
+
 async function main() {
-  const targetPath = process.argv[2];
+  const args = process.argv.slice(2);
+  let targetPath = '';
+
+  // 解析 --dir 参数或位置参数
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--dir' || args[i] === '-d') {
+      targetPath = args[i + 1] || '';
+      break;
+    } else if (!args[i].startsWith('-') && !targetPath) {
+      targetPath = args[i];
+    }
+  }
 
   if (!targetPath) {
     console.log(`
 ====================================================================
  🏢 Kinginsun Enterprise Registration Data Importer
 ====================================================================
+ 数据来源与致谢:
+   https://github.com/kinginsun/Enterprise-Registration-Data-of-Chinese-Mainland
+
  使用说明:
-   bun run scripts/import-kinginsun.ts <CSV文件路径 或 文件夹路径>
+   1. 使用 --dir 选项导入目录下所有 CSV:
+      bun run scripts/import-kinginsun.ts --dir <目录路径>
+
+   2. 导入单个 CSV 文件:
+      bun run scripts/import-kinginsun.ts <文件路径>
 
  示例:
-   1. 导入单个 CSV 文件:
-      bun run scripts/import-kinginsun.ts /path/to/enterprise.csv
-
-   2. 批量导入包含 CSV 的文件夹:
-      bun run scripts/import-kinginsun.ts /path/to/csv_folder
+   bun run scripts/import-kinginsun.ts --dir /path/to/enterprise_csv_dir
+   bun run import:kinginsun --dir ./data/kinginsun
 ====================================================================
 `);
     process.exit(1);
@@ -33,26 +67,21 @@ async function main() {
   }
 
   const stat = fs.statSync(absolutePath);
-  const csvFiles: string[] = [];
+  let csvFiles: string[] = [];
 
   if (stat.isFile()) {
     if (absolutePath.endsWith('.csv') || absolutePath.endsWith('.txt')) {
       csvFiles.push(absolutePath);
     } else {
-      console.error('❌ 指定的文件必须是 .csv 扩展名');
+      console.error('❌ 指定的文件必须是 .csv 或 .txt 格式');
       process.exit(1);
     }
   } else if (stat.isDirectory()) {
-    const files = fs.readdirSync(absolutePath);
-    for (const f of files) {
-      if (f.endsWith('.csv') || f.endsWith('.txt')) {
-        csvFiles.push(path.join(absolutePath, f));
-      }
-    }
+    csvFiles = scanDirectoryRecursively(absolutePath);
   }
 
   if (csvFiles.length === 0) {
-    console.error('❌ 未找到可处理的 CSV 数据文件');
+    console.error(`❌ 在目录 [${absolutePath}] 中未找到可处理的 CSV / TXT 数据文件`);
     process.exit(1);
   }
 
@@ -65,7 +94,7 @@ async function main() {
 
   for (let idx = 0; idx < csvFiles.length; idx++) {
     const filePath = csvFiles[idx];
-    console.log(`[${idx + 1}/${csvFiles.length}] 读取并解析文件: ${path.basename(filePath)}`);
+    console.log(`[${idx + 1}/${csvFiles.length}] 读取并解析文件: ${path.relative(process.cwd(), filePath)}`);
     const startTime = Date.now();
 
     try {

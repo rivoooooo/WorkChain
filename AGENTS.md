@@ -11,7 +11,7 @@
   - 推送/同步数据库迁移：`bun run db:migrate` (或 `bun run db:push`)
   - 导出 ORM 迁移脚本：`bun run db:generate`
   - 填充城市国家地理数据：`bun run import:geo`
-  - 转换导入企业注册 CSV：`bun run import:kinginsun <CSV或文件夹路径>`
+  - 转换导入企业注册 CSV：`bun run import:kinginsun <CSV文件路径>` 或 `bun run import:kinginsun --dir <文件夹路径>`
   - 启动 Drizzle Studio 可视化面板：`bun run db:studio`
 
 ## 数据库与迁移规范

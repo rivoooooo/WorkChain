@@ -43,14 +43,15 @@ bun run import:geo
 ```
 
 ### 3. 载入企业注册 CSV 数据 (Kinginsun 仓库格式)
-支持解析并导入 [Enterprise-Registration-Data-of-Chinese-Mainland](https://github.com/kinginsun/Enterprise-Registration-Data-of-Chinese-Mainland) 的 CSV / TXT 工商注册数据：
+支持解析并导入中国大陆企业注册数据，感谢开源数据提供：
+- 🔗 **数据来源与致谢**：[kinginsun/Enterprise-Registration-Data-of-Chinese-Mainland](https://github.com/kinginsun/Enterprise-Registration-Data-of-Chinese-Mainland)
 
 ```bash
-# 导入单个 CSV 数据文件
-bun run import:kinginsun /path/to/enterprise.csv
+# 使用 --dir 参数批量导入目录下（包含子目录）的所有 CSV / TXT 数据
+bun run import:kinginsun --dir /path/to/enterprise_csv_dir
 
-# 批量导入包含 CSV 的文件夹
-bun run import:kinginsun /path/to/csv_folder
+# 或导入单个 CSV 数据文件
+bun run import:kinginsun /path/to/enterprise.csv
 ```
 
 *特质说明*：
@@ -98,7 +99,7 @@ bun run import:kinginsun /path/to/csv_folder
 | `bun run db:migrate` | 运行增量 DDL 脚本，自动初始化/迁移数据库表结构与 RLS |
 | `bun run db:push` | 使用 drizzle-kit 直接推送 ORM Schema 到 PostgreSQL |
 | `bun run import:geo` | 从仓库数据源 `data/cities500.txt` 批量写入 23.5 万城市与 246 个国家 |
-| `bun run import:kinginsun <path>` | 载入并批量转换企业注册数据 CSV，按统一社会信用代码 Upsert 入库 |
+| `bun run import:kinginsun --dir <path>` | 支持 `--dir` 递归转换并批量导入目录下所有 CSV，按统一社会信用代码 Upsert 入库 |
 
 ---
 
