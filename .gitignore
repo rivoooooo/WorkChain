@@ -6,10 +6,8 @@ coverage/
 .env*
 !.env.example
 
-# Runtime generated backup files
-data/backups/
-data/backups.json
-data/backups_binary.json
+# Local runtime fallback data & backups
+data/
 
 # Supabase CLI temp files
 supabase/.temp/
