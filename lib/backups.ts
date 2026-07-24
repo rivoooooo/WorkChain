@@ -54,8 +54,8 @@ function ensureDirectories() {
 
 // Initialize Supabase client dynamically if variables exist
 function getSupabaseClient() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_ANON_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
   if (url && key) {
     return createClient(url, key);
   }
@@ -129,7 +129,7 @@ async function saveBackupMetadata(metadata: BackupMetadata[]) {
 
       const { error } = await supabase
         .from('backups_metadata')
-        .upsert(dbRows);
+        .upsert(dbRows, { onConflict: 'id', ignoreDuplicates: true });
 
       if (error) {
         console.error('[Backup System] Error upserting metadata to Supabase:', error);
@@ -245,7 +245,7 @@ async function saveBackupBinary(id: string, binaryData: BackupBinaryData) {
 
       const { error } = await supabase
         .from('backups_binary')
-        .upsert(dbRow);
+        .upsert(dbRow, { onConflict: 'id', ignoreDuplicates: true });
 
       if (error) {
         console.error(`[Backup System] Error upserting binary ${id} to Supabase:`, error);

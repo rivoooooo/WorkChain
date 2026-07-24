@@ -185,8 +185,8 @@ function saveCompaniesToDisk(companies: Company[]) {
 
 // Initialize Supabase Client dynamically to prevent crash if env vars are missing
 function getSupabaseClient() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_ANON_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
   if (url && key) {
     return createClient(url, key);
   }
@@ -453,7 +453,7 @@ export async function addReview(reviewData: Omit<Review, 'id' | 'company_id' | '
   // Try saving both review and company to Supabase if configured
   const supabase = getSupabaseClient();
   if (supabase) {
-    // 1. Upsert company to companies table
+    // 1. Upsert company to companies table (使用 ignoreDuplicates 规避 RLS 禁止 UPDATE 的限制)
     const { error: compError } = await supabase
       .from('companies')
       .upsert({
@@ -469,7 +469,7 @@ export async function addReview(reviewData: Omit<Review, 'id' | 'company_id' | '
         avg_culture: company.avg_culture,
         avg_salary: company.avg_salary,
         avg_bonus: company.avg_bonus
-      });
+      }, { onConflict: 'id', ignoreDuplicates: true });
 
     if (compError) {
       console.error('Error inserting company into Supabase:', compError);
