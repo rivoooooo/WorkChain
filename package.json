@@ -9,15 +9,11 @@
     "lint": "eslint .",
     "clean": "next clean",
     "db:push": "drizzle-kit push",
-    "db:push:prod": "bun --env-file=.env.production run drizzle-kit push",
     "db:migrate": "bun run scripts/migrate.ts",
-    "db:migrate:prod": "bun --env-file=.env.production run scripts/migrate.ts",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "import:geo": "bun run scripts/import-geonames.ts",
-    "import:geo:prod": "bun --env-file=.env.production run scripts/import-geonames.ts",
-    "import:kinginsun": "bun run scripts/import-kinginsun.ts",
-    "import:kinginsun:prod": "bun --env-file=.env.production run scripts/import-kinginsun.ts"
+    "import:kinginsun": "bun run scripts/import-kinginsun.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
