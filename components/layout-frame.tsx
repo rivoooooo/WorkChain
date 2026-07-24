@@ -40,6 +40,17 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
     review_text: ''
   });
 
+  // ESC key listener to close submit modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showSubmitForm) {
+        setShowSubmitForm(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showSubmitForm]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.company_name.trim()) {
@@ -265,21 +276,21 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
               {/* Outer Wrapper anchored to bottom with max-h 90dvh */}
               <div className="relative max-w-2xl w-full h-full max-h-[90dvh] mb-0 sm:mb-2 flex flex-col">
                 
-                {/* Stacked Second Document Background Sheet (Rotated -4deg, matching exact form size) */}
-                <div 
-                  className="absolute inset-0 bg-card border border-border shadow-md pointer-events-none z-0 opacity-80"
-                  style={{
-                    transform: 'rotate(-4deg) scale(0.99)',
-                    transformOrigin: 'bottom left'
-                  }}
+                {/* Stacked Second Document Background Sheet (Unfolds outward -4.5deg like a paper fan opening) */}
+                <motion.div 
+                  initial={{ y: 120, rotate: 0, x: 0, opacity: 0 }}
+                  animate={{ y: 0, rotate: -4.5, x: -6, opacity: 0.85 }}
+                  exit={{ y: 120, rotate: 0, x: 0, opacity: 0 }}
+                  transition={{ type: 'spring', damping: 26, stiffness: 280, delay: 0.04 }}
+                  className="absolute inset-0 bg-card border border-border shadow-md pointer-events-none z-0 origin-bottom-left"
                 />
 
-                {/* Main Front Form Container with solid bg-card and border border-border */}
+                {/* Main Front Form Container (Pops up from bottom & settles into position) */}
                 <motion.div
-                  initial={{ y: 80, opacity: 0 }}
+                  initial={{ y: 120, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 80, opacity: 0 }}
-                  transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+                  exit={{ y: 120, opacity: 0 }}
+                  transition={{ type: 'spring', damping: 26, stiffness: 300 }}
                   className="relative z-10 bg-card border border-border shadow-2xl w-full h-full max-h-[90dvh] flex flex-col text-card-foreground overflow-hidden"
                 >
                   {/* Sticky Header */}
