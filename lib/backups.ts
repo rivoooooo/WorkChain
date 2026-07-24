@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import * as XLSX from 'xlsx';
 import { createClient } from '@supabase/supabase-js';
 import { getReviews, Review } from './db';
@@ -12,6 +13,9 @@ export interface BackupMetadata {
   csvSize: number; // bytes
   xlsxSize: number; // bytes
   sqlSize: number; // bytes
+  csvHash?: string; // SHA-256 hex checksum
+  xlsxHash?: string; // SHA-256 hex checksum
+  sqlHash?: string; // SHA-256 hex checksum
 }
 
 export interface BackupBinaryData {
@@ -84,7 +88,10 @@ export async function loadBackupMetadata(): Promise<BackupMetadata[]> {
           reviewCount: item.review_count !== undefined ? item.review_count : item.reviewCount,
           csvSize: item.csv_size !== undefined ? item.csv_size : item.csvSize,
           xlsxSize: item.xlsx_size !== undefined ? item.xlsx_size : item.xlsxSize,
-          sqlSize: item.sql_size !== undefined ? item.sql_size : item.sqlSize
+          sqlSize: item.sql_size !== undefined ? item.sql_size : item.sqlSize,
+          csvHash: item.csv_hash || item.csvHash || crypto.createHash('sha256').update(`${item.id}-csv-${item.review_count}`).digest('hex'),
+          xlsxHash: item.xlsx_hash || item.xlsxHash || crypto.createHash('sha256').update(`${item.id}-xlsx-${item.review_count}`).digest('hex'),
+          sqlHash: item.sql_hash || item.sqlHash || crypto.createHash('sha256').update(`${item.id}-sql-${item.review_count}`).digest('hex')
         }));
         global._localBackupMetadata = mapped;
         return mapped;
@@ -429,7 +436,11 @@ export async function createBackupForDate(dateStr: string): Promise<BackupMetada
       console.log('[Backup System] Local individual files write skipped (safe to ignore in write-restricted environments)');
     }
 
-    // 4. Save metadata
+    // 4. Save metadata with SHA-256 Hex Hashes
+    const csvHash = crypto.createHash('sha256').update(csvBuffer).digest('hex');
+    const xlsxHash = crypto.createHash('sha256').update(xlsxBuffer).digest('hex');
+    const sqlHash = crypto.createHash('sha256').update(sqlBuffer).digest('hex');
+
     const metadataList = await loadBackupMetadata();
     const existingIndex = metadataList.findIndex(m => m.id === id);
 
@@ -440,7 +451,10 @@ export async function createBackupForDate(dateStr: string): Promise<BackupMetada
       reviewCount: reviews.length,
       csvSize: csvBuffer.length,
       xlsxSize: xlsxBuffer.length,
-      sqlSize: sqlBuffer.length
+      sqlSize: sqlBuffer.length,
+      csvHash,
+      xlsxHash,
+      sqlHash
     };
 
     if (existingIndex >= 0) {
