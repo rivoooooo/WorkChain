@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language } from '../../lib/i18n';
 import { ThemeToggle } from '../../components/theme-toggle';
+import { BeforeAfterCanvas } from '../../components/before-after-canvas';
 import {
   Search,
   Plus,
@@ -301,22 +302,19 @@ export default function Home({ params }: PageProps) {
         {!hasSearched ? (
           <div className="space-y-12 sm:space-y-16">
             
-            {/* HERO PIXEL ART IMAGE BANNER - SHARP RIGHT-ANGLED CORNERS WITH OVERFLOW HIDDEN */}
+            {/* HERO INTERACTIVE CANVAS BEFORE/AFTER REVEAL BANNER */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="w-full rounded-none shadow-xl border border-border bg-card relative aspect-[16/9] sm:aspect-[21/9] overflow-hidden"
+              className="w-full rounded-none shadow-xl border border-border bg-card relative overflow-hidden"
               id="hero_banner_container"
             >
-              <Image
-                src="/hero_pixel_art.jpg"
-                alt="WorkChain Mediterranean Garden Pixel Art"
-                fill
-                priority
-                className="object-cover object-center transform hover:scale-105 transition-transform duration-700"
+              <BeforeAfterCanvas
+                beforeSrc="/before.png"
+                afterSrc="/after.png"
+                className="w-full aspect-[16/9] sm:aspect-[21/9]"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
             </motion.div>
 
             {/* TYPOGRAPHY AS ART + HERO SPLIT SEARCH LAYOUT */}
