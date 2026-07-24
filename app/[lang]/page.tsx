@@ -61,6 +61,7 @@ export default function Home({ params }: PageProps) {
   // Autocomplete suggestions
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [searchActiveSuggestionIndex, setSearchActiveSuggestionIndex] = useState(-1);
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
 
   // Modals & Form
   const [showSubmitForm, setShowSubmitForm] = useState(false);
@@ -196,24 +197,21 @@ export default function Home({ params }: PageProps) {
       <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-rose-500/5 blur-[140px] rounded-full pointer-events-none" />
 
       {/* NEWSPAPER EDITORIAL MAX-W CONTAINER (ENTIRE PAGE: HEADER + CONTENT + FOOTER) */}
-      <div className="max-w-6xl mx-auto border-x border-border min-h-screen flex flex-col justify-between relative z-10" id="app_container">
+      <div className="max-w-6xl mx-auto border-x border-border min-h-screen flex flex-col justify-between relative z-10 px-2" id="app_container">
         
         {/* FLOATING CAPSULE NAVBAR INSIDE CONTAINER */}
-        <div className="sticky top-6 z-50 px-4 sm:px-8 mb-8 sm:mb-12">
+        <div className="sticky top-6 z-50 px-2 sm:px-4 mb-8 sm:mb-12">
           <header className="max-w-4xl mx-auto bg-zinc-950 text-white rounded-full p-2 pl-6 pr-3 shadow-2xl border border-white/10 backdrop-blur-md flex items-center justify-between" id="floating_navbar">
-            {/* Logo */}
+            {/* Pure Text Logo */}
             <Link
               href={`/${rawLang}`}
               onClick={() => {
                 setHasSearched(false);
                 setSearchQuery('');
               }}
-              className="flex items-center gap-2 group"
+              className="flex items-center group"
             >
-              <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Building className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-extrabold text-white text-base tracking-tight transition-colors">
+              <span className="font-extrabold text-white text-base sm:text-lg tracking-tight transition-colors">
                 workchain
               </span>
             </Link>
@@ -223,16 +221,50 @@ export default function Home({ params }: PageProps) {
               {/* Theme Toggle (Circular Ghost) */}
               <ThemeToggle className="w-9 h-9 rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer flex items-center justify-center" />
 
-              {/* Language Switcher (Circular Ghost) */}
-              <button
-                type="button"
-                onClick={toggleLang}
-                className="w-9 h-9 rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer flex items-center justify-center relative group"
-                title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
-                aria-label="Toggle Language"
-              >
-                <Languages className="w-4 h-4 text-white" />
-              </button>
+              {/* Language Switcher Dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowLangDropdown(prev => !prev)}
+                  className="w-9 h-9 rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer flex items-center justify-center relative"
+                  title="切换语言 / Switch Language"
+                  aria-label="Toggle Language Menu"
+                >
+                  <Languages className="w-4 h-4 text-white" />
+                </button>
+
+                {showLangDropdown && (
+                  <div 
+                    className="absolute right-0 top-full mt-2 w-36 bg-zinc-950 text-white border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 py-1"
+                    onMouseLeave={() => setShowLangDropdown(false)}
+                  >
+                    <button
+                      onClick={() => {
+                        setShowLangDropdown(false);
+                        if (lang !== 'en') window.location.href = '/en';
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
+                        lang === 'en' ? 'bg-white/15 text-white font-bold' : 'text-zinc-300 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      <span>English</span>
+                      {lang === 'en' && <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowLangDropdown(false);
+                        if (lang !== 'zh') window.location.href = '/zh-cn';
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
+                        lang === 'zh' ? 'bg-white/15 text-white font-bold' : 'text-zinc-300 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      <span>简体中文</span>
+                      {lang === 'zh' && <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Write Review Capsule Button */}
               <button
@@ -264,7 +296,7 @@ export default function Home({ params }: PageProps) {
         </div>
 
         {/* MAIN BODY CONTENT */}
-        <div className="flex-1 px-4 sm:px-8">
+        <div className="flex-1 px-2 sm:px-4">
 
         {!hasSearched ? (
           <div className="space-y-12 sm:space-y-16">
