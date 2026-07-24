@@ -86,3 +86,24 @@ BEGIN
         END IF;
     END IF;
 END $$;
+
+-- 4. 解决 Row Level Security (RLS) 报错：
+-- 方式 A (推荐且最简单直接)：直接关闭两张表的 RLS 行级安全限制，允许完全公开读写
+ALTER TABLE companies DISABLE ROW LEVEL SECURITY;
+ALTER TABLE reviews DISABLE ROW LEVEL SECURITY;
+
+-- 方式 B (如果您一定要保持 RLS 开启，请运行以下策略代码以允许匿名/公开用户读写)：
+-- DROP POLICY IF EXISTS "Allow public select on companies" ON companies;
+-- CREATE POLICY "Allow public select on companies" ON companies FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "Allow public insert on companies" ON companies;
+-- CREATE POLICY "Allow public insert on companies" ON companies FOR INSERT WITH CHECK (true);
+-- DROP POLICY IF EXISTS "Allow public update on companies" ON companies;
+-- CREATE POLICY "Allow public update on companies" ON companies FOR UPDATE USING (true);
+-- 
+-- DROP POLICY IF EXISTS "Allow public select on reviews" ON reviews;
+-- CREATE POLICY "Allow public select on reviews" ON reviews FOR SELECT USING (true);
+-- DROP POLICY IF EXISTS "Allow public insert on reviews" ON reviews;
+-- CREATE POLICY "Allow public insert on reviews" ON reviews FOR INSERT WITH CHECK (true);
+-- DROP POLICY IF EXISTS "Allow public update on reviews" ON reviews;
+-- CREATE POLICY "Allow public update on reviews" ON reviews FOR UPDATE USING (true);
+

@@ -551,42 +551,38 @@ export async function addReview(reviewData: Omit<Review, 'id' | 'company_id' | '
   // Try saving both review and company to Supabase if configured
   const supabase = getSupabaseClient();
   if (supabase) {
-    try {
-      // 1. Upsert company to companies table
-      const { error: compError } = await supabase
-        .from('companies')
-        .upsert({
-          id: company.id,
-          name: company.name,
-          created_at: company.created_at,
-          review_count: company.review_count,
-          avg_rating: company.avg_rating,
-          avg_career: company.avg_career,
-          avg_balance: company.avg_balance,
-          avg_management: company.avg_management,
-          avg_compensation: company.avg_compensation,
-          avg_culture: company.avg_culture,
-          avg_salary: company.avg_salary,
-          avg_bonus: company.avg_bonus
-        });
+    // 1. Upsert company to companies table
+    const { error: compError } = await supabase
+      .from('companies')
+      .upsert({
+        id: company.id,
+        name: company.name,
+        created_at: company.created_at,
+        review_count: company.review_count,
+        avg_rating: company.avg_rating,
+        avg_career: company.avg_career,
+        avg_balance: company.avg_balance,
+        avg_management: company.avg_management,
+        avg_compensation: company.avg_compensation,
+        avg_culture: company.avg_culture,
+        avg_salary: company.avg_salary,
+        avg_bonus: company.avg_bonus
+      });
 
-      if (compError) {
-        console.error('Error inserting company into Supabase:', compError);
-        throw new Error(`创建或更新公司失败: ${compError.message}. 请确保已执行最新的数据库迁移 SQL。`);
-      } else {
-        console.log('Successfully saved company info to Supabase');
-      }
+    if (compError) {
+      console.error('Error inserting company into Supabase:', compError);
+      throw new Error(`创建或更新公司失败: ${compError.message}。由于数据库中可能缺少 companies 表，请在 Supabase 中运行 /migration.sql 执行数据库迁移！`);
+    } else {
+      console.log('Successfully saved company info to Supabase');
+    }
 
-      // 2. Insert review to reviews table
-      const { error: revError } = await supabase.from('reviews').insert([newReview]);
-      if (revError) {
-        console.error('Error inserting review into Supabase:', revError);
-        throw new Error(`创建评价失败: ${revError.message}. 请确保已执行最新的数据库迁移 SQL。`);
-      } else {
-        console.log('Successfully saved review to Supabase');
-      }
-    } catch (e) {
-      console.error('Failed to upload review or company to Supabase:', e);
+    // 2. Insert review to reviews table
+    const { error: revError } = await supabase.from('reviews').insert([newReview]);
+    if (revError) {
+      console.error('Error inserting review into Supabase:', revError);
+      throw new Error(`创建评价失败: ${revError.message}。由于 reviews 表中可能没有 company_id 字段，请在 Supabase 中运行 /migration.sql 执行数据库迁移！`);
+    } else {
+      console.log('Successfully saved review to Supabase');
     }
   }
 
