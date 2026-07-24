@@ -23,8 +23,35 @@ import {
   AlertCircle,
   Briefcase,
   Layers,
-  FileText
+  FileText,
+  Globe,
+  ExternalLink,
+  Calendar,
+  UserCheck,
+  Coins,
+  Link2,
+  Image as ImageIcon,
+  Plus,
+  Upload
 } from 'lucide-react';
+
+interface CompanyDetailsInfo {
+  legal_representative?: string | null;
+  registered_capital?: string | null;
+  business_scope?: string | null;
+  registered_address?: string | null;
+  establishment_date?: string | null;
+  company_type?: string | null;
+}
+
+interface CompanyLinkItem {
+  id: string;
+  type: string;
+  url: string;
+  storage_path?: string | null;
+  title?: string | null;
+  created_at?: string | null;
+}
 
 interface Review {
   id: string;
@@ -50,6 +77,11 @@ interface Review {
 interface Company {
   id: string;
   name: string;
+  credit_code?: string | null;
+  country_code?: string | null;
+  country_name?: string | null;
+  province?: string | null;
+  city?: string | null;
   created_at: string;
   review_count: number;
   avg_rating: number;
@@ -125,9 +157,11 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
   // Component State
   const [company, setCompany] = useState<Company | null>(null);
+  const [companyDetailsInfo, setCompanyDetailsInfo] = useState<CompanyDetailsInfo | null>(null);
+  const [companyLinksList, setCompanyLinksList] = useState<CompanyLinkItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'reviews' | 'aiReport' | 'ledger'>('reviews');
+  const [activeTab, setActiveTab] = useState<'reviews' | 'details' | 'aiReport' | 'ledger'>('reviews');
 
   // Search & Filtering inside company
   const [localSearch, setLocalSearch] = useState('');
@@ -148,7 +182,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
     details: { index: number; reviewId: string; status: 'ok' | 'hash_mismatch' | 'chain_broken'; computedHash: string; storedHash: string }[];
   } | null>(null);
 
-  // Load Company & reviews data
+  // Load Company & reviews & details data
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
@@ -163,6 +197,17 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         const revJson = await revRes.json();
         if (revJson.success) {
           setReviews(revJson.data || []);
+        }
+
+        // 详细扩展信息与相关链接
+        const detailRes = await fetch(`/api/companies/details?company_id=${companyId}`);
+        const detailJson = await detailRes.json();
+        if (detailJson.success && detailJson.data) {
+          setCompanyDetailsInfo(detailJson.data.details || null);
+          setCompanyLinksList(detailJson.data.links || []);
+          if (detailJson.data.company && !compJson.data) {
+            setCompany(detailJson.data.company);
+          }
         }
 
         const cached = getCachedAIReport(companyId);
@@ -352,10 +397,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* TABS ROW */}
-      <div className="flex border-b border-border mb-8 font-mono text-xs" id="detail_tabs_row">
+      <div className="flex border-b border-border mb-8 font-mono text-xs overflow-x-auto" id="detail_tabs_row">
         <button
           onClick={() => setActiveTab('reviews')}
-          className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer ${
+          className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'reviews'
               ? 'border-foreground text-foreground'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -364,6 +409,20 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
           <span className="flex items-center gap-2 uppercase">
             <FileText className="w-3.5 h-3.5" />
             <span>{t.tabReviews} ({reviews.length})</span>
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('details')}
+          className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+            activeTab === 'details'
+              ? 'border-foreground text-foreground'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <span className="flex items-center gap-2 uppercase">
+            <Building2 className="w-3.5 h-3.5 text-emerald-500" />
+            <span>{lang === 'zh' ? '公司详情信息' : 'Company Details'}</span>
           </span>
         </button>
 
@@ -610,6 +669,167 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB: COMPANY DETAILS */}
+          {activeTab === 'details' && (
+            <div className="space-y-6" id="company_details_content">
+              {/* Header Title */}
+              <div className="border border-border p-5 bg-card rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-emerald-500" />
+                    <span>{lang === 'zh' ? '企业基本与工商补充信息档案' : 'Company Dossier & Corporate Specs'}</span>
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {lang === 'zh'
+                      ? '包含统一社会信用代码、注册资金、法人代表、经营范围及关联媒体图片/链接。'
+                      : 'Corporate registry attributes, credit code, and linked media assets.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* GRID ATTR CARDS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* 统一社会信用代码 */}
+                <div className="border border-border p-4 bg-card rounded-none space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                    {lang === 'zh' ? '统一社会信用代码' : 'USCC Credit Code'}
+                  </span>
+                  <div className="text-sm font-mono font-bold text-foreground truncate" title={company.credit_code || '未录入'}>
+                    {company.credit_code || (lang === 'zh' ? '暂无社会信用代码' : 'N/A')}
+                  </div>
+                </div>
+
+                {/* 所在国家与城市 */}
+                <div className="border border-border p-4 bg-card rounded-none space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
+                    <Globe className="w-3.5 h-3.5 text-emerald-500" />
+                    {lang === 'zh' ? '所在国家与城市' : 'Country & City'}
+                  </span>
+                  <div className="text-sm font-bold text-foreground truncate">
+                    {[company.country_name || company.country_code, company.province, company.city].filter(Boolean).join(' · ') || (lang === 'zh' ? '中国' : 'China')}
+                  </div>
+                </div>
+
+                {/* 法人代表 */}
+                <div className="border border-border p-4 bg-card rounded-none space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
+                    <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+                    {lang === 'zh' ? '法定代表人' : 'Legal Representative'}
+                  </span>
+                  <div className="text-sm font-bold text-foreground truncate">
+                    {companyDetailsInfo?.legal_representative || (lang === 'zh' ? '未填写' : 'N/A')}
+                  </div>
+                </div>
+
+                {/* 注册资金 */}
+                <div className="border border-border p-4 bg-card rounded-none space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
+                    <Coins className="w-3.5 h-3.5 text-emerald-500" />
+                    {lang === 'zh' ? '注册资金' : 'Registered Capital'}
+                  </span>
+                  <div className="text-sm font-mono font-bold text-foreground truncate">
+                    {companyDetailsInfo?.registered_capital || (lang === 'zh' ? '未填写' : 'N/A')}
+                  </div>
+                </div>
+
+                {/* 成立日期 */}
+                <div className="border border-border p-4 bg-card rounded-none space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                    {lang === 'zh' ? '成立 / 注册日期' : 'Establishment Date'}
+                  </span>
+                  <div className="text-sm font-mono font-bold text-foreground truncate">
+                    {companyDetailsInfo?.establishment_date || (lang === 'zh' ? '未填写' : 'N/A')}
+                  </div>
+                </div>
+
+                {/* 企业类型 */}
+                <div className="border border-border p-4 bg-card rounded-none space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
+                    <Briefcase className="w-3.5 h-3.5 text-emerald-500" />
+                    {lang === 'zh' ? '企业类型' : 'Company Type'}
+                  </span>
+                  <div className="text-sm font-bold text-foreground truncate">
+                    {companyDetailsInfo?.company_type || (lang === 'zh' ? '未填写' : 'N/A')}
+                  </div>
+                </div>
+              </div>
+
+              {/* 注册地址 */}
+              <div className="border border-border p-5 bg-card rounded-none space-y-2">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 border-b border-border pb-2">
+                  <MapPin className="w-4 h-4 text-emerald-500" />
+                  <span>{lang === 'zh' ? '注册 / 住所地址' : 'Registered Address'}</span>
+                </h4>
+                <p className="text-xs text-foreground font-mono leading-relaxed">
+                  {companyDetailsInfo?.registered_address || (lang === 'zh' ? '暂未填写注册详细地址' : 'No registered address provided.')}
+                </p>
+              </div>
+
+              {/* 经营范围 */}
+              <div className="border border-border p-5 bg-card rounded-none space-y-2">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 border-b border-border pb-2">
+                  <FileText className="w-4 h-4 text-emerald-500" />
+                  <span>{lang === 'zh' ? '经营范围' : 'Business Scope'}</span>
+                </h4>
+                <p className="text-xs text-foreground/90 leading-relaxed font-sans whitespace-pre-wrap">
+                  {companyDetailsInfo?.business_scope || (lang === 'zh' ? '暂未填写经营范围' : 'No business scope details provided.')}
+                </p>
+              </div>
+
+              {/* 相关链接与媒体图片 */}
+              <div className="border border-border p-5 bg-card rounded-none space-y-4">
+                <div className="flex items-center justify-between border-b border-border pb-2">
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Link2 className="w-4 h-4 text-emerald-500" />
+                    <span>{lang === 'zh' ? '相关链接与媒体展示' : 'Associated Links & Media'} ({companyLinksList.length})</span>
+                  </h4>
+                </div>
+
+                {companyLinksList.length === 0 ? (
+                  <div className="py-8 text-center space-y-2">
+                    <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto" />
+                    <p className="text-xs text-muted-foreground">
+                      {lang === 'zh' ? '暂无关联图片、Logo或外部链接' : 'No linked media or URLs recorded.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {companyLinksList.map((link) => (
+                      <div key={link.id} className="border border-border p-3 bg-muted/20 rounded-none flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          {link.type === 'logo' || link.type === 'image' ? (
+                            <div className="w-10 h-10 bg-muted border border-border shrink-0 flex items-center justify-center overflow-hidden">
+                              <img src={link.url} alt={link.title || 'company media'} className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 shrink-0 flex items-center justify-center">
+                              <Link2 className="w-4 h-4 text-emerald-500" />
+                            </div>
+                          )}
+                          <div className="truncate">
+                            <span className="text-xs font-bold text-foreground block truncate">{link.title || link.url}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono uppercase">{link.type}</span>
+                          </div>
+                        </div>
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2.5 py-1 border border-border hover:bg-foreground hover:text-background text-[10px] font-bold transition-colors shrink-0 flex items-center gap-1"
+                        >
+                          <span>{lang === 'zh' ? '打开' : 'Open'}</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
