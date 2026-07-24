@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loadBackupMetadata, createBackupForDate } from '../../../lib/backups';
+import { loadBackupMetadata, createBackupForDate, initBackupScheduler } from '../../../lib/backups';
 
 export async function GET(req: NextRequest) {
   try {
+    // Safely initialize backup scheduler daemon at runtime
+    try {
+      initBackupScheduler();
+    } catch (schedError) {
+      console.warn('Failed to lazily initialize backup scheduler:', schedError);
+    }
+
     const list = await loadBackupMetadata();
     return NextResponse.json({ success: true, backups: list });
   } catch (error: any) {
@@ -16,6 +23,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Safely initialize backup scheduler daemon at runtime
+    try {
+      initBackupScheduler();
+    } catch (schedError) {
+      console.warn('Failed to lazily initialize backup scheduler:', schedError);
+    }
+
     const body = await req.json().catch(() => ({}));
     const { date } = body;
 

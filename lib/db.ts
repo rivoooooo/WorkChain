@@ -75,13 +75,8 @@ if (!global._localCompanies) {
   global._localCompanies = loadLocalCompanies();
 }
 
-// Start automatic backup task check-and-run daemon asynchronously
-try {
-  const { initBackupScheduler } = require('./backups');
-  initBackupScheduler();
-} catch (e) {
-  console.error('Failed to initialize backup scheduler daemon:', e);
-}
+// Note: The backup scheduler daemon is now initialized lazily at runtime (e.g. inside API routes)
+// to prevent circular dependency issues and ReferenceError: Cannot access 'z' before initialization during build time.
 
 // Function to calculate cryptographic hash for a review
 export function calculateReviewHash(review: Omit<Review, 'hash'>): string {
@@ -353,20 +348,22 @@ export async function getCompanies(search?: string): Promise<Company[]> {
       const { data, error } = await query.order('name', { ascending: true });
 
       if (!error && data) {
-        const mapped: Company[] = data.map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          created_at: item.created_at || item.createdAt,
-          review_count: item.review_count !== undefined ? item.review_count : item.reviewCount,
-          avg_rating: Number(item.avg_rating !== undefined ? item.avg_rating : item.avgRating || 0),
-          avg_career: Number(item.avg_career !== undefined ? item.avg_career : item.avgCareer || 0),
-          avg_balance: Number(item.avg_balance !== undefined ? item.avg_balance : item.avgBalance || 0),
-          avg_management: Number(item.avg_management !== undefined ? item.avg_management : item.avgManagement || 0),
-          avg_compensation: Number(item.avg_compensation !== undefined ? item.avg_compensation : item.avgCompensation || 0),
-          avg_culture: Number(item.avg_culture !== undefined ? item.avg_culture : item.avgCulture || 0),
-          avg_salary: Number(item.avg_salary !== undefined ? item.avg_salary : item.avgSalary || 0),
-          avg_bonus: Number(item.avg_bonus !== undefined ? item.avg_bonus : item.avgBonus || 0)
-        }));
+        const mapped: Company[] = data
+          .filter((item: any) => item.id !== 'comp-unknown')
+          .map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            created_at: item.created_at || item.createdAt,
+            review_count: item.review_count !== undefined ? item.review_count : item.reviewCount,
+            avg_rating: Number(item.avg_rating !== undefined ? item.avg_rating : item.avgRating || 0),
+            avg_career: Number(item.avg_career !== undefined ? item.avg_career : item.avgCareer || 0),
+            avg_balance: Number(item.avg_balance !== undefined ? item.avg_balance : item.avgBalance || 0),
+            avg_management: Number(item.avg_management !== undefined ? item.avg_management : item.avgManagement || 0),
+            avg_compensation: Number(item.avg_compensation !== undefined ? item.avg_compensation : item.avgCompensation || 0),
+            avg_culture: Number(item.avg_culture !== undefined ? item.avg_culture : item.avgCulture || 0),
+            avg_salary: Number(item.avg_salary !== undefined ? item.avg_salary : item.avgSalary || 0),
+            avg_bonus: Number(item.avg_bonus !== undefined ? item.avg_bonus : item.avgBonus || 0)
+          }));
         // Only update local global cache with full list if not searching
         if (!search) {
           global._localCompanies = mapped;
@@ -381,11 +378,11 @@ export async function getCompanies(search?: string): Promise<Company[]> {
   }
 
   // File system fallback
-  let local = loadLocalCompanies();
+  let local = loadLocalCompanies().filter(c => c.id !== 'comp-unknown');
   if (local.length === 0) {
     // Calculate from reviews dynamically if no companies list is saved
     const reviews = await getReviews();
-    local = await recalculateAllCompanies(reviews);
+    local = (await recalculateAllCompanies(reviews)).filter(c => c.id !== 'comp-unknown');
     global._localCompanies = local;
     saveCompaniesToDisk(local);
   } else {

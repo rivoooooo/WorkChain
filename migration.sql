@@ -69,15 +69,16 @@ BEGIN
             SELECT 1 FROM information_schema.table_constraints 
             WHERE constraint_name = 'fk_reviews_company' AND table_schema = 'public'
         ) THEN
-            -- 清理任何不合法的空数据（如有）
-            UPDATE reviews SET company_id = 'comp-unknown' WHERE company_id IS NULL;
-            -- 确保 parent 公司记录存在以防违反外键约束
-            INSERT INTO companies (id, name, review_count, avg_rating)
-            VALUES ('comp-unknown', '未知公司', 0, 0)
-            ON CONFLICT (id) DO NOTHING;
+            -- 如果需要，可以清理任何不合法的空数据（如有）
+            -- UPDATE reviews SET company_id = 'comp-unknown' WHERE company_id IS NULL;
+            -- 以前为了防止违反外键约束，创建了兜底的 '未知公司' 记录。
+            -- 如果是干净的新数据库，您可以直接在 Supabase 中运行 DELETE FROM companies WHERE id = 'comp-unknown'; 删除它。
+            -- INSERT INTO companies (id, name, review_count, avg_rating)
+            -- VALUES ('comp-unknown', '未知公司', 0, 0)
+            -- ON CONFLICT (id) DO NOTHING;
 
             -- 设为 NOT NULL 并添加外键约束
-            ALTER TABLE reviews ALTER COLUMN company_id SET NOT NULL;
+            -- ALTER TABLE reviews ALTER COLUMN company_id SET NOT NULL;
             ALTER TABLE reviews 
             ADD CONSTRAINT fk_reviews_company 
             FOREIGN KEY (company_id) 
