@@ -195,90 +195,94 @@ export default function Home({ params }: PageProps) {
       <div className="absolute bottom-[-5%] right-[-5%] w-[600px] h-[600px] bg-amber-500/5 blur-[140px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-rose-500/5 blur-[140px] rounded-full pointer-events-none" />
 
-      {/* FLOATING CAPSULE NAVBAR */}
-      <div className="sticky top-6 z-50 px-4 mb-8 sm:mb-12">
-        <header className="max-w-4xl mx-auto bg-zinc-950 text-white rounded-full p-2 pl-6 pr-3 shadow-2xl border border-white/10 backdrop-blur-md flex items-center justify-between" id="floating_navbar">
-          {/* Logo */}
-          <Link
-            href={`/${rawLang}`}
-            onClick={() => {
-              setHasSearched(false);
-              setSearchQuery('');
-            }}
-            className="flex items-center gap-2 group"
-          >
-            <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Building className="w-4 h-4 text-emerald-400" />
-            </div>
-            <span className="font-extrabold text-white text-base tracking-tight group-hover:text-emerald-400 transition-colors">
-              work<span className="text-emerald-400">chain</span>
-            </span>
-          </Link>
-
-          {/* Nav links */}
-          <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-zinc-300">
-            <Link 
-              href={`/${rawLang}/companies`}
-              className="hover:text-white transition-colors flex items-center gap-1.5"
-            >
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{t.viewRankings}</span>
-            </Link>
-            <Link 
-              href={`/${rawLang}/download`}
-              className="hover:text-white transition-colors flex items-center gap-1.5"
-            >
-              <Database className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{t.downloadNavLabel}</span>
-            </Link>
-          </div>
-
-          {/* Action CTAs & Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Theme Toggle (Circular Ghost) */}
-            <ThemeToggle className="w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center" />
-
-            {/* Language Switcher (Circular Ghost) */}
-            <button
-              type="button"
-              onClick={toggleLang}
-              className="w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center relative group"
-              title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
-              aria-label="Toggle Language"
-            >
-              <Languages className="w-4 h-4 text-emerald-400" />
-            </button>
-
-            {/* Write Review Capsule Button */}
-            <button
+      {/* NEWSPAPER EDITORIAL MAX-W CONTAINER (ENTIRE PAGE: HEADER + CONTENT + FOOTER) */}
+      <div className="max-w-6xl mx-auto border-x border-border min-h-screen flex flex-col justify-between relative z-10" id="app_container">
+        
+        {/* FLOATING CAPSULE NAVBAR INSIDE CONTAINER */}
+        <div className="sticky top-6 z-50 px-4 sm:px-8 mb-8 sm:mb-12">
+          <header className="max-w-4xl mx-auto bg-zinc-950 text-white rounded-full p-2 pl-6 pr-3 shadow-2xl border border-white/10 backdrop-blur-md flex items-center justify-between" id="floating_navbar">
+            {/* Logo */}
+            <Link
+              href={`/${rawLang}`}
               onClick={() => {
-                setFormData({
-                  company_name: '',
-                  branch_location: '',
-                  position: '',
-                  employment_status: 'current',
-                  salary: '',
-                  bonus: '',
-                  experience_years: '3',
-                  rating_career: 4,
-                  rating_balance: 3,
-                  rating_management: 3,
-                  rating_compensation: 3,
-                  rating_culture: 4,
-                  review_text: ''
-                });
-                setShowSubmitForm(true);
+                setHasSearched(false);
+                setSearchQuery('');
               }}
-              className="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-full transition-all shadow-md flex items-center gap-1.5 cursor-pointer ml-1"
+              className="flex items-center gap-2 group"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{t.addReview}</span>
-            </button>
-          </div>
-        </header>
-      </div>
+              <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Building className="w-4 h-4 text-emerald-400" />
+              </div>
+              <span className="font-extrabold text-white text-base tracking-tight group-hover:text-emerald-400 transition-colors">
+                work<span className="text-emerald-400">chain</span>
+              </span>
+            </Link>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 border-x border-border min-h-screen pb-16" id="app_container">
+            {/* Nav links */}
+            <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-zinc-300">
+              <Link 
+                href={`/${rawLang}/companies`}
+                className="hover:text-white transition-colors flex items-center gap-1.5"
+              >
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{t.viewRankings}</span>
+              </Link>
+              <Link 
+                href={`/${rawLang}/download`}
+                className="hover:text-white transition-colors flex items-center gap-1.5"
+              >
+                <Database className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{t.downloadNavLabel}</span>
+              </Link>
+            </div>
+
+            {/* Action CTAs & Controls */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Theme Toggle (Circular Ghost) */}
+              <ThemeToggle className="w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center" />
+
+              {/* Language Switcher (Circular Ghost) */}
+              <button
+                type="button"
+                onClick={toggleLang}
+                className="w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center relative group"
+                title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
+                aria-label="Toggle Language"
+              >
+                <Languages className="w-4 h-4 text-emerald-400" />
+              </button>
+
+              {/* Write Review Capsule Button */}
+              <button
+                onClick={() => {
+                  setFormData({
+                    company_name: '',
+                    branch_location: '',
+                    position: '',
+                    employment_status: 'current',
+                    salary: '',
+                    bonus: '',
+                    experience_years: '3',
+                    rating_career: 4,
+                    rating_balance: 3,
+                    rating_management: 3,
+                    rating_compensation: 3,
+                    rating_culture: 4,
+                    review_text: ''
+                  });
+                  setShowSubmitForm(true);
+                }}
+                className="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-full transition-all shadow-md flex items-center gap-1.5 cursor-pointer ml-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{t.addReview}</span>
+              </button>
+            </div>
+          </header>
+        </div>
+
+        {/* MAIN BODY CONTENT */}
+        <div className="flex-1 px-4 sm:px-8">
 
         {!hasSearched ? (
           <div className="space-y-12 sm:space-y-16">
@@ -838,11 +842,10 @@ export default function Home({ params }: PageProps) {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+        </div>
 
-      {/* Footer */}
-      <footer className="bg-muted/30 border-t border-border mt-20 py-8 text-xs text-muted-foreground" id="footer">
-        <div className="max-w-5xl mx-auto px-4 text-center space-y-2">
+        {/* Footer inside container */}
+        <footer className="bg-muted/30 border-t border-border mt-20 py-8 px-4 text-xs text-muted-foreground text-center space-y-2" id="footer">
           <p>
             {lang === 'zh'
               ? '© 2026 WorkChain · 基于密码学 SHA-256 区块链链式防篡改存证的公司匿名评价与薪资分析系统'
@@ -853,8 +856,8 @@ export default function Home({ params }: PageProps) {
               ? '不存储任何账号、姓名、手机、IP、设备标识等可能推断真实身份的任何用户隐私。数据实时存证并同步。'
               : 'Does not store any user accounts, names, phone numbers, IPs, device fingerprints, or tracking telemetry. Data is cryptographically hashed and validated in real-time.'}
           </p>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </main>
   );
 }
