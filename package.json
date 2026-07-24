@@ -12,8 +12,7 @@
     "db:migrate": "bun run scripts/migrate.ts",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "import:geo": "bun run scripts/import-geonames.ts",
-    "import:kinginsun": "bun run scripts/import-kinginsun.ts"
+    "import:geo": "bun run scripts/import-geonames.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

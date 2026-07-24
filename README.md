@@ -90,20 +90,18 @@ bun run import:kinginsun /path/to/enterprise.csv
 
 ---
 
-## 📜 常用命令列表
+## 📜 常用 CLI 脚本列表
 
-| 命令 | 说明 |
+| 脚本命令 | 说明 |
 | :--- | :--- |
-| `bun run dev` | 启动 Next.js 本地开发服务 |
-| `bun run build` | 编译打包生产静态/动态页面 |
-| `bun run db:migrate` | 运行增量 DDL 脚本，自动初始化/迁移数据库表结构与 RLS |
-| `bun run db:push` | 使用 drizzle-kit 直接推送 ORM Schema 到 PostgreSQL |
-| `bun run import:geo` | 从仓库数据源 `data/cities500.txt` 批量写入 23.5 万城市与 246 个国家 |
-| `bun run import:kinginsun --dir <path>` | 支持 `--dir` 递归转换并批量导入目录下所有 CSV，按统一社会信用代码 Upsert 入库 |
+| `bun run scripts/migrate.ts` | 运行增量 DDL 脚本，自动初始化/迁移数据库表结构与 RLS |
+| `bun run scripts/import-geonames.ts` | 从仓库数据源 `data/cities500.txt` 批量写入 23.5 万城市与 246 个国家 |
+| `bun run scripts/import-kinginsun.ts --dir <path>` | 支持 `--dir` 递归转换并批量导入目录下所有 CSV，按统一社会信用代码 Upsert 入库 |
 
 ---
 
 ## 📚 项目文档
 
+- [运维与 CLI 脚本指南](SCRIPTS.md)
 - [设计系统与样式指南](DESIGN.md)
 - [AGENTS 指南与规范](AGENTS.md)
