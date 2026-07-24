@@ -453,29 +453,37 @@ export async function addReview(reviewData: Omit<Review, 'id' | 'company_id' | '
   // Try saving both review and company to Supabase if configured
   const supabase = getSupabaseClient();
   if (supabase) {
-    // 1. Upsert company to companies table (使用 ignoreDuplicates 规避 RLS 禁止 UPDATE 的限制)
-    const { error: compError } = await supabase
+    // 1. 检查公司是否已存在（避免使用 upsert 触发 PostgREST 的 RLS UPDATE 校验）
+    const { data: existingCompany } = await supabase
       .from('companies')
-      .upsert({
-        id: company.id,
-        name: company.name,
-        created_at: company.created_at,
-        review_count: company.review_count,
-        avg_rating: company.avg_rating,
-        avg_career: company.avg_career,
-        avg_balance: company.avg_balance,
-        avg_management: company.avg_management,
-        avg_compensation: company.avg_compensation,
-        avg_culture: company.avg_culture,
-        avg_salary: company.avg_salary,
-        avg_bonus: company.avg_bonus
-      }, { onConflict: 'id', ignoreDuplicates: true });
+      .select('id')
+      .eq('id', company.id)
+      .maybeSingle();
 
-    if (compError) {
-      console.error('Error inserting company into Supabase:', compError);
-      throw new Error(`创建或更新公司失败: ${compError.message}。由于数据库中可能缺少 companies 表，请在 Supabase 中运行 /migration.sql 执行数据库迁移！`);
-    } else {
-      console.log('Successfully saved company info to Supabase');
+    if (!existingCompany) {
+      const { error: compError } = await supabase
+        .from('companies')
+        .insert([{
+          id: company.id,
+          name: company.name,
+          created_at: company.created_at,
+          review_count: company.review_count,
+          avg_rating: company.avg_rating,
+          avg_career: company.avg_career,
+          avg_balance: company.avg_balance,
+          avg_management: company.avg_management,
+          avg_compensation: company.avg_compensation,
+          avg_culture: company.avg_culture,
+          avg_salary: company.avg_salary,
+          avg_bonus: company.avg_bonus
+        }]);
+
+      if (compError && !compError.message.includes('duplicate key') && !compError.message.includes('already exists')) {
+        console.error('Error inserting company into Supabase:', compError);
+        throw new Error(`创建公司失败: ${compError.message}`);
+      } else {
+        console.log('Successfully saved new company info to Supabase');
+      }
     }
 
     // 2. Insert review to reviews table

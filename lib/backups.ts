@@ -129,10 +129,10 @@ async function saveBackupMetadata(metadata: BackupMetadata[]) {
 
       const { error } = await supabase
         .from('backups_metadata')
-        .upsert(dbRows, { onConflict: 'id', ignoreDuplicates: true });
+        .insert(dbRows);
 
-      if (error) {
-        console.error('[Backup System] Error upserting metadata to Supabase:', error);
+      if (error && !error.message.includes('duplicate key') && !error.message.includes('already exists')) {
+        console.error('[Backup System] Error inserting metadata to Supabase:', error);
       } else {
         console.log('[Backup System] Successfully saved metadata to Supabase table');
       }
@@ -245,10 +245,10 @@ async function saveBackupBinary(id: string, binaryData: BackupBinaryData) {
 
       const { error } = await supabase
         .from('backups_binary')
-        .upsert(dbRow, { onConflict: 'id', ignoreDuplicates: true });
+        .insert([dbRow]);
 
-      if (error) {
-        console.error(`[Backup System] Error upserting binary ${id} to Supabase:`, error);
+      if (error && !error.message.includes('duplicate key') && !error.message.includes('already exists')) {
+        console.error(`[Backup System] Error inserting binary ${id} to Supabase:`, error);
       } else {
         console.log(`[Backup System] Successfully saved binary ${id} to Supabase table`);
       }
