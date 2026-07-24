@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
+import { i18n, Language } from '../lib/i18n';
 import {
   Search,
   Plus,
@@ -64,6 +65,20 @@ interface AIReport {
   careerAdvice: string;
   salaryAnalysis: string;
 }
+
+const ROTATING_HEADLINES_ZH = [
+  "匿名查询公司口碑，职场环境更透明",
+  "不限大厂，让大小厂真实薪资重见天日",
+  "打破信息不对称，寻找有温度的企业",
+  "全行业覆盖，还原最真实的工作体验"
+];
+
+const ROTATING_HEADLINES_EN = [
+  "Anonymous reviews for all companies, creating workplace transparency",
+  "Beyond big tech, bringing true compensation to light",
+  "Break information asymmetry, discover warm workplaces",
+  "Industry-wide coverage, revealing the authentic working experience"
+];
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -128,6 +143,35 @@ const setCachedAIReport = (companyName: string, data: AIReport) => {
 };
 
 export default function Home() {
+  // Multi-language & Rotating Headline State
+  const [lang, setLang] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('lang') as Language;
+      if (savedLang === 'zh' || savedLang === 'en') {
+        return savedLang;
+      }
+    }
+    return 'zh';
+  });
+  const [headlineIndex, setHeadlineIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeadlineIndex((prev) => (prev + 1) % 4);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const toggleLang = () => {
+    const nextLang = lang === 'zh' ? 'en' : 'zh';
+    setLang(nextLang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lang', nextLang);
+    }
+  };
+
+  const t = i18n[lang];
+
   // Navigation & Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
@@ -550,10 +594,10 @@ export default function Home() {
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Lock className="w-3.5 h-3.5 text-emerald-400" />
-            <span>完全匿名评价系统：采用密码学哈希区块链链式存证，永不收集与存储个人隐私信息。</span>
+            <span>{t.topBanner}</span>
           </span>
           <span className="hidden md:inline text-emerald-500 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest">
-            Blockchain Secured
+            {t.blockchainSecured}
           </span>
         </div>
       </div>
@@ -575,22 +619,34 @@ export default function Home() {
             className="flex items-center gap-2 group"
           >
             <Building className="w-5.5 h-5.5 text-emerald-400 group-hover:scale-105 transition-transform" />
-            <span className="font-extrabold text-white text-base md:text-lg tracking-tight group-hover:text-emerald-400 transition-colors">职场口碑网</span>
+            <span className="font-extrabold text-white text-base md:text-lg tracking-tight group-hover:text-emerald-400 transition-colors">
+              {t.brandName}
+            </span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Language Switcher */}
+            <button
+              onClick={toggleLang}
+              className="px-3 py-1.5 bg-[#0d0d0d] hover:bg-[#151515] border border-white/10 text-gray-400 hover:text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-1"
+              title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
+            >
+              <span>🌐</span>
+              <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
+            </button>
+
             <Link 
               href="/companies"
               className="text-xs md:text-sm font-semibold text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-1.5"
             >
               <TrendingUp className="w-4 h-4 text-emerald-400" />
-              <span>浏览公司龙虎榜</span>
+              <span>{t.viewRankings}</span>
             </Link>
             {!submittedQuery && !showSubmitForm && (
               <button
                 onClick={() => setShowSubmitForm(true)}
                 className="hidden sm:inline-block px-3.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl transition-colors"
               >
-                提供新评价
+                {t.addReview}
               </button>
             )}
           </div>
@@ -603,17 +659,28 @@ export default function Home() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="mb-8"
+              className="mb-8 w-full"
             >
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/5 border border-emerald-500/20 rounded-full shadow-xs text-xs text-emerald-400 font-medium mb-4">
                 <Database className="w-3 h-3 text-emerald-500" />
-                <span>基于区块链技术的防篡改职场口碑网</span>
+                <span>{t.heroBadge}</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4">
-                匿名查大厂，薪资更真实
-              </h1>
-              <p className="text-base text-gray-400 leading-relaxed max-w-lg mx-auto">
-                一键检索匿名评价、多维度打分与职场文化报告，所有评价记录均链式关联，确保真实不可篡改。
+              <div className="h-[96px] sm:h-[80px] flex items-center justify-center overflow-hidden mb-4">
+                <AnimatePresence mode="wait">
+                  <motion.h1
+                    key={`${lang}-${headlineIndex}`}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white px-2"
+                  >
+                    {lang === 'zh' ? ROTATING_HEADLINES_ZH[headlineIndex] : ROTATING_HEADLINES_EN[headlineIndex]}
+                  </motion.h1>
+                </AnimatePresence>
+              </div>
+              <p className="text-sm md:text-base text-gray-400 leading-relaxed max-w-lg mx-auto">
+                {t.heroSub}
               </p>
             </motion.div>
 
@@ -669,7 +736,7 @@ export default function Home() {
                       handleSearch();
                     }
                   }}
-                  placeholder="输入公司名称（如：阿里巴巴、腾讯、字节跳动）"
+                  placeholder={t.searchPlaceholder}
                   className="w-full pl-12 pr-32 py-4 bg-transparent outline-none text-[#e0e0e0] placeholder:text-gray-500 font-medium text-base rounded-xl"
                   id="main_search_input"
                   autoComplete="off"
@@ -682,7 +749,7 @@ export default function Home() {
                   className="absolute right-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-sm font-bold transition-colors duration-200 shadow-sm"
                   id="search_btn"
                 >
-                  检索口碑
+                  {t.searchBtn}
                 </button>
               </div>
 
@@ -693,7 +760,7 @@ export default function Home() {
                   id="search_suggestions_dropdown"
                 >
                   <div className="px-3 py-1.5 text-[10px] text-gray-500 font-bold uppercase tracking-wider border-b border-white/5">
-                    推荐存在的公司名称 (回车或点击直接检索)
+                    {t.dropdownTitle}
                   </div>
                   {filteredSearchSuggestions.map((comp, idx) => (
                     <button
@@ -730,7 +797,7 @@ export default function Home() {
                 className="flex flex-wrap items-center justify-center gap-2"
                 id="search_suggestions"
               >
-                <span className="text-xs text-gray-500 font-medium mr-1">热门检索:</span>
+                <span className="text-xs text-gray-500 font-medium mr-1">{t.trendingSearch}</span>
                 {distinctCompanies.slice(0, 5).map((comp) => (
                   <button
                     key={comp}
@@ -752,22 +819,34 @@ export default function Home() {
                 <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-full mb-3">
                   <ShieldCheck className="w-5 h-5 text-emerald-400" />
                 </div>
-                <h3 className="text-sm font-semibold text-white mb-1">完全匿名</h3>
-                <p className="text-xs text-gray-500">不留IP、不留账号，极速提交</p>
+                <h3 className="text-sm font-semibold text-white mb-1">
+                  {lang === 'zh' ? '完全匿名' : '100% Anonymous'}
+                </h3>
+                <p className="text-xs text-gray-500 text-center">
+                  {lang === 'zh' ? '不留IP、不留账号，极速提交' : 'No logs, no trackers, submit instantly'}
+                </p>
               </div>
               <div className="flex flex-col items-center">
                 <div className="p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-full mb-3">
                   <Lock className="w-5 h-5 text-indigo-400" />
                 </div>
-                <h3 className="text-sm font-semibold text-white mb-1">链上存证</h3>
-                <p className="text-xs text-gray-500">哈希链接防篡改，公开透明</p>
+                <h3 className="text-sm font-semibold text-white mb-1">
+                  {lang === 'zh' ? '链上存证' : 'Ledger Verified'}
+                </h3>
+                <p className="text-xs text-gray-500 text-center">
+                  {lang === 'zh' ? '哈希链接防篡改，公开透明' : 'Chained cryptographically to ensure integrity'}
+                </p>
               </div>
               <div className="flex flex-col items-center">
                 <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-full mb-3">
                   <Sparkles className="w-5 h-5 text-amber-400" />
                 </div>
-                <h3 className="text-sm font-semibold text-white mb-1">AI 语义分析</h3>
-                <p className="text-xs text-gray-500">自动解析职场真实满意度与文化</p>
+                <h3 className="text-sm font-semibold text-white mb-1">
+                  {lang === 'zh' ? 'AI 语义分析' : 'AI Culture Auditor'}
+                </h3>
+                <p className="text-xs text-gray-500 text-center">
+                  {lang === 'zh' ? '自动解析职场真实满意度与文化' : 'Aggregates employee sentiment & vibe checks'}
+                </p>
               </div>
             </div>
           </div>

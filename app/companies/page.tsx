@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
+import { i18n, Language } from '../../lib/i18n';
 import {
   Building,
   ArrowLeft,
@@ -59,8 +60,28 @@ type SortField = 'avgRating' | 'reviewCount' | 'avgSalary' | 'avgBalance' | 'avg
 type SortOrder = 'desc' | 'asc';
 
 export default function CompaniesPage() {
+  const [lang, setLang] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const savedLang = localStorage.getItem('lang') as Language;
+      if (savedLang === 'zh' || savedLang === 'en') {
+        return savedLang;
+      }
+    }
+    return 'zh';
+  });
   const [allReviews, setAllReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const toggleLang = () => {
+    const nextLang = lang === 'zh' ? 'en' : 'zh';
+    setLang(nextLang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lang', nextLang);
+    }
+  };
+
+  const t = i18n[lang];
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('avgRating');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -152,13 +173,13 @@ export default function CompaniesPage() {
   };
 
   const sortOptions: { label: string; field: SortField }[] = [
-    { label: '综合评分', field: 'avgRating' },
-    { label: '评价数量', field: 'reviewCount' },
-    { label: '平均月薪', field: 'avgSalary' },
-    { label: '工作生活平衡(WLB)', field: 'avgBalance' },
-    { label: '职业发展', field: 'avgCareer' },
-    { label: '福利待遇', field: 'avgCompensation' },
-    { label: '企业文化', field: 'avgCulture' }
+    { label: lang === 'zh' ? '综合评分' : 'Overall Score', field: 'avgRating' },
+    { label: lang === 'zh' ? '评价数量' : 'Reviews Count', field: 'reviewCount' },
+    { label: lang === 'zh' ? '平均月薪' : 'Avg Monthly Salary', field: 'avgSalary' },
+    { label: lang === 'zh' ? '工作生活平衡(WLB)' : 'Work-Life Balance (WLB)', field: 'avgBalance' },
+    { label: lang === 'zh' ? '职业发展' : 'Career Growth', field: 'avgCareer' },
+    { label: lang === 'zh' ? '福利待遇' : 'Benefits & Perks', field: 'avgCompensation' },
+    { label: lang === 'zh' ? '企业文化' : 'Company Culture', field: 'avgCulture' }
   ];
 
   return (
@@ -168,10 +189,10 @@ export default function CompaniesPage() {
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Lock className="w-3.5 h-3.5 text-emerald-400" />
-            <span>完全匿名评价系统：采用密码学哈希区块链链式存证，永不收集与存储个人隐私信息。</span>
+            <span>{t.topBanner}</span>
           </span>
           <span className="hidden md:inline text-emerald-500 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest">
-            Blockchain Secured
+            {t.blockchainSecured}
           </span>
         </div>
       </div>
@@ -179,17 +200,28 @@ export default function CompaniesPage() {
       <div className="max-w-5xl mx-auto px-4 py-8" id="companies_directory_container">
         {/* Navigation back */}
         <div className="flex items-center justify-between mb-8" id="directory_nav">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium text-sm transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>返回主页</span>
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium text-sm transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>{t.backToHome}</span>
+            </Link>
+
+            {/* Language Switcher */}
+            <button
+              onClick={toggleLang}
+              className="px-2.5 py-1 bg-[#121212] hover:bg-[#1a1a1a] border border-white/5 text-gray-400 hover:text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
+            >
+              <span>🌐</span>
+              <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
+            </button>
+          </div>
 
           <div className="inline-flex items-center gap-2 text-xs text-gray-500">
             <Database className="w-3.5 h-3.5 text-emerald-400" />
-            <span>已入网口碑公司数: {companiesList.length}</span>
+            <span>{t.allReviewsCount}: {companiesList.length}</span>
           </div>
         </div>
 
@@ -197,13 +229,13 @@ export default function CompaniesPage() {
         <div className="mb-8" id="directory_heading">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/5 border border-emerald-500/20 rounded-full shadow-xs text-xs text-emerald-400 font-medium mb-3">
             <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-            <span>大厂口碑龙虎榜 (支持多维度自主排序)</span>
+            <span>{t.dirTitle}</span>
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">
-            公司口碑一览表
+            {t.dirMainHeader}
           </h1>
           <p className="text-sm text-gray-400 mt-2 max-w-xl">
-            多维度、全方位的匿名企业评价对比，帮助每一位职场人选择最适合自己的下一站。
+            {t.dirSub}
           </p>
         </div>
 
@@ -217,7 +249,7 @@ export default function CompaniesPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="搜索已入网的公司名称..."
+                placeholder={t.dirSearchPlaceholder}
                 className="w-full pl-10 pr-4 py-2.5 bg-[#121212] border border-white/5 focus:border-emerald-500/50 outline-none text-sm text-[#e0e0e0] placeholder:text-gray-600 rounded-xl transition-colors"
                 autoComplete="off"
               />
@@ -227,11 +259,11 @@ export default function CompaniesPage() {
             <div className="flex items-center gap-2 text-xs text-gray-400 bg-white/5 border border-white/5 px-3 py-2 rounded-xl">
               <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400" />
               <span>
-                当前排序：
+                {t.dirSortModeLabel}
                 <strong className="text-emerald-400 font-bold">
                   {sortOptions.find(opt => opt.field === sortField)?.label}
                 </strong>
-                （{sortOrder === 'desc' ? '降序' : '升序'}）
+                （{sortOrder === 'desc' ? (lang === 'zh' ? '降序' : 'Desc') : (lang === 'zh' ? '升序' : 'Asc')}）
               </span>
             </div>
           </div>
@@ -239,7 +271,7 @@ export default function CompaniesPage() {
           {/* Sort Toggles Grid */}
           <div className="mt-4 border-t border-white/5 pt-4">
             <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2">
-              选择排序维度:
+              {t.dirSortFieldLabel}
             </div>
             <div className="flex flex-wrap gap-2">
               {sortOptions.map((opt) => {
@@ -269,14 +301,16 @@ export default function CompaniesPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20" id="loading_state">
             <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
-            <p className="text-sm text-gray-500">正在链上拉取并汇总企业评价数据...</p>
+            <p className="text-sm text-gray-500">
+              {lang === 'zh' ? '正在链上拉取并汇总企业评价数据...' : 'Syncing and aggregating anonymous ledger reviews...'}
+            </p>
           </div>
         ) : filteredAndSortedCompanies.length === 0 ? (
           <div className="text-center py-16 bg-[#0d0d0d] border border-white/10 rounded-2xl" id="empty_state">
             <Building className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-            <h3 className="text-sm font-semibold text-white mb-1">未找到匹配的公司</h3>
+            <h3 className="text-sm font-semibold text-white mb-1">{t.dirNoResults}</h3>
             <p className="text-xs text-gray-500 max-w-xs mx-auto">
-              目前还没有该公司下的评价，或者搜索拼写不准确。您可以返回主页提交该公司下的第一笔匿名评价！
+              {t.dirNoResultsDesc}
             </p>
           </div>
         ) : (
@@ -302,24 +336,24 @@ export default function CompaniesPage() {
                         <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors flex items-center gap-2">
                           <span>{comp.name}</span>
                           <span className="text-[10px] font-bold bg-[#151515] text-gray-400 px-2 py-0.5 rounded border border-white/5">
-                            {comp.reviewCount} 笔评价
+                            {comp.reviewCount} {lang === 'zh' ? '笔评价' : 'reviews'}
                           </span>
                         </h3>
                         <div className="flex items-center gap-3 mt-1.5">
                           {/* Aggregate Star Badge */}
                           <div className="flex items-center gap-1 text-sm text-emerald-400 font-bold bg-emerald-500/5 border border-emerald-500/10 px-2 py-0.5 rounded">
                             <Star className="w-3.5 h-3.5 fill-emerald-400 text-emerald-400" />
-                            <span>{comp.avgRating} 综合分</span>
+                            <span>{comp.avgRating} {lang === 'zh' ? '综合分' : 'Rating'}</span>
                           </div>
                           
                           {/* Avg Salary info */}
                           {comp.avgSalary > 0 && (
                             <span className="text-xs text-gray-400 flex items-center gap-1">
                               <DollarSign className="w-3.5 h-3.5 text-gray-500" />
-                              <span>平均月薪: <strong className="text-white font-bold">{comp.avgSalary}K</strong></span>
+                              <span>{lang === 'zh' ? '平均月薪' : 'Avg Salary'}: <strong className="text-white font-bold">{comp.avgSalary}K</strong></span>
                               {comp.avgBonus > 0 && (
                                 <span className="text-gray-500">
-                                  （年终奖: <strong className="text-gray-300 font-semibold">{comp.avgBonus}K</strong>）
+                                  （{lang === 'zh' ? '年终奖' : 'Bonus'}: <strong className="text-gray-300 font-semibold">{comp.avgBonus}K</strong>）
                                 </span>
                               )}
                             </span>
@@ -332,27 +366,27 @@ export default function CompaniesPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 border-t lg:border-t-0 border-white/5 pt-4 lg:pt-0">
                       {/* WLB */}
                       <div className="flex flex-col bg-[#121212] px-2.5 py-1.5 rounded-lg border border-white/5 text-center min-w-[76px]">
-                        <span className="text-[9px] text-gray-500 font-medium">工作生活平衡</span>
+                        <span className="text-[9px] text-gray-500 font-medium">{lang === 'zh' ? '工作生活平衡' : 'WLB'}</span>
                         <span className="text-xs font-extrabold text-indigo-400 mt-0.5">{comp.avgBalance}</span>
                       </div>
                       {/* Career */}
                       <div className="flex flex-col bg-[#121212] px-2.5 py-1.5 rounded-lg border border-white/5 text-center min-w-[76px]">
-                        <span className="text-[9px] text-gray-500 font-medium">职业成长</span>
+                        <span className="text-[9px] text-gray-500 font-medium">{lang === 'zh' ? '职业成长' : 'Career'}</span>
                         <span className="text-xs font-extrabold text-emerald-400 mt-0.5">{comp.avgCareer}</span>
                       </div>
                       {/* Management */}
                       <div className="flex flex-col bg-[#121212] px-2.5 py-1.5 rounded-lg border border-white/5 text-center min-w-[76px]">
-                        <span className="text-[9px] text-gray-500 font-medium">管理层满意度</span>
+                        <span className="text-[9px] text-gray-500 font-medium">{lang === 'zh' ? '管理层满意' : 'Management'}</span>
                         <span className="text-xs font-extrabold text-amber-400 mt-0.5">{comp.avgManagement}</span>
                       </div>
                       {/* Compensation */}
                       <div className="flex flex-col bg-[#121212] px-2.5 py-1.5 rounded-lg border border-white/5 text-center min-w-[76px]">
-                        <span className="text-[9px] text-gray-500 font-medium">福利待遇</span>
+                        <span className="text-[9px] text-gray-500 font-medium">{lang === 'zh' ? '福利待遇' : 'Benefits'}</span>
                         <span className="text-xs font-extrabold text-rose-400 mt-0.5">{comp.avgCompensation}</span>
                       </div>
                       {/* Culture */}
                       <div className="flex flex-col bg-[#121212] px-2.5 py-1.5 rounded-lg border border-white/5 text-center min-w-[76px]">
-                        <span className="text-[9px] text-gray-500 font-medium">企业文化</span>
+                        <span className="text-[9px] text-gray-500 font-medium">{lang === 'zh' ? '企业文化' : 'Culture'}</span>
                         <span className="text-xs font-extrabold text-teal-400 mt-0.5">{comp.avgCulture}</span>
                       </div>
                     </div>
