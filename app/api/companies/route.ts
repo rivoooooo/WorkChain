@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
     }
 
     const search = searchParams.get('search') || searchParams.get('q') || undefined;
-    const companies = await getCompanies(search || undefined);
+    const limit = Number(searchParams.get('limit')) || 50;
+    const companies = await getCompanies(search || undefined, limit);
     return NextResponse.json({ success: true, data: companies });
   } catch (error: any) {
     console.error('API Error in GET companies:', error);

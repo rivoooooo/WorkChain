@@ -247,15 +247,20 @@ export async function getCompanyReviews(companyName: string): Promise<Review[]> 
 }
 
 // Get all companies list with optional search parameter
-export async function getCompanies(search?: string): Promise<Company[]> {
+// Get companies list with fuzzy keyword search and limit (default 50 records)
+export async function getCompanies(search?: string, limit: number = 50): Promise<Company[]> {
   const supabase = getSupabaseClient();
   if (supabase) {
     try {
       let query = supabase.from('companies').select('*');
-      if (search) {
-        query = query.ilike('name', `%${search.trim()}%`);
+      if (search && search.trim()) {
+        const term = search.trim();
+        query = query.or(`name.ilike.%${term}%,credit_code.ilike.%${term}%`);
       }
-      const { data, error } = await query.order('name', { ascending: true });
+      const { data, error } = await query
+        .order('review_count', { ascending: false })
+        .order('name', { ascending: true })
+        .limit(limit);
 
       if (!error && data) {
         const mapped: Company[] = data
@@ -279,11 +284,6 @@ export async function getCompanies(search?: string): Promise<Company[]> {
             avg_salary: Number(item.avg_salary !== undefined ? item.avg_salary : item.avgSalary || 0),
             avg_bonus: Number(item.avg_bonus !== undefined ? item.avg_bonus : item.avgBonus || 0)
           }));
-        // Only update local global cache with full list if not searching
-        if (!search) {
-          global._localCompanies = mapped;
-          saveCompaniesToDisk(mapped);
-        }
         return mapped;
       }
       console.warn('[DB] Supabase companies select error, calculating on-the-fly:', error);
@@ -292,10 +292,9 @@ export async function getCompanies(search?: string): Promise<Company[]> {
     }
   }
 
-  // File system fallback
+  // File system fallback (capped at limit 50)
   let local = loadLocalCompanies().filter(c => c.id !== 'comp-unknown');
   if (local.length === 0) {
-    // Calculate from reviews dynamically if no companies list is saved
     const reviews = await getReviews();
     local = (await recalculateAllCompanies(reviews)).filter(c => c.id !== 'comp-unknown');
     global._localCompanies = local;
@@ -304,11 +303,11 @@ export async function getCompanies(search?: string): Promise<Company[]> {
     global._localCompanies = local;
   }
 
-  if (search) {
+  if (search && search.trim()) {
     const term = search.trim().toLowerCase();
-    return local.filter(c => c.name.toLowerCase().includes(term));
+    return local.filter(c => c.name.toLowerCase().includes(term) || (c.credit_code && c.credit_code.toLowerCase().includes(term))).slice(0, limit);
   }
-  return local;
+  return local.slice(0, limit);
 }
 
 // Get single company details by its ID
