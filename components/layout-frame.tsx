@@ -270,11 +270,11 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center p-3 sm:p-6 overflow-hidden"
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center p-3 sm:p-6 pt-12 sm:pt-16 overflow-hidden"
               id="submission_modal"
             >
-              {/* Outer Wrapper anchored to bottom with max-h 90dvh */}
-              <div className="relative max-w-2xl w-full h-full max-h-[90dvh] mb-0 sm:mb-2 flex flex-col">
+              {/* Outer Wrapper anchored to bottom with top margin and max-h 82dvh */}
+              <div className="relative max-w-2xl w-full h-full max-h-[82dvh] mb-0 sm:mb-2 flex flex-col">
                 
                 {/* Stacked Second Document Background Sheet (Unfolds outward -4.5deg like a paper fan opening) */}
                 <motion.div 
@@ -291,7 +291,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: 120, opacity: 0 }}
                   transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-                  className="relative z-10 bg-card border border-border shadow-2xl w-full h-full max-h-[90dvh] flex flex-col text-card-foreground overflow-hidden"
+                  className="relative z-10 bg-card border border-border shadow-2xl w-full h-full max-h-[82dvh] flex flex-col text-card-foreground overflow-hidden"
                 >
                   {/* Sticky Header */}
                   <div className="p-6 sm:p-8 pb-4 border-b border-border bg-card shrink-0 relative z-20">
