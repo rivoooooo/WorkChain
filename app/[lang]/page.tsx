@@ -297,7 +297,7 @@ export default function Home({ params }: PageProps) {
         </div>
 
         {/* MAIN BODY CONTENT */}
-        <div className="flex-1 px-1">
+        <div className="flex-1 px-2">
 
         {!hasSearched ? (
           <div className="space-y-12 sm:space-y-16">
@@ -307,7 +307,7 @@ export default function Home({ params }: PageProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="w-full rounded-none shadow-xl border border-border bg-card relative overflow-hidden"
+              className="w-full rounded-none border border-border bg-card relative overflow-hidden"
               id="hero_banner_container"
             >
               <BeforeAfterCanvas
