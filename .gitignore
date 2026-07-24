@@ -8,6 +8,7 @@ coverage/
 
 # Local runtime fallback data & backups
 data/*.json
+data/backups/
 !data/cities500.txt
 
 # Supabase CLI temp files
