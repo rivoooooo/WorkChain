@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { i18n, Language } from '../../lib/i18n';
+import { i18n, Language } from '../../../lib/i18n';
 import {
   Building,
   ArrowLeft,
@@ -60,25 +60,20 @@ interface CompanyStats {
 type SortField = 'avgRating' | 'reviewCount' | 'avgSalary' | 'avgBalance' | 'avgCareer' | 'avgCompensation' | 'avgCulture';
 type SortOrder = 'desc' | 'asc';
 
-export default function CompaniesPage() {
-  const [lang, setLang] = useState<Language>(() => {
-    if (typeof window !== 'undefined') {
-      const savedLang = localStorage.getItem('lang') as Language;
-      if (savedLang === 'zh' || savedLang === 'en') {
-        return savedLang;
-      }
-    }
-    return 'zh';
-  });
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
+
+export default function CompaniesPage({ params }: PageProps) {
+  const { lang: rawLang } = use(params);
+  const lang: Language = (rawLang === 'zh-cn' || rawLang === 'zh') ? 'zh' : 'en';
+
   const [companiesList, setCompaniesList] = useState<CompanyStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const toggleLang = () => {
-    const nextLang = lang === 'zh' ? 'en' : 'zh';
-    setLang(nextLang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lang', nextLang);
-    }
+    const nextLangPath = lang === 'zh' ? '/en/companies' : '/zh-cn/companies';
+    window.location.href = nextLangPath;
   };
 
   const t = i18n[lang];
@@ -171,7 +166,7 @@ export default function CompaniesPage() {
         <div className="flex items-center justify-between mb-8" id="directory_nav">
           <div className="flex items-center gap-4">
             <Link
-              href="/"
+              href={`/${rawLang}`}
               className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium text-sm transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -188,7 +183,7 @@ export default function CompaniesPage() {
             </button>
 
             <Link
-              href="/download"
+              href={`/${rawLang}/download`}
               className="inline-flex items-center gap-1.5 text-gray-400 hover:text-white font-semibold text-xs bg-[#121212] hover:bg-[#1a1a1a] border border-white/5 px-2.5 py-1 rounded-lg transition-colors"
             >
               <Database className="w-3.5 h-3.5 text-emerald-400" />
@@ -300,7 +295,7 @@ export default function CompaniesPage() {
                 transition={{ delay: Math.min(idx * 0.04, 0.4), duration: 0.3 }}
               >
                 <Link
-                  href={`/companies/${comp.id}`}
+                  href={`/${rawLang}/companies/${comp.id}`}
                   className="block bg-[#0d0d0d] hover:bg-[#111111] border border-white/10 hover:border-emerald-500/30 rounded-2xl p-5 transition-all group"
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

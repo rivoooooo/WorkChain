@@ -3,7 +3,7 @@
 import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { i18n, Language } from '../../../lib/i18n';
+import { i18n, Language } from '../../../../lib/i18n';
 import {
   Building,
   ArrowLeft,
@@ -121,26 +121,13 @@ const setCachedAIReport = (companyId: string, data: AIReport) => {
   }
 };
 
-export default function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: companyId } = use(params);
-
-  // Internationalization & UI tabs
-  const [lang, setLang] = useState<Language>(() => {
-    if (typeof window !== 'undefined') {
-      const savedLang = localStorage.getItem('lang') as Language;
-      if (savedLang === 'zh' || savedLang === 'en') {
-        return savedLang;
-      }
-    }
-    return 'zh';
-  });
+export default function CompanyDetailPage({ params }: { params: Promise<{ id: string; lang: string }> }) {
+  const { id: companyId, lang: rawLang } = use(params);
+  const lang: Language = (rawLang === 'zh-cn' || rawLang === 'zh') ? 'zh' : 'en';
 
   const toggleLang = () => {
-    const nextLang = lang === 'zh' ? 'en' : 'zh';
-    setLang(nextLang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lang', nextLang);
-    }
+    const nextLangPath = lang === 'zh' ? `/en/companies/${companyId}` : `/zh-cn/companies/${companyId}`;
+    window.location.href = nextLangPath;
   };
 
   const t = i18n[lang];
@@ -327,7 +314,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
           {lang === 'zh' ? '该企业可能尚未创建评价，或者标识符无效。' : 'No records exist under this identifier.'}
         </p>
         <Link
-          href="/"
+          href={`/${rawLang}`}
           className="px-5 py-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-white font-semibold rounded-xl transition-all"
         >
           {t.backToHome}
@@ -358,7 +345,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         <div className="flex items-center justify-between mb-8" id="detail_nav">
           <div className="flex items-center gap-4">
             <Link
-              href="/companies"
+              href={`/${rawLang}/companies`}
               className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium text-sm transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />

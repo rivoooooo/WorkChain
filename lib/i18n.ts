@@ -6,13 +6,13 @@ export const i18n = {
     // Top banner & general
     topBanner: '完全匿名评价系统：采用密码学哈希区块链链式存证，永不收集与存储个人隐私信息。',
     blockchainSecured: '区块链存证',
-    brandName: '职场口碑网',
+    brandName: 'WorkChain',
     viewRankings: '浏览公司龙虎榜',
     addReview: '提供新评价',
     allReviewsCount: '已入网口碑公司数',
     
     // Home Hero
-    heroBadge: '基于区块链技术的防篡改职场口碑网',
+    heroBadge: '基于区块链技术的防篡改 WorkChain',
     heroSub: '一键检索匿名评价、多维度打分与职场文化报告，所有评价记录均链式关联，确保真实不可篡改。',
     searchPlaceholder: '输入公司名称（如：阿里巴巴、腾讯、字节跳动、特斯拉、微软等）',
     searchBtn: '检索口碑',
@@ -143,7 +143,7 @@ export const i18n = {
     // Top banner & general
     topBanner: 'Completely anonymous review system: Secured by cryptographic hash chain ledger, never collecting or storing personal privacy data.',
     blockchainSecured: 'Blockchain Secured',
-    brandName: 'JobTrust Index',
+    brandName: 'WorkChain',
     viewRankings: 'View Company Rankings',
     addReview: 'Add Review',
     allReviewsCount: 'Companies Listed',

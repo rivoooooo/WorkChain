@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { i18n, Language } from '../../lib/i18n';
+import { i18n, Language } from '../../../lib/i18n';
 import {
   ArrowLeft,
   Database,
@@ -29,16 +29,13 @@ interface BackupMetadata {
   sqlSize: number;
 }
 
-export default function DownloadPage() {
-  const [lang, setLang] = useState<Language>(() => {
-    if (typeof window !== 'undefined') {
-      const savedLang = localStorage.getItem('lang') as Language;
-      if (savedLang === 'zh' || savedLang === 'en') {
-        return savedLang;
-      }
-    }
-    return 'zh';
-  });
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
+
+export default function DownloadPage({ params }: PageProps) {
+  const { lang: rawLang } = use(params);
+  const lang: Language = (rawLang === 'zh-cn' || rawLang === 'zh') ? 'zh' : 'en';
 
   const [backups, setBackups] = useState<BackupMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,11 +43,8 @@ export default function DownloadPage() {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const toggleLang = () => {
-    const nextLang = lang === 'zh' ? 'en' : 'zh';
-    setLang(nextLang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lang', nextLang);
-    }
+    const nextLangPath = lang === 'zh' ? '/en/download' : '/zh-cn/download';
+    window.location.href = nextLangPath;
   };
 
   const t = i18n[lang];
@@ -149,7 +143,7 @@ export default function DownloadPage() {
         <div className="flex items-center justify-between mb-8" id="download_nav">
           <div className="flex items-center gap-4">
             <Link
-              href="/"
+              href={`/${rawLang}`}
               className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium text-sm transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />

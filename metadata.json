@@ -1,6 +1,1 @@
-{
-  "name": "公司匿名评价与薪资分析系统",
-  "description": "提供匿名公司评价、薪资水平统计、区块链记录存证以及AI多维度职场文化分析报告的一站式平台。",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
+{"name":"公司匿名评价与薪资分析系统","description":"提供匿名公司评价、薪资水平统计、区块链记录存证以及AI多维度职场文化分析报告的一站式平台。","requestFramePermissions":[],"majorCapabilities":["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]}
