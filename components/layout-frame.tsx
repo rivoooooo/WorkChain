@@ -413,7 +413,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                           </div>
                         </div>
 
-                        {/* Ratings Sliders */}
+              {/* Ratings Sliders */}
                         <div className="bg-muted/40 border border-border rounded-none p-4 space-y-3">
                           <span className="block text-xs font-extrabold text-foreground uppercase border-b border-border pb-2">
                             {t.formRatingTitle}
@@ -442,10 +442,42 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                                 </span>
                               </div>
                             </div>
-                        </button>
-                      </div>
-                    </form>
-                  )}
+                          ))}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                            {t.formReviewTextLabel} <span className="text-rose-500">*</span>
+                          </label>
+                          <textarea
+                            required
+                            rows={3}
+                            value={formData.review_text}
+                            onChange={(e) => setFormData(prev => ({ ...prev, review_text: e.target.value }))}
+                            placeholder={t.formReviewTextPlaceholder}
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none resize-none"
+                          />
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-3 border-t border-border">
+                          <button
+                            type="button"
+                            onClick={() => setShowSubmitForm(false)}
+                            className="px-5 py-2 border border-border hover:bg-accent text-muted-foreground hover:text-foreground rounded-none text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            {t.formCancel}
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="inline-flex items-center gap-1.5 px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-none text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            {isSubmitting && <Loader2 className="w-3 h-3 animate-spin text-black" />}
+                            <span>{isSubmitting ? t.formSubmitting : t.formSubmit}</span>
+                          </button>
+                        </div>
+                      </form>
+                    )}
                   </div>
                 </motion.div>
               </div>
