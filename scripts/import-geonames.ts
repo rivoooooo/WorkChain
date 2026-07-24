@@ -1,9 +1,12 @@
 import fs from 'fs';
+import path from 'path';
 import readline from 'readline';
 import postgres from 'postgres';
 
 const connectionString = process.env.DATABASE_URL || '';
-const GEONAMES_FILE_PATH = '/Users/owocc/Downloads/source/cities500.txt';
+const GEONAMES_FILE_PATH = process.argv[2]
+  ? path.resolve(process.argv[2])
+  : path.join(process.cwd(), 'data', 'cities500.txt');
 
 // 常用国家 ISO 代码中文映射表 (常见国家)
 const COUNTRY_NAME_MAP: Record<string, { en: string; cn: string }> = {

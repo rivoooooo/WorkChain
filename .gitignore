@@ -7,7 +7,8 @@ coverage/
 !.env.example
 
 # Local runtime fallback data & backups
-data/
+data/*.json
+!data/cities500.txt
 
 # Supabase CLI temp files
 supabase/.temp/
