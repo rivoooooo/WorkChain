@@ -433,7 +433,7 @@ export default function Home({ params }: PageProps) {
                   {/* Suggestions Dropdown */}
                   {showSearchSuggestions && filteredSearchSuggestions.length > 0 && (
                     <div 
-                      className="absolute left-0 right-0 top-full mt-2 bg-popover text-popover-foreground border border-border rounded-2xl overflow-hidden shadow-2xl z-50 py-1 max-h-60 overflow-y-auto"
+                      className="absolute left-0 right-0 top-full mt-2 bg-popover text-popover-foreground border border-border rounded-none overflow-hidden shadow-md z-50 py-1 max-h-60 overflow-y-auto"
                       id="search_suggestions_dropdown"
                     >
                       <div className="px-3 py-1.5 text-[10px] text-muted-foreground font-bold uppercase tracking-wider border-b border-border">
@@ -484,7 +484,7 @@ export default function Home({ params }: PageProps) {
                       setSearchQuery(comp.name);
                       handleSearch(comp.name);
                     }}
-                    className="text-xs px-3.5 py-1.5 bg-muted/50 border border-border hover:border-emerald-500/40 hover:text-emerald-500 rounded-full text-muted-foreground font-medium transition-all shadow-2xs cursor-pointer"
+                    className="text-xs px-3.5 py-1.5 bg-muted/50 border border-border hover:border-emerald-500/40 hover:text-emerald-500 rounded-none text-muted-foreground font-medium transition-all cursor-pointer"
                   >
                     {comp.name}
                   </button>
@@ -494,8 +494,8 @@ export default function Home({ params }: PageProps) {
 
             {/* Core Trust & Security Pillars */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 border-t border-border" id="trust_badges">
-              <div className="bg-card border border-border p-6 rounded-3xl shadow-xs transition-all hover:shadow-md">
-                <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mb-4">
+              <div className="bg-card border border-border p-6 rounded-none transition-colors hover:bg-muted/30">
+                <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-none flex items-center justify-center mb-4">
                   <ShieldCheck className="w-5 h-5 text-emerald-500" />
                 </div>
                 <h3 className="text-base font-extrabold text-foreground mb-1.5">
@@ -506,8 +506,8 @@ export default function Home({ params }: PageProps) {
                 </p>
               </div>
 
-              <div className="bg-card border border-border p-6 rounded-3xl shadow-xs transition-all hover:shadow-md">
-                <div className="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center mb-4">
+              <div className="bg-card border border-border p-6 rounded-none transition-colors hover:bg-muted/30">
+                <div className="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 rounded-none flex items-center justify-center mb-4">
                   <Lock className="w-5 h-5 text-indigo-500" />
                 </div>
                 <h3 className="text-base font-extrabold text-foreground mb-1.5">
@@ -518,8 +518,8 @@ export default function Home({ params }: PageProps) {
                 </p>
               </div>
 
-              <div className="bg-card border border-border p-6 rounded-3xl shadow-xs transition-all hover:shadow-md">
-                <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mb-4">
+              <div className="bg-card border border-border p-6 rounded-none transition-colors hover:bg-muted/30">
+                <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-none flex items-center justify-center mb-4">
                   <Sparkles className="w-5 h-5 text-amber-500" />
                 </div>
                 <h3 className="text-base font-extrabold text-foreground mb-1.5">
@@ -543,10 +543,10 @@ export default function Home({ params }: PageProps) {
               <span>{lang === 'zh' ? '返回主页检索' : 'Back to Search'}</span>
             </button>
 
-            <div className="bg-card border border-border rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden text-card-foreground">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-2xl rounded-full" />
+            <div className="bg-card border border-border rounded-none p-8 text-center relative text-card-foreground">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-2xl" />
               
-              <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-none flex items-center justify-center mx-auto mb-6">
                 <Building2 className="w-8 h-8 text-emerald-500" />
               </div>
 
@@ -562,7 +562,7 @@ export default function Home({ params }: PageProps) {
 
               <button
                 onClick={() => setShowSubmitForm(true)}
-                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-sm rounded-2xl transition-all shadow-lg inline-flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-sm rounded-none transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
               >
                 <PlusCircle className="w-5 h-5 text-black" />
                 <span>{lang === 'zh' ? '创建该公司并提供第一条匿名口碑' : 'Create & Submit Pioneer Review'}</span>
@@ -585,7 +585,7 @@ export default function Home({ params }: PageProps) {
                 initial={{ scale: 0.95, y: 15 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 15 }}
-                className="bg-card text-card-foreground w-full max-w-2xl rounded-3xl border border-border shadow-2xl overflow-hidden my-8"
+                className="bg-card text-card-foreground w-full max-w-2xl rounded-none border border-border shadow-lg overflow-hidden my-8"
               >
                 {/* Modal Header */}
                 <div className="bg-muted/60 border-b border-border text-foreground p-6 flex justify-between items-center">
@@ -613,7 +613,7 @@ export default function Home({ params }: PageProps) {
                 <form onSubmit={handleFormSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto" id="new_review_form">
                   {formSuccess ? (
                     <div className="py-8 text-center space-y-3" id="form_success_message">
-                      <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto animate-bounce">
+                      <div className="w-12 h-12 bg-emerald-500/10 rounded-none border border-emerald-500/20 flex items-center justify-center mx-auto animate-bounce">
                         <ShieldCheck className="w-6 h-6 text-emerald-500" />
                       </div>
                       <h4 className="text-lg font-bold text-foreground">
@@ -628,14 +628,14 @@ export default function Home({ params }: PageProps) {
                   ) : (
                     <>
                       {formError && (
-                        <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 text-xs font-semibold flex items-center gap-2">
+                        <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-none text-rose-500 text-xs font-semibold flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
                           <span>{formError}</span>
                         </div>
                       )}
 
                       {/* Top identity notification */}
-                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-600 dark:text-amber-400">
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-none p-3 flex items-start gap-2.5 text-xs text-amber-600 dark:text-amber-400">
                         <ShieldAlert className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                         <span>
                           <strong>{lang === 'zh' ? '隐私安全承诺:' : 'Privacy Commitment:'}</strong> {lang === 'zh' ? '平台采用完全匿名机制，服务器不记录任何用户的Cookie、IP地址或登录标识，不记录任何人像、手机或姓名信息。' : 'Absolutely zero tracking, cookies, IP addresses, or usernames logged.'}
@@ -654,7 +654,7 @@ export default function Home({ params }: PageProps) {
                             value={formData.company_name}
                             onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
                             placeholder="如: 阿里巴巴"
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                             autoComplete="off"
                           />
                         </div>
@@ -669,7 +669,7 @@ export default function Home({ params }: PageProps) {
                             value={formData.branch_location}
                             onChange={(e) => setFormData(prev => ({ ...prev, branch_location: e.target.value }))}
                             placeholder="如: 上海徐汇分部、深圳总部"
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                           />
                         </div>
                       </div>
@@ -686,7 +686,7 @@ export default function Home({ params }: PageProps) {
                             value={formData.position}
                             onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
                             placeholder="如: 后端研发工程师"
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                           />
                         </div>
 
@@ -697,7 +697,7 @@ export default function Home({ params }: PageProps) {
                           <select
                             value={formData.employment_status}
                             onChange={(e) => setFormData(prev => ({ ...prev, employment_status: e.target.value }))}
-                            className="w-full px-3 py-2.5 bg-muted/40 border border-border rounded-xl text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none cursor-pointer"
+                            className="w-full px-3 py-2.5 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none cursor-pointer"
                           >
                             <option value="current" className="bg-popover text-popover-foreground">{lang === 'zh' ? '目前在职' : 'Current'}</option>
                             <option value="former" className="bg-popover text-popover-foreground">{lang === 'zh' ? '已经离职' : 'Former'}</option>
@@ -716,7 +716,7 @@ export default function Home({ params }: PageProps) {
                             value={formData.salary}
                             onChange={(e) => setFormData(prev => ({ ...prev, salary: e.target.value }))}
                             placeholder="如: 25000"
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                           />
                         </div>
 
@@ -729,7 +729,7 @@ export default function Home({ params }: PageProps) {
                             value={formData.bonus}
                             onChange={(e) => setFormData(prev => ({ ...prev, bonus: e.target.value }))}
                             placeholder="如: 80000"
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                           />
                         </div>
 
@@ -742,13 +742,13 @@ export default function Home({ params }: PageProps) {
                             value={formData.experience_years}
                             onChange={(e) => setFormData(prev => ({ ...prev, experience_years: e.target.value }))}
                             placeholder="如: 3"
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                           />
                         </div>
                       </div>
 
                       {/* Multi-dimensional Sliders */}
-                      <div className="bg-muted/40 border border-border rounded-xl p-4 space-y-4">
+                      <div className="bg-muted/40 border border-border rounded-none p-4 space-y-4">
                         <span className="block text-xs font-extrabold text-foreground uppercase border-b border-border pb-2">
                           {lang === 'zh' ? '多维度满意度评分 (1 - 5 星)' : 'Satisfaction Metrics (1 - 5 Stars)'}
                         </span>
@@ -773,7 +773,7 @@ export default function Home({ params }: PageProps) {
                                 step="1"
                                 value={formData[slider.key as keyof typeof formData]}
                                 onChange={(e) => setFormData(prev => ({ ...prev, [slider.key]: Number(e.target.value) }))}
-                                className="w-40 h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-emerald-500"
+                                className="w-40 h-1.5 bg-muted rounded-none appearance-none cursor-pointer accent-emerald-500"
                               />
                               <span className="w-10 text-right font-bold text-emerald-500 text-sm">
                                 {formData[slider.key as keyof typeof formData]} {lang === 'zh' ? '星' : 'Stars'}
@@ -796,7 +796,7 @@ export default function Home({ params }: PageProps) {
                           placeholder={lang === 'zh' 
                             ? '请写下您在该公司的真实就职体验，例如：日常工作流程、团队加班状态、考核机制、办公室环境及食堂福利等细节。字数需多于15个字。'
                             : 'Provide authentic detail concerning work pace, pressure, corporate management styles, and workplace benefits (min. 15 chars).'}
-                          className="w-full px-3 py-2.5 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none resize-none"
+                          className="w-full px-3 py-2.5 bg-muted/40 border border-border rounded-none text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none resize-none"
                         />
                       </div>
 
@@ -805,14 +805,14 @@ export default function Home({ params }: PageProps) {
                         <button
                           type="button"
                           onClick={() => setShowSubmitForm(false)}
-                          className="px-5 py-2 border border-border hover:bg-accent text-muted-foreground hover:text-foreground rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                          className="px-5 py-2 border border-border hover:bg-accent text-muted-foreground hover:text-foreground rounded-none text-xs font-bold transition-colors cursor-pointer"
                         >
                           {lang === 'zh' ? '取消' : 'Cancel'}
                         </button>
                         <button
                           type="submit"
                           disabled={isSubmitting}
-                          className="inline-flex items-center gap-1.5 px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-xs font-bold transition-colors shadow-xs cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-none text-xs font-bold transition-colors cursor-pointer"
                         >
                           {isSubmitting && <Loader2 className="w-3 h-3 animate-spin text-black" />}
                           <span>{lang === 'zh' ? '确认匿名提交' : 'Submit Review'}</span>
