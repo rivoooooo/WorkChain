@@ -64,6 +64,68 @@ interface AIReport {
   salaryAnalysis: string;
 }
 
+const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+interface CacheEntry {
+  data: AIReport;
+  timestamp: number;
+}
+
+// Automatically clear expired entries from local storage
+const cleanExpiredAICache = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    const keys = Object.keys(localStorage);
+    const now = Date.now();
+    keys.forEach(key => {
+      if (key.startsWith('ai_report_cache_')) {
+        const itemStr = localStorage.getItem(key);
+        if (itemStr) {
+          const entry: CacheEntry = JSON.parse(itemStr);
+          if (now - entry.timestamp > CACHE_DURATION_MS) {
+            localStorage.removeItem(key);
+          }
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Failed to clean expired AI Cache:', err);
+  }
+};
+
+const getCachedAIReport = (companyName: string): AIReport | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const key = `ai_report_cache_${companyName.toLowerCase().trim()}`;
+    const itemStr = localStorage.getItem(key);
+    if (!itemStr) return null;
+    const entry: CacheEntry = JSON.parse(itemStr);
+    if (Date.now() - entry.timestamp < CACHE_DURATION_MS) {
+      return entry.data;
+    } else {
+      localStorage.removeItem(key); // clear expired entry
+      return null;
+    }
+  } catch (err) {
+    console.error('Failed to read AI cache:', err);
+    return null;
+  }
+};
+
+const setCachedAIReport = (companyName: string, data: AIReport) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = `ai_report_cache_${companyName.toLowerCase().trim()}`;
+    const entry: CacheEntry = {
+      data,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(key, JSON.stringify(entry));
+  } catch (err) {
+    console.error('Failed to save AI cache:', err);
+  }
+};
+
 export default function Home() {
   // Navigation & Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,6 +150,7 @@ export default function Home() {
   const [aiReport, setAiReport] = useState<AIReport | null>(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [isReportFromCache, setIsReportFromCache] = useState(false);
 
   // Ledger Verification State
   const [isVerifyingLedger, setIsVerifyingLedger] = useState(false);
@@ -123,7 +186,47 @@ export default function Home() {
   // Fetch all reviews and distinct companies on load
   useEffect(() => {
     fetchInitialData();
+    cleanExpiredAICache();
   }, []);
+
+  // Handle popstate event (browser back/forward button clicks)
+  useEffect(() => {
+    const handlePopState = () => {
+      if (allReviews.length > 0) {
+        const params = new URLSearchParams(window.location.search);
+        const companyParam = params.get('company');
+        if (companyParam) {
+          const query = companyParam.trim();
+          setSearchQuery(query);
+          setSubmittedQuery(query);
+          setShowSubmitForm(false);
+          setVerificationResult(null);
+          
+          const matched = allReviews.filter(
+            r => r.company_name.toLowerCase().trim() === query.toLowerCase()
+          );
+          setCurrentCompanyReviews(matched);
+
+          const cached = getCachedAIReport(query);
+          if (cached) {
+            setAiReport(cached);
+            setIsReportFromCache(true);
+          } else {
+            setAiReport(null);
+            setIsReportFromCache(false);
+          }
+        } else {
+          setSubmittedQuery('');
+          setSearchQuery('');
+          setAiReport(null);
+          setIsReportFromCache(false);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [allReviews]);
 
   async function fetchInitialData() {
     setIsLoading(true);
@@ -131,8 +234,38 @@ export default function Home() {
       const res = await fetch('/api/reviews');
       const json = await res.json();
       if (json.success) {
-        setAllReviews(json.data || []);
+        const reviews = json.data || [];
+        setAllReviews(reviews);
         setDistinctCompanies(json.companies || []);
+
+        // Sync state with URL search parameters on initial load
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const companyParam = params.get('company');
+          if (companyParam) {
+            const query = companyParam.trim();
+            setSearchQuery(query);
+            setSubmittedQuery(query);
+            setShowSubmitForm(false);
+            setVerificationResult(null);
+            setAiError('');
+
+            const matched = reviews.filter(
+              (r: Review) => r.company_name.toLowerCase().trim() === query.toLowerCase()
+            );
+            setCurrentCompanyReviews(matched);
+
+            const cached = getCachedAIReport(query);
+            if (cached) {
+              setAiReport(cached);
+              setIsReportFromCache(true);
+            } else {
+              setAiReport(null);
+              setIsReportFromCache(false);
+            }
+            setActiveTab('reviews');
+          }
+        }
       }
     } catch (err) {
       console.error('Failed to fetch initial reviews:', err);
@@ -165,11 +298,39 @@ export default function Home() {
     } else {
       // Prefetch or prepare
     }
+
+    // Update URL Search Parameter
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('company', query);
+      window.history.pushState({}, '', url.toString());
+    }
+
+    // Check Cache immediately
+    const cached = getCachedAIReport(query);
+    if (cached) {
+      setAiReport(cached);
+      setIsReportFromCache(true);
+    } else {
+      setAiReport(null);
+      setIsReportFromCache(false);
+    }
   };
 
   // Generate / Load AI Culture Analysis
-  const handleGenerateAIReport = async () => {
+  const handleGenerateAIReport = async (force: boolean = false) => {
     if (!submittedQuery) return;
+
+    // Check cache first if not forced
+    if (!force) {
+      const cached = getCachedAIReport(submittedQuery);
+      if (cached) {
+        setAiReport(cached);
+        setIsReportFromCache(true);
+        return;
+      }
+    }
+
     setIsGeneratingAI(true);
     setAiError('');
     try {
@@ -181,6 +342,9 @@ export default function Home() {
       const json = await res.json();
       if (json.success) {
         setAiReport(json.data);
+        setIsReportFromCache(false);
+        // Save to cache
+        setCachedAIReport(submittedQuery, json.data);
       } else {
         setAiError(json.error || '无法生成分析报告，请稍后再试。');
       }
@@ -577,6 +741,11 @@ export default function Home() {
                 onClick={() => {
                   setSubmittedQuery('');
                   setSearchQuery('');
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('company');
+                    window.history.pushState({}, '', url.pathname + url.search);
+                  }
                 }}
                 className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium text-sm transition-colors"
               >
@@ -684,7 +853,7 @@ export default function Home() {
                     onClick={() => {
                       setActiveTab('aiReport');
                       if (!aiReport) {
-                        handleGenerateAIReport();
+                        handleGenerateAIReport(false);
                       }
                     }}
                     className={`px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors flex items-center gap-1.5 ${
@@ -880,12 +1049,18 @@ export default function Home() {
                         <p className="text-xs text-gray-500 mt-1">
                           系统自动聚合全量匿名文本，基于情感倾向分析计算出的企业宏观画像与发展性价比报告。
                         </p>
+                        {isReportFromCache && (
+                          <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[11px] text-emerald-400 font-medium">
+                            <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>已从本地缓存加载 (24小时内有效，点击右侧刷新可强制重新生成)</span>
+                          </div>
+                        )}
                       </div>
                       <button
-                        onClick={handleGenerateAIReport}
+                        onClick={() => handleGenerateAIReport(true)}
                         disabled={isGeneratingAI}
                         className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                        title="重新生成AI报告"
+                        title="重新生成并更新AI缓存"
                       >
                         <RefreshCw className={`w-4 h-4 ${isGeneratingAI ? 'animate-spin' : ''}`} />
                       </button>
@@ -1030,7 +1205,7 @@ export default function Home() {
                     ) : (
                       <div className="text-center py-12">
                         <button
-                          onClick={handleGenerateAIReport}
+                          onClick={() => handleGenerateAIReport(false)}
                           className="px-6 py-2.5 bg-[#151515] hover:bg-[#1a1a1a] border border-white/10 text-[#e0e0e0] hover:text-white rounded-xl text-xs font-bold transition-colors"
                         >
                           开始生成深度文化分析报告
