@@ -297,7 +297,7 @@ export default function Home({ params }: PageProps) {
         </div>
 
         {/* MAIN BODY CONTENT */}
-        <div className="flex-1 px-2">
+        <div className="flex-1 px-4">
 
         {!hasSearched ? (
           <div className="space-y-12 sm:space-y-16">
