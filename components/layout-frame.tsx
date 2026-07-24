@@ -42,12 +42,12 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.company_name.trim() || !formData.review_text.trim()) {
-      setFormError(lang === 'zh' ? '请填写公司名称与详细评价内容。' : 'Please provide company name and review detail.');
+    if (!formData.company_name.trim()) {
+      setFormError(t.formErrorNameRequired);
       return;
     }
     if (formData.review_text.trim().length < 15) {
-      setFormError(lang === 'zh' ? '评价字数较少，请多提供至少15字细节。' : 'Review detail is too brief (min 15 chars).');
+      setFormError(t.formErrorTextLength);
       return;
     }
 
@@ -75,11 +75,11 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
           window.location.reload();
         }, 1800);
       } else {
-        setFormError(json.error || (lang === 'zh' ? '提交失败，请重试' : 'Submission failed'));
+        setFormError(json.error || t.formErrorSubmitFailed);
       }
     } catch (err) {
       console.error(err);
-      setFormError(lang === 'zh' ? '网络错误，无法存证' : 'Network error');
+      setFormError(t.formErrorNetwork);
     } finally {
       setIsSubmitting(false);
     }
@@ -293,10 +293,10 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
 
                     <h2 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
                       <Plus className="w-5 h-5 text-emerald-500" />
-                      <span>{lang === 'zh' ? '添加企业匿名评价' : 'Submit Anonymous Review'}</span>
+                      <span>{t.formTitle}</span>
                     </h2>
                     <p className="text-xs text-muted-foreground">
-                      {lang === 'zh' ? '采用密码学哈希存证，完全匿名，永不包含个人信息。' : 'Cryptographically hashed, 100% anonymous without identity tracking.'}
+                      {t.formSubtitle}
                     </p>
                   </div>
 
@@ -309,171 +309,139 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                       </div>
                     )}
 
-                  {formSuccess ? (
-                    <div className="py-12 text-center space-y-3">
-                      <ShieldCheck className="w-12 h-12 text-emerald-500 mx-auto animate-bounce" />
-                      <h3 className="text-base font-bold text-foreground">{lang === 'zh' ? '评价提交成功！已生成哈希链条' : 'Review Hashed & Recorded!'}</h3>
-                      <p className="text-xs text-muted-foreground">{lang === 'zh' ? '正在刷新全局数据...' : 'Refreshing ledger state...'}</p>
-                    </div>
-                  ) : (
-                    <form onSubmit={handleSubmit} className="space-y-4 flex-1">
-                      {/* Form Fields */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
-                            {lang === 'zh' ? '公司全称' : 'Company Name'} <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            required
-                            value={formData.company_name}
-                            onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
-                            placeholder={lang === 'zh' ? '例如: 腾讯 / 字节跳动 / 华为' : 'e.g. Google / Microsoft'}
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
-                            {lang === 'zh' ? '工作城市 / 分部' : 'Location / Branch'}
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.branch_location}
-                            onChange={(e) => setFormData(prev => ({ ...prev, branch_location: e.target.value }))}
-                            placeholder="例如: 北京 / 上海 / 深圳"
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
-                          />
-                        </div>
+                    {formSuccess ? (
+                      <div className="py-12 text-center space-y-3">
+                        <ShieldCheck className="w-12 h-12 text-emerald-500 mx-auto animate-bounce" />
+                        <h3 className="text-base font-bold text-foreground">{t.formSuccessTitle}</h3>
+                        <p className="text-xs text-muted-foreground">{t.formSuccessDesc}</p>
                       </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
-                            {lang === 'zh' ? '职位名称' : 'Position Title'}
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.position}
-                            onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
-                            placeholder="例如: 高级软件工程师"
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
-                            {lang === 'zh' ? '在职状态' : 'Employment Status'}
-                          </label>
-                          <select
-                            value={formData.employment_status}
-                            onChange={(e) => setFormData(prev => ({ ...prev, employment_status: e.target.value }))}
-                            className="w-full px-3 py-2.5 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none cursor-pointer"
-                          >
-                            <option value="current" className="bg-popover text-popover-foreground">{lang === 'zh' ? '目前在职' : 'Current'}</option>
-                            <option value="former" className="bg-popover text-popover-foreground">{lang === 'zh' ? '已经离职' : 'Former'}</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
-                            {lang === 'zh' ? '基本月薪 (元/CNY)' : 'Base Monthly Salary'}
-                          </label>
-                          <input
-                            type="number"
-                            value={formData.salary}
-                            onChange={(e) => setFormData(prev => ({ ...prev, salary: e.target.value }))}
-                            placeholder="如: 25000"
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
-                            {lang === 'zh' ? '大约年终奖 (元)' : 'Expected Annual Bonus'}
-                          </label>
-                          <input
-                            type="number"
-                            value={formData.bonus}
-                            onChange={(e) => setFormData(prev => ({ ...prev, bonus: e.target.value }))}
-                            placeholder="如: 80000"
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
-                            {lang === 'zh' ? '经验年限' : 'Experience Years'}
-                          </label>
-                          <input
-                            type="number"
-                            value={formData.experience_years}
-                            onChange={(e) => setFormData(prev => ({ ...prev, experience_years: e.target.value }))}
-                            placeholder="如: 3"
-                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Ratings Sliders */}
-                      <div className="bg-muted/40 border border-border rounded-none p-4 space-y-3">
-                        <span className="block text-xs font-extrabold text-foreground uppercase border-b border-border pb-2">
-                          {lang === 'zh' ? '多维度满意度评分 (1 - 5 星)' : 'Satisfaction Metrics (1 - 5 Stars)'}
-                        </span>
-                        {[
-                          { key: 'rating_career', label: lang === 'zh' ? '职业发展空间' : 'Career Space' },
-                          { key: 'rating_balance', label: lang === 'zh' ? '工作平衡 (WLB)' : 'Work Balance (WLB)' },
-                          { key: 'rating_management', label: lang === 'zh' ? '管理层信任度' : 'Management Trust' },
-                          { key: 'rating_compensation', label: lang === 'zh' ? '薪资福利性价比' : 'Compensation Value' },
-                          { key: 'rating_culture', label: lang === 'zh' ? '团队文化氛围' : 'Team Vibe' }
-                        ].map((slider) => (
-                          <div key={slider.key} className="flex items-center justify-between gap-2 text-xs">
-                            <span className="font-semibold text-foreground">{slider.label}</span>
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="range"
-                                min="1"
-                                max="5"
-                                step="1"
-                                value={formData[slider.key as keyof typeof formData]}
-                                onChange={(e) => setFormData(prev => ({ ...prev, [slider.key]: Number(e.target.value) }))}
-                                className="w-32 h-1.5 bg-muted rounded-none appearance-none cursor-pointer accent-emerald-500"
-                              />
-                              <span className="w-10 text-right font-bold text-emerald-500 text-xs">
-                                {formData[slider.key as keyof typeof formData]} {lang === 'zh' ? '星' : 'Stars'}
-                              </span>
-                            </div>
+                    ) : (
+                      <form onSubmit={handleSubmit} className="space-y-4 flex-1">
+                        {/* Form Fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                              {t.formLabelCompany} <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.company_name}
+                              onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
+                              placeholder={t.formPlaceholderCompany}
+                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            />
                           </div>
-                        ))}
-                      </div>
+                          <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                              {t.formLabelLocation}
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.branch_location}
+                              onChange={(e) => setFormData(prev => ({ ...prev, branch_location: e.target.value }))}
+                              placeholder={t.formPlaceholderLocation}
+                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            />
+                          </div>
+                        </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
-                          {lang === 'zh' ? '匿名评论详情描述' : 'Review Details'} <span className="text-rose-500">*</span>
-                        </label>
-                        <textarea
-                          required
-                          rows={3}
-                          value={formData.review_text}
-                          onChange={(e) => setFormData(prev => ({ ...prev, review_text: e.target.value }))}
-                          placeholder={lang === 'zh' ? '请写下您在该公司的真实就职体验细节（至少15字）。' : 'Authentic detail concerning work pace, pressure, and culture (min. 15 chars).'}
-                          className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none resize-none"
-                        />
-                      </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                              {t.formLabelPosition}
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.position}
+                              onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
+                              placeholder={t.formPlaceholderPosition}
+                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                              {t.formLabelStatus}
+                            </label>
+                            <select
+                              value={formData.employment_status}
+                              onChange={(e) => setFormData(prev => ({ ...prev, employment_status: e.target.value }))}
+                              className="w-full px-3 py-2.5 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none cursor-pointer"
+                            >
+                              <option value="current" className="bg-popover text-popover-foreground">{t.currentEmployee}</option>
+                              <option value="former" className="bg-popover text-popover-foreground">{t.formerEmployee}</option>
+                            </select>
+                          </div>
+                        </div>
 
-                      <div className="flex justify-end gap-3 pt-3 border-t border-border">
-                        <button
-                          type="button"
-                          onClick={() => setShowSubmitForm(false)}
-                          className="px-5 py-2 border border-border hover:bg-accent text-muted-foreground hover:text-foreground rounded-none text-xs font-bold transition-colors cursor-pointer"
-                        >
-                          {lang === 'zh' ? '取消' : 'Cancel'}
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={isSubmitting}
-                          className="inline-flex items-center gap-1.5 px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-none text-xs font-bold transition-colors cursor-pointer"
-                        >
-                          {isSubmitting && <Loader2 className="w-3 h-3 animate-spin text-black" />}
-                          <span>{lang === 'zh' ? '确认匿名提交' : 'Submit Review'}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                              {t.formLabelSalary}
+                            </label>
+                            <input
+                              type="number"
+                              value={formData.salary}
+                              onChange={(e) => setFormData(prev => ({ ...prev, salary: e.target.value }))}
+                              placeholder={t.formPlaceholderSalary}
+                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                              {t.formLabelBonus}
+                            </label>
+                            <input
+                              type="number"
+                              value={formData.bonus}
+                              onChange={(e) => setFormData(prev => ({ ...prev, bonus: e.target.value }))}
+                              placeholder={t.formPlaceholderBonus}
+                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                              {t.formLabelYears}
+                            </label>
+                            <input
+                              type="number"
+                              value={formData.experience_years}
+                              onChange={(e) => setFormData(prev => ({ ...prev, experience_years: e.target.value }))}
+                              placeholder={t.formPlaceholderYears}
+                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Ratings Sliders */}
+                        <div className="bg-muted/40 border border-border rounded-none p-4 space-y-3">
+                          <span className="block text-xs font-extrabold text-foreground uppercase border-b border-border pb-2">
+                            {t.formRatingTitle}
+                          </span>
+                          {[
+                            { key: 'rating_career', label: t.metricCareer },
+                            { key: 'rating_balance', label: t.metricWlb },
+                            { key: 'rating_management', label: t.metricManagement },
+                            { key: 'rating_compensation', label: t.metricBenefits },
+                            { key: 'rating_culture', label: t.metricCulture }
+                          ].map((slider) => (
+                            <div key={slider.key} className="flex items-center justify-between gap-2 text-xs">
+                              <span className="font-semibold text-foreground">{slider.label}</span>
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="range"
+                                  min="1"
+                                  max="5"
+                                  step="1"
+                                  value={formData[slider.key as keyof typeof formData]}
+                                  onChange={(e) => setFormData(prev => ({ ...prev, [slider.key]: Number(e.target.value) }))}
+                                  className="w-32 h-1.5 bg-muted rounded-none appearance-none cursor-pointer accent-emerald-500"
+                                />
+                                <span className="w-10 text-right font-bold text-emerald-500 text-xs">
+                                  {formData[slider.key as keyof typeof formData]} {t.formStarsUnit}
+                                </span>
+                              </div>
+                            </div>
                         </button>
                       </div>
                     </form>
