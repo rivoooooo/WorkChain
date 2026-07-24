@@ -77,7 +77,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
 
   const [formData, setFormData] = useState({
     company_name: '',
-    country_code: 'CN',
+    country_code: '',
     branch_location: '',
     position: '',
     employment_status: 'current',
@@ -140,7 +140,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
   const openReviewModal = () => {
     setFormData({
       company_name: '',
-      country_code: 'CN',
+      country_code: '',
       branch_location: '',
       position: '',
       employment_status: 'current',

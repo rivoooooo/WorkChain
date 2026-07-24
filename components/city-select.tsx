@@ -25,7 +25,7 @@ interface CitySelectProps {
 }
 
 export function CitySelect({
-  countryValue = 'CN',
+  countryValue = '',
   cityValue = '',
   onCountryChange,
   onCityChange,
@@ -68,7 +68,7 @@ export function CitySelect({
   const currentCountry = countries.find((c) => c.code.toUpperCase() === selectedCountryCode.toUpperCase());
   const currentCountryDisplay = currentCountry
     ? (currentCountry.chinese_name ? `${currentCountry.chinese_name} (${currentCountry.code})` : `${currentCountry.name} (${currentCountry.code})`)
-    : (selectedCountryCode === 'CN' ? '中国 (CN)' : selectedCountryCode);
+    : selectedCountryCode;
 
   // 过滤国家搜索结果
   const filteredCountries = countries.filter((c) => {
