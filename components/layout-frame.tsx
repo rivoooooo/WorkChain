@@ -262,47 +262,52 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
               className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end justify-center p-3 sm:p-6 overflow-hidden"
               id="submission_modal"
             >
-              {/* Modal Container Fixed to Bottom with max-h 90dvh */}
-              <div className="relative max-w-2xl w-full max-h-[90dvh] mb-0 sm:mb-2 flex flex-col items-center">
+              {/* Outer Wrapper anchored to bottom with max-h 90dvh */}
+              <div className="relative max-w-2xl w-full h-full max-h-[90dvh] mb-0 sm:mb-2 flex flex-col">
                 
-                {/* Stacked Second Document Background Sheet (Subtle -4deg left tilt for stacked paper look) */}
+                {/* Stacked Second Document Background Sheet (Rotated -4deg, matching exact form size) */}
                 <div 
-                  className="absolute inset-0 bg-card border border-border shadow-lg pointer-events-none z-0 opacity-80"
+                  className="absolute inset-0 bg-card border border-border shadow-md pointer-events-none z-0 opacity-80"
                   style={{
-                    transform: 'rotate(-4deg) scale(0.98)',
+                    transform: 'rotate(-4deg) scale(0.99)',
                     transformOrigin: 'bottom left'
                   }}
                 />
 
-                {/* Main Front Review Submission Form Sheet */}
+                {/* Main Front Form Container with solid bg-card and border border-border */}
                 <motion.div
                   initial={{ y: 80, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: 80, opacity: 0 }}
                   transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-                  className="relative z-10 bg-card border border-border shadow-2xl w-full max-h-[90dvh] overflow-y-auto p-6 sm:p-8 text-card-foreground flex flex-col"
+                  className="relative z-10 bg-card border border-border shadow-2xl w-full h-full max-h-[90dvh] flex flex-col text-card-foreground overflow-hidden"
                 >
-                  <button
-                    onClick={() => setShowSubmitForm(false)}
-                    className="absolute right-6 top-6 text-muted-foreground hover:text-foreground cursor-pointer z-20"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  {/* Sticky Header */}
+                  <div className="p-6 sm:p-8 pb-4 border-b border-border bg-card shrink-0 relative z-20">
+                    <button
+                      onClick={() => setShowSubmitForm(false)}
+                      className="absolute right-6 top-6 text-muted-foreground hover:text-foreground cursor-pointer z-20"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
 
-                  <h2 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-emerald-500" />
-                    <span>{lang === 'zh' ? '添加企业匿名评价' : 'Submit Anonymous Review'}</span>
-                  </h2>
-                  <p className="text-xs text-muted-foreground mb-6">
-                    {lang === 'zh' ? '采用密码学哈希存证，完全匿名，永不包含个人信息。' : 'Cryptographically hashed, 100% anonymous without identity tracking.'}
-                  </p>
+                    <h2 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
+                      <Plus className="w-5 h-5 text-emerald-500" />
+                      <span>{lang === 'zh' ? '添加企业匿名评价' : 'Submit Anonymous Review'}</span>
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      {lang === 'zh' ? '采用密码学哈希存证，完全匿名，永不包含个人信息。' : 'Cryptographically hashed, 100% anonymous without identity tracking.'}
+                    </p>
+                  </div>
 
-                  {formError && (
-                    <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-none text-xs flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      <span>{formError}</span>
-                    </div>
-                  )}
+                  {/* Scrollable Form Body with Solid bg-card Background */}
+                  <div className="flex-1 overflow-y-auto p-6 sm:p-8 pt-4 bg-card">
+                    {formError && (
+                      <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-none text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{formError}</span>
+                      </div>
+                    )}
 
                   {formSuccess ? (
                     <div className="py-12 text-center space-y-3">
@@ -473,6 +478,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                       </div>
                     </form>
                   )}
+                  </div>
                 </motion.div>
               </div>
             </motion.div>
