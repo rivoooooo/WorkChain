@@ -200,101 +200,99 @@ export default function Home({ params }: PageProps) {
       {/* NEWSPAPER EDITORIAL MAX-W CONTAINER (ENTIRE PAGE: HEADER + CONTENT + FOOTER) */}
       <div className="max-w-6xl mx-auto border-x border-border min-h-screen flex flex-col justify-between relative z-10 px-0" id="app_container">
         
-        {/* FLOATING CAPSULE NAVBAR INSIDE CONTAINER */}
-        <div className="sticky top-6 z-50 px-2 mb-8 sm:mb-12">
-          <header className="max-w-4xl mx-auto bg-zinc-950 text-white rounded-full p-2 pl-6 pr-3 shadow-2xl border border-white/10 backdrop-blur-md flex items-center justify-between" id="floating_navbar">
-            {/* Pure Text Logo */}
-            <Link
-              href={`/${rawLang}`}
-              onClick={() => {
-                setHasSearched(false);
-                setSearchQuery('');
-              }}
-              className="flex items-center group"
-            >
-              <span className="font-extrabold text-white text-base sm:text-lg tracking-tight transition-colors">
-                workchain
-              </span>
-            </Link>
+        {/* NEWSPAPER EDITORIAL HEADER MASTHEAD INSIDE CONTAINER */}
+        <header className="w-full border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50 mb-8 px-4 sm:px-6 py-4 flex items-center justify-between" id="newspaper_header">
+          {/* Left: App Name (Pure Newspaper Typography) */}
+          <Link
+            href={`/${rawLang}`}
+            onClick={() => {
+              setHasSearched(false);
+              setSearchQuery('');
+            }}
+            className="flex items-center group"
+          >
+            <span className="font-black text-foreground text-xl sm:text-2xl tracking-tighter uppercase font-sans group-hover:opacity-80 transition-opacity">
+              workchain
+            </span>
+          </Link>
 
-            {/* Action CTAs & Controls */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Theme Toggle (Circular Ghost) */}
-              <ThemeToggle className="w-9 h-9 rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer flex items-center justify-center" />
+          {/* Right: Actions & Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Theme Toggle (Ghost Button) */}
+            <ThemeToggle className="w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none" />
 
-              {/* Language Switcher Dropdown */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowLangDropdown(prev => !prev)}
-                  className="w-9 h-9 rounded-full hover:bg-white/10 text-white transition-colors cursor-pointer flex items-center justify-center relative"
-                  title="切换语言 / Switch Language"
-                  aria-label="Toggle Language Menu"
-                >
-                  <Languages className="w-4 h-4 text-white" />
-                </button>
-
-                {showLangDropdown && (
-                  <div 
-                    className="absolute right-0 top-full mt-2 w-36 bg-zinc-950 text-white border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 py-1"
-                    onMouseLeave={() => setShowLangDropdown(false)}
-                  >
-                    <button
-                      onClick={() => {
-                        setShowLangDropdown(false);
-                        if (lang !== 'en') window.location.href = '/en';
-                      }}
-                      className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
-                        lang === 'en' ? 'bg-white/15 text-white font-bold' : 'text-zinc-300 hover:bg-white/10 hover:text-white'
-                      }`}
-                    >
-                      <span>English</span>
-                      {lang === 'en' && <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowLangDropdown(false);
-                        if (lang !== 'zh') window.location.href = '/zh-cn';
-                      }}
-                      className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
-                        lang === 'zh' ? 'bg-white/15 text-white font-bold' : 'text-zinc-300 hover:bg-white/10 hover:text-white'
-                      }`}
-                    >
-                      <span>简体中文</span>
-                      {lang === 'zh' && <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Write Review Capsule Button */}
+            {/* Language Switcher Dropdown */}
+            <div className="relative">
               <button
-                onClick={() => {
-                  setFormData({
-                    company_name: '',
-                    branch_location: '',
-                    position: '',
-                    employment_status: 'current',
-                    salary: '',
-                    bonus: '',
-                    experience_years: '3',
-                    rating_career: 4,
-                    rating_balance: 3,
-                    rating_management: 3,
-                    rating_compensation: 3,
-                    rating_culture: 4,
-                    review_text: ''
-                  });
-                  setShowSubmitForm(true);
-                }}
-                className="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-full transition-all shadow-md flex items-center gap-1.5 cursor-pointer ml-1"
+                type="button"
+                onClick={() => setShowLangDropdown(prev => !prev)}
+                className="w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none relative"
+                title="切换语言 / Switch Language"
+                aria-label="Toggle Language Menu"
               >
-                <Plus className="w-3.5 h-3.5 text-black" />
-                <span>{t.addReview}</span>
+                <Languages className="w-4 h-4 text-foreground" />
               </button>
+
+              {showLangDropdown && (
+                <div 
+                  className="absolute right-0 top-full mt-2 w-36 bg-popover text-popover-foreground border border-border rounded-none shadow-lg z-50 py-1"
+                  onMouseLeave={() => setShowLangDropdown(false)}
+                >
+                  <button
+                    onClick={() => {
+                      setShowLangDropdown(false);
+                      if (lang !== 'en') window.location.href = '/en';
+                    }}
+                    className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
+                      lang === 'en' ? 'bg-muted text-foreground font-bold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    <span>English</span>
+                    {lang === 'en' && <span className="w-1.5 h-1.5 bg-foreground rounded-full" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowLangDropdown(false);
+                      if (lang !== 'zh') window.location.href = '/zh-cn';
+                    }}
+                    className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
+                      lang === 'zh' ? 'bg-muted text-foreground font-bold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
+                  >
+                    <span>简体中文</span>
+                    {lang === 'zh' && <span className="w-1.5 h-1.5 bg-foreground rounded-full" />}
+                  </button>
+                </div>
+              )}
             </div>
-          </header>
-        </div>
+
+            {/* Write Review Newspaper Button */}
+            <button
+              onClick={() => {
+                setFormData({
+                  company_name: '',
+                  branch_location: '',
+                  position: '',
+                  employment_status: 'current',
+                  salary: '',
+                  bonus: '',
+                  experience_years: '3',
+                  rating_career: 4,
+                  rating_balance: 3,
+                  rating_management: 3,
+                  rating_compensation: 3,
+                  rating_culture: 4,
+                  review_text: ''
+                });
+                setShowSubmitForm(true);
+              }}
+              className="px-4 py-2 bg-foreground text-background hover:opacity-90 text-xs font-bold rounded-none transition-all shadow-none flex items-center gap-1.5 cursor-pointer ml-1"
+            >
+              <Plus className="w-3.5 h-3.5 text-background" />
+              <span>{t.addReview}</span>
+            </button>
+          </div>
+        </header>
 
         {/* MAIN BODY CONTENT */}
         <div className="flex-1 px-4">

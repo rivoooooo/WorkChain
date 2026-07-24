@@ -37,9 +37,9 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       aria-label="Toggle Theme"
     >
       {isDark ? (
-        <Sun className="w-4 h-4 text-white transition-all" />
+        <Sun className="w-4 h-4 text-current transition-all" />
       ) : (
-        <Moon className="w-4 h-4 text-white transition-all" />
+        <Moon className="w-4 h-4 text-current transition-all" />
       )}
     </button>
   );
