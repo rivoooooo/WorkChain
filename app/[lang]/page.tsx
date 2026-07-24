@@ -287,12 +287,12 @@ export default function Home({ params }: PageProps) {
         {!hasSearched ? (
           <div className="space-y-12 sm:space-y-16">
             
-            {/* HERO PIXEL ART IMAGE BANNER - SHARP RIGHT-ANGLED CORNERS */}
+            {/* HERO PIXEL ART IMAGE BANNER - SHARP RIGHT-ANGLED CORNERS WITH OVERFLOW HIDDEN */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="w-full rounded-none shadow-xl border border-border bg-card relative aspect-[16/9] sm:aspect-[21/9]"
+              className="w-full rounded-none shadow-xl border border-border bg-card relative aspect-[16/9] sm:aspect-[21/9] overflow-hidden"
               id="hero_banner_container"
             >
               <Image
@@ -300,7 +300,7 @@ export default function Home({ params }: PageProps) {
                 alt="WorkChain Mediterranean Garden Pixel Art"
                 fill
                 priority
-                className="object-cover object-center transform hover:scale-102 transition-transform duration-700"
+                className="object-cover object-center transform hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
               
@@ -367,16 +367,8 @@ export default function Home({ params }: PageProps) {
                 </motion.div>
               </div>
 
-              {/* Right Column: Narrative Subtitle & Capsule Search Form */}
+              {/* Right Column: Capsule Search Form */}
               <div className="lg:col-span-5 space-y-6">
-                <motion.p 
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                  className="text-sm sm:text-base text-muted-foreground leading-relaxed font-normal"
-                >
-                  {t.heroSub}
-                </motion.p>
 
                 {/* Capsule Search Bar Container */}
                 <motion.div
