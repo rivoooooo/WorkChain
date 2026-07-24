@@ -374,9 +374,9 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5 whitespace-nowrap">
                               {t.formLabelSalary}
                             </label>
                             <input
@@ -388,7 +388,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5 whitespace-nowrap">
                               {t.formLabelBonus}
                             </label>
                             <input
@@ -399,8 +399,11 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                               className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
                             />
                           </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5 whitespace-nowrap">
                               {t.formLabelYears}
                             </label>
                             <input
