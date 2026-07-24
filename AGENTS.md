@@ -8,15 +8,19 @@
   - 启动开发服务：`bun run dev`
   - 构建项目：`bun run build`
   - 代码校验：`bun run lint`
-  - 生成 DB 迁移文件：`bun run db:generate`
-  - 推送表结构到云端 DB：`bun run db:push`
+  - 推送/同步数据库迁移：`bun run db:migrate` (或 `bun run db:push`)
+  - 导出 ORM 迁移脚本：`bun run db:generate`
+  - 填充城市国家地理数据：`bun run import:geo`
+  - 转换导入企业注册 CSV：`bun run import:kinginsun <CSV或文件夹路径>`
   - 启动 Drizzle Studio 可视化面板：`bun run db:studio`
 
 ## 数据库与迁移规范
 
 - **数据库服务**：基于 Supabase / PostgreSQL。
-- **ORM 框架**：使用 **Drizzle ORM** 管理表结构与 Schema 变更（配置文件位于 `drizzle/schema.ts` 与 `drizzle.config.ts`）。
-- **表结构推演**：修改 `drizzle/schema.ts` 后运行 `bun run db:push` 即可直接将最新 Schema 推送到线上 PostgreSQL（无需 Docker 依赖）。
+- **ORM 框架与表结构**：使用 **Drizzle ORM** 管理表结构（`drizzle/schema.ts`）。
+  - `companies` 主表以 **统一社会信用代码 (`credit_code`)** 作为唯一索引与匹配 Key。
+  - 扩展详细工商属性置于 `company_details`，相关媒体链接置于 `company_links`，地理信息置于 `geo_cities` / `geo_countries`。
+- **通用转换层架构**：数据导入必须遵循 `lib/converters/` 架构，使用转换适配器统一转为 `StandardCompanyDTO` 后再进行以 `credit_code` 为 Key 的 Upsert 增量更新。
 - **初始化 SQL**：表结构及 RLS 安全策略同时保留在 `supabase/migrations/20260724000000_init_tables.sql`。
 - **种子数据**：移除了内置 seed 种子数据，所有测试与线上环境使用干净的表结构。
 
