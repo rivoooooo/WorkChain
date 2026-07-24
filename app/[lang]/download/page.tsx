@@ -139,21 +139,23 @@ export default function DownloadPage({ params }: PageProps) {
         <div className="flex flex-col md:flex-row md:items-baseline md:justify-between border-b-2 border-foreground pb-6 mb-8 gap-4">
           <div>
             <span className="text-xs font-extrabold tracking-widest text-muted-foreground uppercase block mb-1">
-              WORKCHAIN LEDGER ARCHIVE
+              {t.downloadArchiveTag}
             </span>
             <h1 className="text-5xl sm:text-7xl font-black text-foreground tracking-tighter uppercase leading-none">
-              MANIFEST
+              {t.downloadManifestHeader}
             </h1>
           </div>
           
           <div className="text-left md:text-right font-mono text-xs text-muted-foreground space-y-1">
             <div className="font-bold text-foreground">
-              {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
+              {lang === 'zh' 
+                ? `${new Date().getFullYear()}年${new Date().getMonth() + 1}月${new Date().getDate()}日`
+                : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}
             </div>
-            <div>MANIFEST NO. #WC-ARCHIVE-2026</div>
+            <div>{t.downloadManifestNo}</div>
             <div className="text-emerald-500 font-bold flex items-center md:justify-end gap-1">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>CRYPTOGRAPHICALLY VERIFIED</span>
+              <span>{t.downloadVerified}</span>
             </div>
           </div>
         </div>
@@ -165,7 +167,7 @@ export default function DownloadPage({ params }: PageProps) {
               {t.downloadIssuerLabel}
             </span>
             <p className="font-bold text-foreground">{t.downloadIssuerVal}</p>
-            <p className="text-muted-foreground font-mono text-[11px]">Node Hash: 0x9f82...3a1c</p>
+            <p className="text-muted-foreground font-mono text-[11px]">{t.downloadNodeHash}</p>
           </div>
 
           <div>
@@ -173,16 +175,16 @@ export default function DownloadPage({ params }: PageProps) {
               {t.downloadSecurityLabel}
             </span>
             <p className="font-bold text-foreground">{t.downloadSecurityVal}</p>
-            <p className="text-muted-foreground font-mono text-[11px]">Strict SHA-256 Hex Digest</p>
+            <p className="text-muted-foreground font-mono text-[11px]">{t.downloadDigestLabel}</p>
           </div>
 
           <div className="flex flex-col justify-between">
             <div>
               <span className="block font-bold uppercase text-muted-foreground text-[10px] tracking-wider mb-1">
-                SNAPSHOT COUNT
+                {t.downloadSnapshotCount}
               </span>
               <p className="font-bold text-foreground font-mono text-sm">
-                {backups.length} DAILY BACKUPS AVAILABLE
+                {backups.length} {t.downloadDailyBackupsAvailable}
               </p>
             </div>
           </div>
@@ -382,10 +384,10 @@ export default function DownloadPage({ params }: PageProps) {
           <div className="flex flex-col md:items-end justify-between gap-4">
             <div className="text-left md:text-right">
               <span className="block font-extrabold uppercase text-foreground text-xs mb-1 tracking-wider">
-                MANUAL ARCHIVAL TRIGGER
+                {t.downloadManualTriggerLabel}
               </span>
               <p className="text-muted-foreground text-[11px]">
-                {lang === 'zh' ? '手动强制编译全新快照并签署哈希' : 'Force re-compile instant ledger snapshot'}
+                {t.downloadManualTriggerSub}
               </p>
             </div>
 
