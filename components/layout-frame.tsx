@@ -3,9 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { Languages, Plus, Loader2, AlertCircle, ShieldCheck, X } from 'lucide-react';
+import { Languages, Plus, Loader2, AlertCircle, ShieldCheck, X, Search, Building2, Star, ArrowRight } from 'lucide-react';
 import { Language, i18n } from '../lib/i18n';
 import { ThemeToggle } from './theme-toggle';
+
+interface CompanyItem {
+  id: string;
+  name: string;
+  review_count: number;
+  avg_rating: number;
+}
 
 interface LayoutFrameProps {
   children: React.ReactNode;
@@ -18,38 +25,53 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
 
   const [showLangDropdown, setShowLangDropdown] = useState(false);
 
-  // Global Modal State
+  // Global Search Modal State
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchModalQuery, setSearchModalQuery] = useState('');
+  const [companyList, setCompanyList] = useState<CompanyItem[]>([]);
+  const [isFetchingCompanies, setIsFetchingCompanies] = useState(false);
+  const [searchActiveIndex, setSearchActiveIndex] = useState(-1);
+
+  // Global Review Modal State
   const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
 
-  const [formData, setFormData] = useState({
-    company_name: '',
-    branch_location: '',
-    position: '',
-    employment_status: 'current',
-    salary: '',
-    bonus: '',
-    experience_years: '3',
-    rating_career: 4,
-    rating_balance: 3,
-    rating_management: 3,
-    rating_compensation: 3,
-    rating_culture: 4,
-    review_text: ''
-  });
+  // Listen for custom event 'open-search-modal' from any page/hero search button
+  useEffect(() => {
+    const handleOpenSearch = () => setShowSearchModal(true);
+    window.addEventListener('open-search-modal', handleOpenSearch);
+    return () => window.removeEventListener('open-search-modal', handleOpenSearch);
+  }, []);
 
-  // ESC key listener to close submit modal
+  // Fetch companies list on demand when search modal opens
+  useEffect(() => {
+    if (showSearchModal && companyList.length === 0) {
+      setIsFetchingCompanies(true);
+      fetch('/api/companies')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setCompanyList(data.data || []);
+          }
+        })
+        .catch(err => console.error('Failed to load companies for search modal:', err))
+        .finally(() => setIsFetchingCompanies(false));
+    }
+  }, [showSearchModal, companyList.length]);
+
+  // ESC key listener to close submit modal and search modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showSubmitForm) {
-        setShowSubmitForm(false);
+      if (e.key === 'Escape') {
+        if (showSearchModal) setShowSearchModal(false);
+        if (showSubmitForm) setShowSubmitForm(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showSubmitForm]);
+  }, [showSubmitForm, showSearchModal]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,6 +162,17 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
 
           {/* Right: Actions & Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Ghost Search Icon Button */}
+            <button
+              type="button"
+              onClick={() => setShowSearchModal(true)}
+              className="w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none"
+              title={lang === 'zh' ? '搜索公司口碑' : 'Search Company Ledger'}
+              aria-label="Search Companies"
+            >
+              <Search className="w-4 h-4 text-foreground" />
+            </button>
+
             {/* Theme Toggle */}
             <ThemeToggle className="w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none" />
 
@@ -495,6 +528,155 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                   </div>
                 </motion.div>
               </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Global Company Search Modal (Command Palette / Newspaper Style) */}
+        <AnimatePresence>
+          {showSearchModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-start justify-center p-4 sm:p-6 pt-16 sm:pt-24 overflow-hidden"
+              onClick={() => setShowSearchModal(false)}
+            >
+              <motion.div
+                initial={{ y: -30, opacity: 0, scale: 0.97 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: -20, opacity: 0, scale: 0.97 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="max-w-2xl w-full bg-card border border-border shadow-2xl overflow-hidden rounded-none flex flex-col text-card-foreground"
+              >
+                {/* Search Modal Input Header */}
+                <div className="p-4 sm:p-5 border-b border-border flex items-center gap-3 bg-muted/30">
+                  <Search className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <input
+                    type="text"
+                    autoFocus
+                    value={searchModalQuery}
+                    onChange={(e) => {
+                      setSearchModalQuery(e.target.value);
+                      setSearchActiveIndex(-1);
+                    }}
+                    onKeyDown={(e) => {
+                      const list = companyList.filter(c => {
+                        if (!searchModalQuery.trim()) return true;
+                        return c.name.toLowerCase().includes(searchModalQuery.toLowerCase().trim());
+                      });
+
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setSearchActiveIndex(prev => (prev < list.length - 1 ? prev + 1 : 0));
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setSearchActiveIndex(prev => (prev > 0 ? prev - 1 : list.length - 1));
+                      } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (searchActiveIndex >= 0 && searchActiveIndex < list.length) {
+                          const target = list[searchActiveIndex];
+                          window.location.href = `/${lang}/companies/${target.id}`;
+                        } else if (list.length > 0) {
+                          window.location.href = `/${lang}/companies/${list[0].id}`;
+                        } else if (searchModalQuery.trim()) {
+                          window.location.href = `/${lang}/companies?q=${encodeURIComponent(searchModalQuery.trim())}`;
+                        }
+                      }
+                    }}
+                    placeholder={t.searchModalInputPlaceholder}
+                    className="w-full bg-transparent text-sm sm:text-base font-bold text-foreground placeholder:text-muted-foreground outline-none"
+                  />
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono border border-border bg-muted text-muted-foreground">
+                      ESC
+                    </span>
+                    <button
+                      onClick={() => setShowSearchModal(false)}
+                      className="p-1 hover:text-foreground text-muted-foreground transition-colors cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Suggestions / Results List Container */}
+                <div className="max-h-[60vh] overflow-y-auto p-3 sm:p-4 space-y-1">
+                  {isFetchingCompanies ? (
+                    <div className="py-12 flex flex-col items-center justify-center text-xs text-muted-foreground">
+                      <Loader2 className="w-6 h-6 text-emerald-500 animate-spin mb-2" />
+                      <span>{lang === 'zh' ? '正在查询企业口碑列表...' : 'Querying company database...'}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+                        <span>{searchModalQuery.trim() ? t.searchModalResults : t.searchModalTrending}</span>
+                        <span>{companyList.filter(c => !searchModalQuery.trim() || c.name.toLowerCase().includes(searchModalQuery.toLowerCase().trim())).length} COMPANIES</span>
+                      </div>
+
+                      {companyList.filter(c => !searchModalQuery.trim() || c.name.toLowerCase().includes(searchModalQuery.toLowerCase().trim())).length === 0 ? (
+                        <div className="py-10 text-center space-y-2">
+                          <Building2 className="w-8 h-8 text-muted-foreground mx-auto" />
+                          <p className="text-xs font-bold text-foreground">{t.searchModalNoResults}</p>
+                          <p className="text-xs text-muted-foreground max-w-sm mx-auto">{t.searchModalNoResultsDesc}</p>
+                          <button
+                            onClick={() => {
+                              setShowSearchModal(false);
+                              openReviewModal();
+                            }}
+                            className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>{t.addReview}</span>
+                          </button>
+                        </div>
+                      ) : (
+                        companyList
+                          .filter(c => !searchModalQuery.trim() || c.name.toLowerCase().includes(searchModalQuery.toLowerCase().trim()))
+                          .map((company, index) => {
+                            const isSelected = index === searchActiveIndex;
+                            return (
+                              <Link
+                                key={company.id}
+                                href={`/${lang}/companies/${company.id}`}
+                                onClick={() => setShowSearchModal(false)}
+                                onMouseEnter={() => setSearchActiveIndex(index)}
+                                className={`w-full p-3 flex items-center justify-between border transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-muted/80 border-emerald-500/50 text-foreground'
+                                    : 'border-border/40 hover:border-border hover:bg-muted/30 text-foreground'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 bg-muted border border-border flex items-center justify-center font-bold text-xs text-foreground uppercase">
+                                    {company.name.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                                      <span>{company.name}</span>
+                                    </h4>
+                                    <p className="text-[11px] text-muted-foreground">
+                                      {company.review_count} {lang === 'zh' ? '笔真实匿名口碑存证' : 'verified reviews'}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-xs font-bold text-emerald-500">
+                                    <Star className="w-3 h-3 fill-emerald-500" />
+                                    <span>{company.avg_rating > 0 ? company.avg_rating.toFixed(1) : '4.5'}</span>
+                                  </div>
+                                  <ArrowRight className={`w-4 h-4 transition-transform ${isSelected ? 'text-emerald-500 translate-x-1' : 'text-muted-foreground'}`} />
+                                </div>
+                              </Link>
+                            );
+                          })
+                      )}
+                    </>
+                  )}
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

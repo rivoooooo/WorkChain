@@ -265,67 +265,29 @@ export default function Home({ params }: PageProps) {
               {/* Right Column: Capsule Search Form */}
               <div className="lg:col-span-5 space-y-6">
 
-                {/* Capsule Search Bar Container */}
+                {/* Capsule Search Bar Container (Read-Only trigger to open Global Search Modal) */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="relative w-full"
+                  className="relative w-full cursor-pointer"
                   id="search_box_container"
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-search-modal'))}
                 >
-                  <div className="bg-muted/70 backdrop-blur-md p-1.5 rounded-full border border-border shadow-lg flex items-center">
-                    <Search className="w-5 h-5 text-muted-foreground ml-4 mr-2 flex-shrink-0" />
+                  <div className="bg-muted/70 hover:bg-muted backdrop-blur-md p-1.5 rounded-full border border-border hover:border-emerald-500/50 transition-all shadow-lg flex items-center group">
+                    <Search className="w-5 h-5 text-muted-foreground group-hover:text-emerald-500 ml-4 mr-2 flex-shrink-0 transition-colors" />
                     <input
                       type="text"
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setShowSearchSuggestions(true);
-                        setSearchActiveSuggestionIndex(-1);
-                      }}
-                      onFocus={() => setShowSearchSuggestions(true)}
-                      onBlur={() => {
-                        setTimeout(() => setShowSearchSuggestions(false), 200);
-                      }}
-                      onKeyDown={(e) => {
-                        if (showSearchSuggestions && filteredSearchSuggestions.length > 0) {
-                          if (e.key === 'ArrowDown') {
-                            e.preventDefault();
-                            setSearchActiveSuggestionIndex(prev => 
-                              prev < filteredSearchSuggestions.length - 1 ? prev + 1 : 0
-                            );
-                          } else if (e.key === 'ArrowUp') {
-                            e.preventDefault();
-                            setSearchActiveSuggestionIndex(prev => 
-                              prev > 0 ? prev - 1 : filteredSearchSuggestions.length - 1
-                            );
-                          } else if (e.key === 'Enter') {
-                            if (searchActiveSuggestionIndex >= 0 && searchActiveSuggestionIndex < filteredSearchSuggestions.length) {
-                              e.preventDefault();
-                              const selected = filteredSearchSuggestions[searchActiveSuggestionIndex];
-                              setSearchQuery(selected);
-                              handleSearch(selected);
-                              setShowSearchSuggestions(false);
-                            } else {
-                              handleSearch();
-                              setShowSearchSuggestions(false);
-                            }
-                          } else if (e.key === 'Escape') {
-                            setShowSearchSuggestions(false);
-                          }
-                        } else if (e.key === 'Enter') {
-                          handleSearch();
-                        }
-                      }}
+                      readOnly
                       placeholder={t.searchPlaceholder}
-                      className="w-full bg-transparent outline-none text-foreground placeholder:text-muted-foreground font-medium text-sm rounded-full pr-2"
+                      className="w-full bg-transparent outline-none text-foreground placeholder:text-muted-foreground font-medium text-sm rounded-full pr-2 cursor-pointer"
                       id="main_search_input"
-                      autoComplete="off"
                     />
                     <button
-                      onClick={() => {
-                        handleSearch();
-                        setShowSearchSuggestions(false);
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.dispatchEvent(new CustomEvent('open-search-modal'));
                       }}
                       className="px-6 py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full text-xs font-bold transition-all shadow-md flex-shrink-0 cursor-pointer"
                       id="search_btn"
@@ -333,40 +295,6 @@ export default function Home({ params }: PageProps) {
                       {t.searchBtn}
                     </button>
                   </div>
-
-                  {/* Suggestions Dropdown */}
-                  {showSearchSuggestions && filteredSearchSuggestions.length > 0 && (
-                    <div 
-                      className="absolute left-0 right-0 top-full mt-2 bg-popover text-popover-foreground border border-border rounded-none overflow-hidden shadow-md z-50 py-1 max-h-60 overflow-y-auto"
-                      id="search_suggestions_dropdown"
-                    >
-                      <div className="px-3 py-1.5 text-[10px] text-muted-foreground font-bold uppercase tracking-wider border-b border-border">
-                        {t.dropdownTitle}
-                      </div>
-                      {filteredSearchSuggestions.map((comp, idx) => (
-                        <button
-                          key={comp}
-                          onClick={() => {
-                            setSearchQuery(comp);
-                            handleSearch(comp);
-                            setShowSearchSuggestions(false);
-                          }}
-                          onMouseEnter={() => setSearchActiveSuggestionIndex(idx)}
-                          className={`w-full text-left px-4 py-3 text-sm flex items-center justify-between transition-colors cursor-pointer ${
-                            idx === searchActiveSuggestionIndex 
-                              ? 'bg-emerald-500/10 text-emerald-500 font-medium' 
-                              : 'text-foreground hover:bg-accent'
-                          }`}
-                        >
-                          <span className="flex items-center gap-2">
-                            <Building className="w-4 h-4 text-muted-foreground" />
-                            <span>{comp}</span>
-                          </span>
-                          <ChevronRight className="w-3.5 h-3.5 opacity-50 text-muted-foreground" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </motion.div>
               </div>
             </div>

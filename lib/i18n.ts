@@ -3,6 +3,15 @@ export type Language = 'zh' | 'en';
 
 export const i18n = {
   zh: {
+    // Search modal
+    searchModalTitle: '全网公司口碑搜索',
+    searchModalInputPlaceholder: '输入公司全称搜索 (例如: 腾讯 / 字节跳动 / 阿里巴巴 / 华为)...',
+    searchModalTrending: '热门检索公司',
+    searchModalResults: '匹配的公司口碑记录',
+    searchModalNoResults: '未找到匹配的公司记录',
+    searchModalNoResultsDesc: '暂无该公司的匿名口碑评价，您可以立即添加第一笔存证评价！',
+    searchModalEscHint: '按 ESC 退出',
+    
     // Top banner & general
     topBanner: '完全匿名评价系统：采用密码学哈希区块链链式存证，永不收集与存储个人隐私信息。',
     blockchainSecured: '区块链存证',
@@ -172,6 +181,15 @@ export const i18n = {
     downloadVerifyText: '下载文件后，在终端中执行 shasum -a 256 <文件名> 命令，比对输出的 64 位 Hex 哈希值是否与本清单完全一致。'
   },
   en: {
+    // Search modal
+    searchModalTitle: 'Search Company Ledger',
+    searchModalInputPlaceholder: 'Type company name (e.g. Google, Apple, ByteDance)...',
+    searchModalTrending: 'Trending Companies',
+    searchModalResults: 'Matching Company Records',
+    searchModalNoResults: 'No matching company found',
+    searchModalNoResultsDesc: 'No anonymous reviews recorded yet. You can submit the first review!',
+    searchModalEscHint: 'Press ESC to close',
+    
     // Top banner & general
     topBanner: 'Completely anonymous review system: Secured by cryptographic hash chain ledger, never collecting or storing personal privacy data.',
     blockchainSecured: 'Blockchain Secured',
