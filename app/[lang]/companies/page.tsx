@@ -4,6 +4,7 @@ import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { i18n, Language } from '../../../lib/i18n';
+import { ThemeToggle } from '../../../components/theme-toggle';
 import {
   Building,
   ArrowLeft,
@@ -147,12 +148,12 @@ export default function CompaniesPage({ params }: PageProps) {
   ];
 
   return (
-    <main className="min-h-screen bg-[#050505] text-[#e0e0e0] selection:bg-emerald-500/20" id="companies_directory_root">
+    <main className="min-h-screen bg-background text-foreground transition-colors duration-200 selection:bg-emerald-500/20" id="companies_directory_root">
       {/* Top Banner indicating absolute anonymity */}
-      <div className="bg-[#0a0a0a] text-gray-400 py-2.5 px-4 text-xs font-medium border-b border-white/10" id="top_announcement">
+      <div className="bg-muted/40 text-muted-foreground py-2.5 px-4 text-xs font-medium border-b border-border" id="top_announcement">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 text-emerald-400" />
+            <Lock className="w-3.5 h-3.5 text-emerald-500" />
             <span>{t.topBanner}</span>
           </span>
           <span className="hidden md:inline text-emerald-500 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest">
@@ -164,19 +165,21 @@ export default function CompaniesPage({ params }: PageProps) {
       <div className="max-w-5xl mx-auto px-4 py-8" id="companies_directory_container">
         {/* Navigation back */}
         <div className="flex items-center justify-between mb-8" id="directory_nav">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <Link
               href={`/${rawLang}`}
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium text-sm transition-colors"
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-medium text-sm transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{t.backToHome}</span>
             </Link>
 
+            <ThemeToggle />
+
             {/* Language Switcher */}
             <button
               onClick={toggleLang}
-              className="px-2.5 py-1 bg-[#121212] hover:bg-[#1a1a1a] border border-white/5 text-gray-400 hover:text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
+              className="px-2.5 py-1 bg-muted/80 hover:bg-accent border border-border/60 text-muted-foreground hover:text-foreground text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
             >
               <span>🌐</span>
               <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
@@ -184,55 +187,55 @@ export default function CompaniesPage({ params }: PageProps) {
 
             <Link
               href={`/${rawLang}/download`}
-              className="inline-flex items-center gap-1.5 text-gray-400 hover:text-white font-semibold text-xs bg-[#121212] hover:bg-[#1a1a1a] border border-white/5 px-2.5 py-1 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground font-semibold text-xs bg-muted/80 hover:bg-accent border border-border/60 px-2.5 py-1 rounded-lg transition-colors"
             >
-              <Database className="w-3.5 h-3.5 text-emerald-400" />
+              <Database className="w-3.5 h-3.5 text-emerald-500" />
               <span>{t.downloadNavLabel}</span>
             </Link>
           </div>
 
-          <div className="inline-flex items-center gap-2 text-xs text-gray-500">
-            <Database className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+            <Database className="w-3.5 h-3.5 text-emerald-500" />
             <span>{t.allReviewsCount}: {companiesList.length}</span>
           </div>
         </div>
 
         {/* Title Block */}
         <div className="mb-8" id="directory_heading">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/5 border border-emerald-500/20 rounded-full shadow-xs text-xs text-emerald-400 font-medium mb-3">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full shadow-xs text-xs text-emerald-500 font-medium mb-3">
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
             <span>{t.dirTitle}</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">
+          <h1 className="text-3xl font-extrabold text-foreground tracking-tight">
             {t.dirMainHeader}
           </h1>
-          <p className="text-sm text-gray-400 mt-2 max-w-xl">
+          <p className="text-sm text-muted-foreground mt-2 max-w-xl">
             {t.dirSub}
           </p>
         </div>
 
         {/* Search and Filters Block */}
-        <div className="bg-[#0d0d0d] border border-white/10 rounded-2xl p-4 mb-6" id="directory_filters_panel">
+        <div className="bg-card border border-border rounded-2xl p-4 mb-6 text-card-foreground shadow-sm" id="directory_filters_panel">
           <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
             {/* Quick Search */}
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t.dirSearchPlaceholder}
-                className="w-full pl-10 pr-4 py-2.5 bg-[#121212] border border-white/5 focus:border-emerald-500/50 outline-none text-sm text-[#e0e0e0] placeholder:text-gray-600 rounded-xl transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 bg-muted/40 border border-border focus:border-emerald-500/50 outline-none text-sm text-foreground placeholder:text-muted-foreground rounded-xl transition-colors"
                 autoComplete="off"
               />
             </div>
 
             {/* Quick Indicator of Sort Mode */}
-            <div className="flex items-center gap-2 text-xs text-gray-400 bg-white/5 border border-white/5 px-3 py-2 rounded-xl">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 border border-border px-3 py-2 rounded-xl">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-emerald-500" />
               <span>
                 {t.dirSortModeLabel}
-                <strong className="text-emerald-400 font-bold">
+                <strong className="text-emerald-500 font-bold">
                   {sortOptions.find(opt => opt.field === sortField)?.label}
                 </strong>
                 （{sortOrder === 'desc' ? (lang === 'zh' ? '降序' : 'Desc') : (lang === 'zh' ? '升序' : 'Asc')}）
@@ -241,8 +244,8 @@ export default function CompaniesPage({ params }: PageProps) {
           </div>
 
           {/* Sort Toggles Grid */}
-          <div className="mt-4 border-t border-white/5 pt-4">
-            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2">
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">
               {t.dirSortFieldLabel}
             </div>
             <div className="flex flex-wrap gap-2">
@@ -252,10 +255,10 @@ export default function CompaniesPage({ params }: PageProps) {
                   <button
                     key={opt.field}
                     onClick={() => handleSort(opt.field)}
-                    className={`text-xs px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 font-medium ${
+                    className={`text-xs px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 font-medium cursor-pointer ${
                       isActive
-                        ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
-                        : 'bg-[#121212] border-white/5 text-gray-400 hover:text-white hover:border-white/10'
+                        ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500 font-bold'
+                        : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground hover:bg-accent'
                     }`}
                   >
                     <span>{opt.label}</span>
@@ -273,15 +276,15 @@ export default function CompaniesPage({ params }: PageProps) {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20" id="loading_state">
             <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mb-4" />
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               {lang === 'zh' ? '正在链上拉取并汇总企业评价数据...' : 'Syncing and aggregating anonymous ledger reviews...'}
             </p>
           </div>
         ) : filteredAndSortedCompanies.length === 0 ? (
-          <div className="text-center py-16 bg-[#0d0d0d] border border-white/10 rounded-2xl" id="empty_state">
-            <Building className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-            <h3 className="text-sm font-semibold text-white mb-1">{t.dirNoResults}</h3>
-            <p className="text-xs text-gray-500 max-w-xs mx-auto">
+          <div className="text-center py-16 bg-card border border-border rounded-2xl text-card-foreground" id="empty_state">
+            <Building className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-sm font-semibold text-foreground mb-1">{t.dirNoResults}</h3>
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto">
               {t.dirNoResultsDesc}
             </p>
           </div>
@@ -296,36 +299,36 @@ export default function CompaniesPage({ params }: PageProps) {
               >
                 <Link
                   href={`/${rawLang}/companies/${comp.id}`}
-                  className="block bg-[#0d0d0d] hover:bg-[#111111] border border-white/10 hover:border-emerald-500/30 rounded-2xl p-5 transition-all group"
+                  className="block bg-card hover:bg-accent/40 border border-border hover:border-emerald-500/40 rounded-2xl p-5 transition-all group text-card-foreground shadow-xs"
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     {/* Brand Info & Basic Rating */}
                     <div className="flex items-start gap-4">
-                      <div className="p-3 bg-[#151515] group-hover:bg-emerald-500/10 border border-white/5 group-hover:border-emerald-500/20 rounded-xl transition-all">
-                        <Building className="w-6 h-6 text-emerald-400" />
+                      <div className="p-3 bg-muted group-hover:bg-emerald-500/10 border border-border group-hover:border-emerald-500/20 rounded-xl transition-all">
+                        <Building className="w-6 h-6 text-emerald-500" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors flex items-center gap-2">
+                        <h3 className="text-lg font-bold text-foreground group-hover:text-emerald-500 transition-colors flex items-center gap-2">
                           <span>{comp.name}</span>
-                          <span className="text-[10px] font-bold bg-[#151515] text-gray-400 px-2 py-0.5 rounded border border-white/5">
+                          <span className="text-[10px] font-bold bg-muted text-muted-foreground px-2 py-0.5 rounded border border-border">
                             {comp.reviewCount} {lang === 'zh' ? '笔评价' : 'reviews'}
                           </span>
                         </h3>
                         <div className="flex items-center gap-3 mt-1.5">
                           {/* Aggregate Star Badge */}
-                          <div className="flex items-center gap-1 text-sm text-emerald-400 font-bold bg-emerald-500/5 border border-emerald-500/10 px-2 py-0.5 rounded">
-                            <Star className="w-3.5 h-3.5 fill-emerald-400 text-emerald-400" />
+                          <div className="flex items-center gap-1 text-sm text-emerald-500 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                            <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" />
                             <span>{comp.avgRating} {lang === 'zh' ? '综合分' : 'Rating'}</span>
                           </div>
                           
                           {/* Avg Salary info */}
                           {comp.avgSalary > 0 && (
-                            <span className="text-xs text-gray-400 flex items-center gap-1">
-                              <DollarSign className="w-3.5 h-3.5 text-gray-500" />
-                              <span>{lang === 'zh' ? '平均月薪' : 'Avg Salary'}: <strong className="text-white font-bold">{comp.avgSalary}K</strong></span>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                              <span>{lang === 'zh' ? '平均月薪' : 'Avg Salary'}: <strong className="text-foreground font-bold">{comp.avgSalary}K</strong></span>
                               {comp.avgBonus > 0 && (
-                                <span className="text-gray-500">
-                                  （{lang === 'zh' ? '年终奖' : 'Bonus'}: <strong className="text-gray-300 font-semibold">{comp.avgBonus}K</strong>）
+                                <span className="text-muted-foreground">
+                                  （{lang === 'zh' ? '年终奖' : 'Bonus'}: <strong className="text-foreground/80 font-semibold">{comp.avgBonus}K</strong>）
                                 </span>
                               )}
                             </span>
@@ -335,36 +338,36 @@ export default function CompaniesPage({ params }: PageProps) {
                     </div>
 
                     {/* Breakdown Ratings row */}
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 border-t lg:border-t-0 border-white/5 pt-4 lg:pt-0">
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 border-t lg:border-t-0 border-border pt-4 lg:pt-0">
                       {/* WLB */}
-                      <div className="flex flex-col bg-[#121212] px-2.5 py-1.5 rounded-lg border border-white/5 text-center min-w-[76px]">
-                        <span className="text-[9px] text-gray-500 font-medium">{lang === 'zh' ? '工作生活平衡' : 'WLB'}</span>
-                        <span className="text-xs font-extrabold text-indigo-400 mt-0.5">{comp.avgBalance}</span>
+                      <div className="flex flex-col bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border text-center min-w-[76px]">
+                        <span className="text-[9px] text-muted-foreground font-medium">{lang === 'zh' ? '工作生活平衡' : 'WLB'}</span>
+                        <span className="text-xs font-extrabold text-indigo-500 dark:text-indigo-400 mt-0.5">{comp.avgBalance}</span>
                       </div>
                       {/* Career */}
-                      <div className="flex flex-col bg-[#121212] px-2.5 py-1.5 rounded-lg border border-white/5 text-center min-w-[76px]">
-                        <span className="text-[9px] text-gray-500 font-medium">{lang === 'zh' ? '职业成长' : 'Career'}</span>
-                        <span className="text-xs font-extrabold text-emerald-400 mt-0.5">{comp.avgCareer}</span>
+                      <div className="flex flex-col bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border text-center min-w-[76px]">
+                        <span className="text-[9px] text-muted-foreground font-medium">{lang === 'zh' ? '职业成长' : 'Career'}</span>
+                        <span className="text-xs font-extrabold text-emerald-500 dark:text-emerald-400 mt-0.5">{comp.avgCareer}</span>
                       </div>
                       {/* Management */}
-                      <div className="flex flex-col bg-[#121212] px-2.5 py-1.5 rounded-lg border border-white/5 text-center min-w-[76px]">
-                        <span className="text-[9px] text-gray-500 font-medium">{lang === 'zh' ? '管理层满意' : 'Management'}</span>
-                        <span className="text-xs font-extrabold text-amber-400 mt-0.5">{comp.avgManagement}</span>
+                      <div className="flex flex-col bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border text-center min-w-[76px]">
+                        <span className="text-[9px] text-muted-foreground font-medium">{lang === 'zh' ? '管理层满意' : 'Management'}</span>
+                        <span className="text-xs font-extrabold text-amber-500 dark:text-amber-400 mt-0.5">{comp.avgManagement}</span>
                       </div>
                       {/* Compensation */}
-                      <div className="flex flex-col bg-[#121212] px-2.5 py-1.5 rounded-lg border border-white/5 text-center min-w-[76px]">
-                        <span className="text-[9px] text-gray-500 font-medium">{lang === 'zh' ? '福利待遇' : 'Benefits'}</span>
-                        <span className="text-xs font-extrabold text-rose-400 mt-0.5">{comp.avgCompensation}</span>
+                      <div className="flex flex-col bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border text-center min-w-[76px]">
+                        <span className="text-[9px] text-muted-foreground font-medium">{lang === 'zh' ? '福利待遇' : 'Benefits'}</span>
+                        <span className="text-xs font-extrabold text-rose-500 dark:text-rose-400 mt-0.5">{comp.avgCompensation}</span>
                       </div>
                       {/* Culture */}
-                      <div className="flex flex-col bg-[#121212] px-2.5 py-1.5 rounded-lg border border-white/5 text-center min-w-[76px]">
-                        <span className="text-[9px] text-gray-500 font-medium">{lang === 'zh' ? '企业文化' : 'Culture'}</span>
-                        <span className="text-xs font-extrabold text-teal-400 mt-0.5">{comp.avgCulture}</span>
+                      <div className="flex flex-col bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border text-center min-w-[76px]">
+                        <span className="text-[9px] text-muted-foreground font-medium">{lang === 'zh' ? '企业文化' : 'Culture'}</span>
+                        <span className="text-xs font-extrabold text-teal-500 dark:text-teal-400 mt-0.5">{comp.avgCulture}</span>
                       </div>
                     </div>
 
                     {/* Action Arrow (desktop and hover visual) */}
-                    <div className="hidden lg:flex items-center text-gray-500 group-hover:text-emerald-400 transition-colors pl-2">
+                    <div className="hidden lg:flex items-center text-muted-foreground group-hover:text-emerald-500 transition-colors pl-2">
                       <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>

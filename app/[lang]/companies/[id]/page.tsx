@@ -4,6 +4,7 @@ import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language } from '../../../../lib/i18n';
+import { ThemeToggle } from '../../../../components/theme-toggle';
 import {
   Building,
   ArrowLeft,
@@ -296,9 +297,9 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#050505] text-[#e0e0e0] flex flex-col items-center justify-center" id="loading_screen">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center" id="loading_screen">
         <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mb-4" />
-        <p className="text-sm text-gray-500 tracking-wide">
+        <p className="text-sm text-muted-foreground tracking-wide">
           {lang === 'zh' ? '正在加载企业专属口碑看板与存证数据...' : 'Syncing company profile and block reviews...'}
         </p>
       </div>
@@ -307,15 +308,15 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
   if (!company) {
     return (
-      <div className="min-h-screen bg-[#050505] text-[#e0e0e0] flex flex-col items-center justify-center p-4" id="error_screen">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4" id="error_screen">
         <AlertCircle className="w-16 h-16 text-rose-500 mb-4" />
-        <h1 className="text-xl font-bold text-white mb-2">{lang === 'zh' ? '未找到该企业' : 'Company Not Found'}</h1>
-        <p className="text-sm text-gray-400 mb-6 text-center max-w-sm">
+        <h1 className="text-xl font-bold text-foreground mb-2">{lang === 'zh' ? '未找到该企业' : 'Company Not Found'}</h1>
+        <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
           {lang === 'zh' ? '该企业可能尚未创建评价，或者标识符无效。' : 'No records exist under this identifier.'}
         </p>
         <Link
           href={`/${rawLang}`}
-          className="px-5 py-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500 hover:text-white font-semibold rounded-xl transition-all"
+          className="px-5 py-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 hover:bg-emerald-500 hover:text-black font-semibold rounded-xl transition-all"
         >
           {t.backToHome}
         </Link>
@@ -326,12 +327,12 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const overallScorePercent = Math.round(company.avg_rating * 20);
 
   return (
-    <main className="min-h-screen bg-[#050505] text-[#e0e0e0] selection:bg-emerald-500/20" id="company_detail_root">
+    <main className="min-h-screen bg-background text-foreground transition-colors duration-200 selection:bg-emerald-500/20" id="company_detail_root">
       {/* Dynamic Top Banner */}
-      <div className="bg-[#0a0a0a] text-gray-400 py-2.5 px-4 text-xs font-medium border-b border-white/10" id="top_announcement">
+      <div className="bg-muted/40 text-muted-foreground py-2.5 px-4 text-xs font-medium border-b border-border" id="top_announcement">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 text-emerald-400" />
+            <Lock className="w-3.5 h-3.5 text-emerald-500" />
             <span>{t.topBanner}</span>
           </span>
           <span className="hidden md:inline text-emerald-500 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest">
@@ -343,46 +344,48 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
       <div className="max-w-5xl mx-auto px-4 py-8" id="company_detail_container">
         {/* Navigation Block */}
         <div className="flex items-center justify-between mb-8" id="detail_nav">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <Link
               href={`/${rawLang}/companies`}
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium text-sm transition-colors"
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-medium text-sm transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{lang === 'zh' ? '返回公司口碑榜' : 'Back to Rankings'}</span>
             </Link>
 
+            <ThemeToggle />
+
             <button
               onClick={toggleLang}
-              className="px-2.5 py-1 bg-[#121212] hover:bg-[#1a1a1a] border border-white/5 text-gray-400 hover:text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1"
+              className="px-2.5 py-1 bg-muted/80 hover:bg-accent border border-border/60 text-muted-foreground hover:text-foreground text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
             >
               <span>🌐</span>
               <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
             </button>
           </div>
 
-          <div className="text-xs text-gray-500 flex items-center gap-1.5 bg-[#0a0a0a] px-3 py-1.5 border border-white/5 rounded-xl font-mono">
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 border border-border rounded-xl font-mono">
             <span>ID:</span>
-            <span className="text-emerald-400">{company.id}</span>
+            <span className="text-emerald-500 font-bold">{company.id}</span>
           </div>
         </div>
 
         {/* Brand Display Hero */}
-        <div className="bg-gradient-to-br from-[#0c0c0c] to-[#080808] border border-white/10 rounded-3xl p-6 lg:p-8 mb-8 relative overflow-hidden" id="company_hero_card">
+        <div className="bg-card border border-border rounded-3xl p-6 lg:p-8 mb-8 relative overflow-hidden text-card-foreground shadow-sm" id="company_hero_card">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-3xl rounded-full -translate-y-12 translate-x-12" />
           
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
             <div className="flex items-center gap-5">
               <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                <Building2 className="w-10 h-10 text-emerald-400" />
+                <Building2 className="w-10 h-10 text-emerald-500" />
               </div>
               <div>
-                <h1 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
+                <h1 className="text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight">
                   {company.name}
                 </h1>
-                <p className="text-sm text-gray-400 mt-1 flex items-center gap-2">
+                <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                   <span>{lang === 'zh' ? '累计区块链存证评价' : 'Total block-verified reviews'}</span>
-                  <span className="bg-[#121212] border border-white/5 text-emerald-400 px-2 py-0.5 rounded text-xs font-bold">
+                  <span className="bg-muted border border-border text-emerald-500 px-2 py-0.5 rounded text-xs font-bold">
                     {company.review_count} {lang === 'zh' ? '条' : 'records'}
                   </span>
                 </p>
@@ -390,76 +393,76 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
             </div>
 
             {/* Quick Aggregate Score */}
-            <div className="flex items-center gap-4 bg-[#121212]/60 border border-white/5 backdrop-blur-xs p-4 rounded-2xl w-full lg:w-auto">
+            <div className="flex items-center gap-4 bg-muted/60 border border-border backdrop-blur-xs p-4 rounded-2xl w-full lg:w-auto">
               <div className="flex flex-col">
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t.metricOverall}</span>
-                <span className="text-2xl font-black text-white mt-1">{company.avg_rating} <span className="text-xs text-gray-500 font-normal">/ 5</span></span>
+                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{t.metricOverall}</span>
+                <span className="text-2xl font-black text-foreground mt-1">{company.avg_rating} <span className="text-xs text-muted-foreground font-normal">/ 5</span></span>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-400 text-lg border border-emerald-500/25">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-500 text-lg border border-emerald-500/25">
                 {overallScorePercent}%
               </div>
             </div>
           </div>
 
           {/* Core Analytics Radar/Bar Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 mt-8 border-t border-white/10 pt-6" id="core_metrics_grid">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 mt-8 border-t border-border pt-6" id="core_metrics_grid">
             {/* WLB */}
-            <div className="bg-[#121212]/30 border border-white/5 rounded-xl p-3 flex flex-col justify-between">
-              <span className="text-xs text-gray-500 font-medium">{t.metricWlb}</span>
+            <div className="bg-muted/40 border border-border rounded-xl p-3 flex flex-col justify-between">
+              <span className="text-xs text-muted-foreground font-medium">{t.metricWlb}</span>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-lg font-extrabold text-indigo-400">{company.avg_balance}</span>
-                <span className="text-[10px] text-gray-600">/ 5</span>
+                <span className="text-lg font-extrabold text-indigo-500 dark:text-indigo-400">{company.avg_balance}</span>
+                <span className="text-[10px] text-muted-foreground">/ 5</span>
               </div>
-              <div className="w-full bg-white/5 h-1 rounded-full mt-2 overflow-hidden">
-                <div className="bg-indigo-400 h-full rounded-full" style={{ width: `${company.avg_balance * 20}%` }} />
+              <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
+                <div className="bg-indigo-500 dark:bg-indigo-400 h-full rounded-full" style={{ width: `${company.avg_balance * 20}%` }} />
               </div>
             </div>
 
             {/* Career */}
-            <div className="bg-[#121212]/30 border border-white/5 rounded-xl p-3 flex flex-col justify-between">
-              <span className="text-xs text-gray-500 font-medium">{t.metricCareer}</span>
+            <div className="bg-muted/40 border border-border rounded-xl p-3 flex flex-col justify-between">
+              <span className="text-xs text-muted-foreground font-medium">{t.metricCareer}</span>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-lg font-extrabold text-emerald-400">{company.avg_career}</span>
-                <span className="text-[10px] text-gray-600">/ 5</span>
+                <span className="text-lg font-extrabold text-emerald-500 dark:text-emerald-400">{company.avg_career}</span>
+                <span className="text-[10px] text-muted-foreground">/ 5</span>
               </div>
-              <div className="w-full bg-white/5 h-1 rounded-full mt-2 overflow-hidden">
-                <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${company.avg_career * 20}%` }} />
+              <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
+                <div className="bg-emerald-500 dark:bg-emerald-400 h-full rounded-full" style={{ width: `${company.avg_career * 20}%` }} />
               </div>
             </div>
 
             {/* Management */}
-            <div className="bg-[#121212]/30 border border-white/5 rounded-xl p-3 flex flex-col justify-between">
-              <span className="text-xs text-gray-500 font-medium">{t.metricManagement}</span>
+            <div className="bg-muted/40 border border-border rounded-xl p-3 flex flex-col justify-between">
+              <span className="text-xs text-muted-foreground font-medium">{t.metricManagement}</span>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-lg font-extrabold text-amber-400">{company.avg_management}</span>
-                <span className="text-[10px] text-gray-600">/ 5</span>
+                <span className="text-lg font-extrabold text-amber-500 dark:text-amber-400">{company.avg_management}</span>
+                <span className="text-[10px] text-muted-foreground">/ 5</span>
               </div>
-              <div className="w-full bg-white/5 h-1 rounded-full mt-2 overflow-hidden">
-                <div className="bg-amber-400 h-full rounded-full" style={{ width: `${company.avg_management * 20}%` }} />
+              <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
+                <div className="bg-amber-500 dark:bg-amber-400 h-full rounded-full" style={{ width: `${company.avg_management * 20}%` }} />
               </div>
             </div>
 
             {/* Compensation */}
-            <div className="bg-[#121212]/30 border border-white/5 rounded-xl p-3 flex flex-col justify-between">
-              <span className="text-xs text-gray-500 font-medium">{t.metricBenefits}</span>
+            <div className="bg-muted/40 border border-border rounded-xl p-3 flex flex-col justify-between">
+              <span className="text-xs text-muted-foreground font-medium">{t.metricBenefits}</span>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-lg font-extrabold text-rose-400">{company.avg_compensation}</span>
-                <span className="text-[10px] text-gray-600">/ 5</span>
+                <span className="text-lg font-extrabold text-rose-500 dark:text-rose-400">{company.avg_compensation}</span>
+                <span className="text-[10px] text-muted-foreground">/ 5</span>
               </div>
-              <div className="w-full bg-white/5 h-1 rounded-full mt-2 overflow-hidden">
-                <div className="bg-rose-400 h-full rounded-full" style={{ width: `${company.avg_compensation * 20}%` }} />
+              <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
+                <div className="bg-rose-500 dark:bg-rose-400 h-full rounded-full" style={{ width: `${company.avg_compensation * 20}%` }} />
               </div>
             </div>
 
             {/* Culture */}
-            <div className="bg-[#121212]/30 border border-white/5 rounded-xl p-3 flex flex-col justify-between">
-              <span className="text-xs text-gray-500 font-medium">{t.metricCulture}</span>
+            <div className="bg-muted/40 border border-border rounded-xl p-3 flex flex-col justify-between">
+              <span className="text-xs text-muted-foreground font-medium">{t.metricCulture}</span>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-lg font-extrabold text-teal-400">{company.avg_culture}</span>
-                <span className="text-[10px] text-gray-600">/ 5</span>
+                <span className="text-lg font-extrabold text-teal-500 dark:text-teal-400">{company.avg_culture}</span>
+                <span className="text-[10px] text-muted-foreground">/ 5</span>
               </div>
-              <div className="w-full bg-white/5 h-1 rounded-full mt-2 overflow-hidden">
-                <div className="bg-teal-400 h-full rounded-full" style={{ width: `${company.avg_culture * 20}%` }} />
+              <div className="w-full bg-muted h-1 rounded-full mt-2 overflow-hidden">
+                <div className="bg-teal-500 dark:bg-teal-400 h-full rounded-full" style={{ width: `${company.avg_culture * 20}%` }} />
               </div>
             </div>
           </div>
@@ -555,7 +558,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         {activeTab === 'reviews' && (
           <div className="space-y-6" id="reviews_tab_content">
             {/* Local Search & filter panels */}
-            <div className="bg-[#0c0c0c] border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between" id="local_filters">
+            <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between" id="local_filters">
               {/* Search reviews */}
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -622,7 +625,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Reviews Cards List */}
             {filteredAndSortedReviews.length === 0 ? (
-              <div className="text-center py-16 bg-[#0c0c0c] border border-white/10 rounded-2xl" id="empty_reviews">
+              <div className="text-center py-16 bg-card border border-border text-card-foreground shadow-sm rounded-2xl" id="empty_reviews">
                 <Briefcase className="w-12 h-12 text-gray-700 mx-auto mb-3" />
                 <h3 className="text-sm font-semibold text-white mb-1">
                   {lang === 'zh' ? '未找到符合条件的评价' : 'No Reviews Found'}
@@ -642,7 +645,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: Math.min(idx * 0.05, 0.4), duration: 0.3 }}
-                      className="bg-[#0c0c0c] border border-white/10 rounded-2xl p-5 relative overflow-hidden"
+                      className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 relative overflow-hidden"
                     >
                       {/* Secure watermark block */}
                       <div className="absolute top-0 right-0 p-2.5 bg-emerald-500/5 text-[9px] text-emerald-500 font-mono tracking-widest border-b border-l border-white/5 select-none rounded-bl-xl uppercase font-bold">
@@ -739,7 +742,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         {activeTab === 'aiReport' && (
           <div className="space-y-6" id="ai_report_tab_content">
             {/* Header info card */}
-            <div className="bg-[#0c0c0c] border border-white/10 rounded-2xl p-5 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="absolute top-0 right-0 p-3 bg-emerald-500/5 blur-xl w-32 h-32 rounded-full" />
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -766,7 +769,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
             {/* AI Generator Trigger / Loading status / Render */}
             {isGeneratingAI ? (
-              <div className="py-20 text-center bg-[#0c0c0c] border border-white/10 rounded-2xl flex flex-col items-center justify-center">
+              <div className="py-20 text-center bg-card border border-border text-card-foreground shadow-sm rounded-2xl flex flex-col items-center justify-center">
                 <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mb-4" />
                 <h3 className="text-sm font-semibold text-white mb-1">{t.aiGenerating}</h3>
                 <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
@@ -786,7 +789,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 </button>
               </div>
             ) : !aiReport ? (
-              <div className="py-16 text-center bg-[#0c0c0c] border border-white/10 rounded-2xl">
+              <div className="py-16 text-center bg-card border border-border text-card-foreground shadow-sm rounded-2xl">
                 <Sparkles className="w-12 h-12 text-emerald-500/30 mx-auto mb-4 animate-bounce" />
                 <h3 className="text-sm font-semibold text-white mb-1">
                   {lang === 'zh' ? '暂无生成的 AI 分析报告' : 'No AI Analysis Generated Yet'}
@@ -821,7 +824,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 {/* Main summaries blocks */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Left Column: Overall Emotion & Score card */}
-                  <div className="bg-[#0c0c0c] border border-white/10 rounded-2xl p-5 flex flex-col justify-between">
+                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 flex flex-col justify-between">
                     <div>
                       <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{lang === 'zh' ? 'AI 宏观情感画像' : 'AI Sentiment Portrait'}</h4>
                       <div className="flex items-center gap-3 mt-4">
@@ -858,7 +861,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   </div>
 
                   {/* Right Column: Narrative Executive Summary */}
-                  <div className="bg-[#0c0c0c] border border-white/10 rounded-2xl p-5 md:col-span-2 flex flex-col justify-between">
+                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5 md:col-span-2 flex flex-col justify-between">
                     <div>
                       <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{lang === 'zh' ? '企业深度口碑纪要' : 'Reputation Summary'}</h4>
                       <p className="text-sm text-gray-300 leading-relaxed mt-4 whitespace-pre-line font-medium">
@@ -873,7 +876,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 </div>
 
                 {/* Section 2: Detailed dimension evaluation scale rows */}
-                <div className="bg-[#0c0c0c] border border-white/10 rounded-2xl p-5">
+                <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-5">{lang === 'zh' ? 'AI 细分维度评估图谱 (0-100)' : 'AI Breakdown Metrics'}</h4>
                   
                   <div className="space-y-4">
@@ -937,7 +940,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 {/* Pros and Cons bullet listings */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Pros card */}
-                  <div className="bg-[#0c0c0c] border border-white/10 rounded-2xl p-5">
+                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
                     <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2 mb-4">
                       <ThumbsUp className="w-4 h-4 fill-emerald-400 text-emerald-400" />
                       <span>{t.aiCatStrengths}</span>
@@ -953,7 +956,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   </div>
 
                   {/* Cons card */}
-                  <div className="bg-[#0c0c0c] border border-white/10 rounded-2xl p-5">
+                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
                     <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2 mb-4">
                       <ThumbsDown className="w-4 h-4 fill-rose-400 text-rose-400" />
                       <span>{t.aiCatPainPoints}</span>
@@ -972,7 +975,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 {/* Section 4: Qualitative Advice and Comp Analytics */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Career advice */}
-                  <div className="bg-[#0c0c0c] border border-white/10 rounded-2xl p-5">
+                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
                     <h4 className="text-xs font-bold text-[#b0a8ff] uppercase tracking-wider mb-4">
                       {lang === 'zh' ? '💡 候选人求职锦囊建议' : '💡 Ideal Candidate & Career Advice'}
                     </h4>
@@ -982,7 +985,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   </div>
 
                   {/* Salary analytics */}
-                  <div className="bg-[#0c0c0c] border border-white/10 rounded-2xl p-5">
+                  <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
                     <h4 className="text-xs font-bold text-[#ffd0a8] uppercase tracking-wider mb-4">
                       {lang === 'zh' ? '💰 薪资性价比与晋升合理度分析' : '💰 Salary Analysis & Fairness'}
                     </h4>
@@ -999,7 +1002,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         {/* Tab Contents: Ledger Auditing */}
         {activeTab === 'ledger' && (
           <div className="space-y-6" id="ledger_tab_content">
-            <div className="bg-[#0c0c0c] border border-white/10 rounded-2xl p-5">
+            <div className="bg-card border border-border text-card-foreground shadow-sm rounded-2xl p-5">
               <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-2">
                 <Lock className="w-5 h-5 text-emerald-400" />
                 <span>{t.ledgerTitle}</span>

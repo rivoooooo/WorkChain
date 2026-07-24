@@ -4,6 +4,7 @@ import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language } from '../../lib/i18n';
+import { ThemeToggle } from '../../components/theme-toggle';
 import {
   Search,
   Plus,
@@ -210,12 +211,12 @@ export default function Home({ params }: PageProps) {
     : [];
 
   return (
-    <main className="min-h-screen bg-[#050505] text-[#e0e0e0] selection:bg-emerald-500/20" id="main_root">
+    <main className="min-h-screen bg-background text-foreground transition-colors duration-200 selection:bg-emerald-500/20" id="main_root">
       {/* Top Banner indicating absolute anonymity */}
-      <div className="bg-[#0a0a0a] text-gray-400 py-2.5 px-4 text-xs font-medium border-b border-white/10" id="top_announcement">
+      <div className="bg-muted/40 text-muted-foreground py-2.5 px-4 text-xs font-medium border-b border-border" id="top_announcement">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 text-emerald-400" />
+            <Lock className="w-3.5 h-3.5 text-emerald-500" />
             <span>{t.topBanner}</span>
           </span>
           <span className="hidden md:inline text-emerald-500 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest">
@@ -226,7 +227,7 @@ export default function Home({ params }: PageProps) {
 
       <div className="max-w-5xl mx-auto px-4 py-8 md:py-16" id="app_container">
         {/* Navigation Header */}
-        <header className="flex items-center justify-between border-b border-white/5 pb-5 mb-8 md:mb-12" id="main_header">
+        <header className="flex items-center justify-between border-b border-border pb-5 mb-8 md:mb-12" id="main_header">
           <Link
             href={`/${rawLang}`}
             onClick={() => {
@@ -235,16 +236,19 @@ export default function Home({ params }: PageProps) {
             }}
             className="flex items-center gap-2 group"
           >
-            <Building className="w-5.5 h-5.5 text-emerald-400 group-hover:scale-105 transition-transform" />
-            <span className="font-extrabold text-white text-base md:text-lg tracking-tight group-hover:text-emerald-400 transition-colors">
+            <Building className="w-5.5 h-5.5 text-emerald-500 group-hover:scale-105 transition-transform" />
+            <span className="font-extrabold text-foreground text-base md:text-lg tracking-tight group-hover:text-emerald-500 transition-colors">
               {t.brandName}
             </span>
           </Link>
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-3.5">
+            {/* Theme Switcher Toggle */}
+            <ThemeToggle />
+
             {/* Language Switcher */}
             <button
               onClick={toggleLang}
-              className="px-3 py-1.5 bg-[#0d0d0d] hover:bg-[#151515] border border-white/10 text-gray-400 hover:text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-1"
+              className="px-3 py-1.5 bg-muted/80 hover:bg-accent border border-border/60 text-muted-foreground hover:text-foreground text-xs font-bold rounded-xl transition-colors flex items-center gap-1 cursor-pointer"
               title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
             >
               <span>🌐</span>
@@ -253,17 +257,17 @@ export default function Home({ params }: PageProps) {
 
             <Link 
               href={`/${rawLang}/companies`}
-              className="text-xs md:text-sm font-semibold text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-1.5"
+              className="text-xs md:text-sm font-semibold text-muted-foreground hover:text-emerald-500 transition-colors flex items-center gap-1.5"
             >
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
               <span>{t.viewRankings}</span>
             </Link>
 
             <Link 
               href={`/${rawLang}/download`}
-              className="text-xs md:text-sm font-semibold text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-1.5"
+              className="text-xs md:text-sm font-semibold text-muted-foreground hover:text-emerald-500 transition-colors flex items-center gap-1.5"
             >
-              <Database className="w-4 h-4 text-emerald-400" />
+              <Database className="w-4 h-4 text-emerald-500" />
               <span>{t.downloadNavLabel}</span>
             </Link>
             
@@ -314,13 +318,13 @@ export default function Home({ params }: PageProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -15 }}
                     transition={{ duration: 0.3 }}
-                    className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white px-2"
+                    className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-foreground px-2"
                   >
                     {lang === 'zh' ? ROTATING_HEADLINES_ZH[headlineIndex] : ROTATING_HEADLINES_EN[headlineIndex]}
                   </motion.h1>
                 </AnimatePresence>
               </div>
-              <p className="text-sm md:text-base text-gray-400 leading-relaxed max-w-lg mx-auto">
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
                 {t.heroSub}
               </p>
             </motion.div>
@@ -330,11 +334,11 @@ export default function Home({ params }: PageProps) {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1, duration: 0.4 }}
-              className="w-full bg-[#0d0d0d] p-2 rounded-2xl shadow-2xl border border-white/10 mb-6 relative"
+              className="w-full bg-card p-2 rounded-2xl shadow-xl border border-border mb-6 relative"
               id="search_box_container"
             >
               <div className="relative flex items-center">
-                <Search className="absolute left-4 w-5 h-5 text-gray-500" />
+                <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
                 <input
                   type="text"
                   value={searchQuery}
@@ -378,7 +382,7 @@ export default function Home({ params }: PageProps) {
                     }
                   }}
                   placeholder={t.searchPlaceholder}
-                  className="w-full pl-12 pr-32 py-4 bg-transparent outline-none text-[#e0e0e0] placeholder:text-gray-500 font-medium text-base rounded-xl"
+                  className="w-full pl-12 pr-32 py-4 bg-transparent outline-none text-foreground placeholder:text-muted-foreground font-medium text-base rounded-xl"
                   id="main_search_input"
                   autoComplete="off"
                 />
@@ -387,7 +391,7 @@ export default function Home({ params }: PageProps) {
                     handleSearch();
                     setShowSearchSuggestions(false);
                   }}
-                  className="absolute right-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-sm font-bold transition-colors duration-200 shadow-sm"
+                  className="absolute right-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-sm font-bold transition-colors duration-200 shadow-sm cursor-pointer"
                   id="search_btn"
                 >
                   {t.searchBtn}
@@ -397,10 +401,10 @@ export default function Home({ params }: PageProps) {
               {/* Suggestions Dropdown */}
               {showSearchSuggestions && filteredSearchSuggestions.length > 0 && (
                 <div 
-                  className="absolute left-0 right-0 top-full mt-2 bg-[#0a0a0a] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 py-1 max-h-60 overflow-y-auto"
+                  className="absolute left-0 right-0 top-full mt-2 bg-popover text-popover-foreground border border-border rounded-xl overflow-hidden shadow-2xl z-50 py-1 max-h-60 overflow-y-auto"
                   id="search_suggestions_dropdown"
                 >
-                  <div className="px-3 py-1.5 text-[10px] text-gray-500 font-bold uppercase tracking-wider border-b border-white/5">
+                  <div className="px-3 py-1.5 text-[10px] text-muted-foreground font-bold uppercase tracking-wider border-b border-border">
                     {t.dropdownTitle}
                   </div>
                   {filteredSearchSuggestions.map((comp, idx) => (
@@ -414,15 +418,15 @@ export default function Home({ params }: PageProps) {
                       onMouseEnter={() => setSearchActiveSuggestionIndex(idx)}
                       className={`w-full text-left px-4 py-3 text-sm flex items-center justify-between transition-colors ${
                         idx === searchActiveSuggestionIndex 
-                          ? 'bg-emerald-500/10 text-emerald-400 font-medium' 
-                          : 'text-gray-300 hover:bg-white/5'
+                          ? 'bg-emerald-500/10 text-emerald-500 font-medium' 
+                          : 'text-foreground hover:bg-accent'
                       }`}
                     >
                       <span className="flex items-center gap-2">
-                        <Building className="w-4 h-4 text-gray-500" />
+                        <Building className="w-4 h-4 text-muted-foreground" />
                         <span>{comp}</span>
                       </span>
-                      <ChevronRight className="w-3.5 h-3.5 opacity-50 text-gray-500" />
+                      <ChevronRight className="w-3.5 h-3.5 opacity-50 text-muted-foreground" />
                     </button>
                   ))}
                 </div>
@@ -438,7 +442,7 @@ export default function Home({ params }: PageProps) {
                 className="flex flex-wrap items-center justify-center gap-2"
                 id="search_suggestions"
               >
-                <span className="text-xs text-gray-500 font-medium mr-1">{t.trendingSearch}</span>
+                <span className="text-xs text-muted-foreground font-medium mr-1">{t.trendingSearch}</span>
                 {companies.slice(0, 5).map((comp) => (
                   <button
                     key={comp.id}
@@ -446,7 +450,7 @@ export default function Home({ params }: PageProps) {
                       setSearchQuery(comp.name);
                       handleSearch(comp.name);
                     }}
-                    className="text-xs px-3 py-1.5 bg-[#0d0d0d] border border-white/10 hover:border-emerald-500/30 hover:text-emerald-400 rounded-lg text-gray-400 font-medium shadow-xs transition-colors"
+                    className="text-xs px-3 py-1.5 bg-muted/60 border border-border hover:border-emerald-500/40 hover:text-emerald-500 rounded-lg text-muted-foreground font-medium shadow-xs transition-colors cursor-pointer"
                   >
                     {comp.name}
                   </button>
@@ -455,37 +459,37 @@ export default function Home({ params }: PageProps) {
             )}
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-6 mt-16 w-full pt-8 border-t border-white/10" id="trust_badges">
+            <div className="grid grid-cols-3 gap-6 mt-16 w-full pt-8 border-t border-border" id="trust_badges">
               <div className="flex flex-col items-center">
-                <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-full mb-3">
-                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-full mb-3">
+                  <ShieldCheck className="w-5 h-5 text-emerald-500" />
                 </div>
-                <h3 className="text-sm font-semibold text-white mb-1">
+                <h3 className="text-sm font-semibold text-foreground mb-1">
                   {lang === 'zh' ? '完全匿名' : '100% Anonymous'}
                 </h3>
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-muted-foreground text-center">
                   {lang === 'zh' ? '不留IP、不留账号，极速提交' : 'No logs, no trackers, submit instantly'}
                 </p>
               </div>
               <div className="flex flex-col items-center">
-                <div className="p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-full mb-3">
-                  <Lock className="w-5 h-5 text-indigo-400" />
+                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-3">
+                  <Lock className="w-5 h-5 text-indigo-500" />
                 </div>
-                <h3 className="text-sm font-semibold text-white mb-1">
+                <h3 className="text-sm font-semibold text-foreground mb-1">
                   {lang === 'zh' ? '链上存证' : 'Ledger Verified'}
                 </h3>
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-muted-foreground text-center">
                   {lang === 'zh' ? '哈希链接防篡改，公开透明' : 'Chained cryptographically to ensure integrity'}
                 </p>
               </div>
               <div className="flex flex-col items-center">
-                <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-full mb-3">
-                  <Sparkles className="w-5 h-5 text-amber-400" />
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-full mb-3">
+                  <Sparkles className="w-5 h-5 text-amber-500" />
                 </div>
-                <h3 className="text-sm font-semibold text-white mb-1">
+                <h3 className="text-sm font-semibold text-foreground mb-1">
                   {lang === 'zh' ? 'AI 语义分析' : 'AI Culture Auditor'}
                 </h3>
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-muted-foreground text-center">
                   {lang === 'zh' ? '自动解析职场真实满意度与文化' : 'Aggregates employee sentiment & vibe checks'}
                 </p>
               </div>
@@ -496,24 +500,24 @@ export default function Home({ params }: PageProps) {
           <div className="max-w-xl mx-auto" id="no_company_view">
             <button
               onClick={() => setHasSearched(false)}
-              className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium text-sm mb-8 transition-colors"
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground font-medium text-sm mb-8 transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{lang === 'zh' ? '返回主页检索' : 'Back to Search'}</span>
             </button>
 
-            <div className="bg-[#0c0c0c] border border-white/10 rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+            <div className="bg-card border border-border rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden text-card-foreground">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-2xl rounded-full" />
               
               <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Building2 className="w-8 h-8 text-emerald-400" />
+                <Building2 className="w-8 h-8 text-emerald-500" />
               </div>
 
-              <h2 className="text-2xl font-black text-white tracking-tight mb-3">
+              <h2 className="text-2xl font-black text-foreground tracking-tight mb-3">
                 {lang === 'zh' ? `尚未收录 “${searchedName}”` : `“${searchedName}” is not yet listed`}
               </h2>
               
-              <p className="text-sm text-gray-400 leading-relaxed mb-8 max-w-sm mx-auto">
+              <p className="text-sm text-muted-foreground leading-relaxed mb-8 max-w-sm mx-auto">
                 {lang === 'zh' 
                   ? '目前去中心化区块链存证账本中还没有该公司的评价记录。您可以作为第一位提交人，创建该公司并同步链上第一条匿名评价！'
                   : 'No evaluations have been submitted for this company yet. Be the pioneer and launch this company listing on the blockchain!'}
@@ -521,7 +525,7 @@ export default function Home({ params }: PageProps) {
 
               <button
                 onClick={() => setShowSubmitForm(true)}
-                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-sm rounded-2xl transition-all shadow-lg shadow-emerald-500/10 inline-flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-sm rounded-2xl transition-all shadow-lg shadow-emerald-500/10 inline-flex items-center justify-center gap-2 cursor-pointer"
               >
                 <PlusCircle className="w-5 h-5 text-black" />
                 <span>{lang === 'zh' ? '创建该公司并提供第一条匿名口碑' : 'Create & Submit Pioneer Review'}</span>
@@ -537,22 +541,22 @@ export default function Home({ params }: PageProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto"
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto"
               id="submission_modal"
             >
               <motion.div
                 initial={{ scale: 0.95, y: 15 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 15 }}
-                className="bg-[#0d0d0d] w-full max-w-2xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden my-8"
+                className="bg-card text-card-foreground w-full max-w-2xl rounded-2xl border border-border shadow-2xl overflow-hidden my-8"
               >
                 {/* Modal Header */}
-                <div className="bg-[#151515] border-b border-white/5 text-white p-6 flex justify-between items-center">
+                <div className="bg-muted/60 border-b border-border text-foreground p-6 flex justify-between items-center">
                   <div>
                     <h3 className="text-lg font-bold">
                       {lang === 'zh' ? '提交匿名评价 & 薪资数据' : 'Submit Anonymous Review & Salary Data'}
                     </h3>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {lang === 'zh' 
                         ? '您的所有薪资与打分在区块链中仅基于公司关联，不含个人信息。' 
                         : 'Your ratings are secured cryptographically without exposing identifiers.'}
@@ -563,7 +567,7 @@ export default function Home({ params }: PageProps) {
                       setShowSubmitForm(false);
                       setFormError('');
                     }}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   >
                     ✕
                   </button>
@@ -573,12 +577,12 @@ export default function Home({ params }: PageProps) {
                   {formSuccess ? (
                     <div className="py-8 text-center space-y-3" id="form_success_message">
                       <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto animate-bounce">
-                        <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                        <ShieldCheck className="w-6 h-6 text-emerald-500" />
                       </div>
-                      <h4 className="text-lg font-bold text-white">
+                      <h4 className="text-lg font-bold text-foreground">
                         {lang === 'zh' ? '匿名口碑提交成功！' : 'Pioneer Review Chained Successfully!'}
                       </h4>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         {lang === 'zh' 
                           ? '正在使用 SHA-256 计算该区块哈希，并自动在账本上创建企业口碑链条，正在跳转...' 
                           : 'Hashing blocks and registering company directory. Redirecting...'}
@@ -587,15 +591,15 @@ export default function Home({ params }: PageProps) {
                   ) : (
                     <>
                       {formError && (
-                        <div className="p-3.5 bg-rose-500/5 border border-rose-500/20 rounded-xl text-rose-300 text-xs font-semibold flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+                        <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 text-xs font-semibold flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
                           <span>{formError}</span>
                         </div>
                       )}
 
                       {/* Top identity notification */}
-                      <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-400">
-                        <ShieldAlert className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-600 dark:text-amber-400">
+                        <ShieldAlert className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                         <span>
                           <strong>{lang === 'zh' ? '隐私安全承诺:' : 'Privacy Commitment:'}</strong> {lang === 'zh' ? '平台采用完全匿名机制，服务器不记录任何用户的Cookie、IP地址或登录标识，不记录任何人像、手机或姓名信息。' : 'Absolutely zero tracking, cookies, IP addresses, or usernames logged.'}
                         </span>
@@ -604,7 +608,7 @@ export default function Home({ params }: PageProps) {
                       {/* Brand Info Inputs */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="relative">
-                          <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">
+                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
                             {lang === 'zh' ? '公司名称' : 'Company Name'} <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -613,13 +617,13 @@ export default function Home({ params }: PageProps) {
                             value={formData.company_name}
                             onChange={(e) => setFormData(prev => ({ ...prev, company_name: e.target.value }))}
                             placeholder="如: 阿里巴巴"
-                            className="w-full px-3 py-2 bg-[#151515] border border-white/5 rounded-xl text-sm text-[#e0e0e0] placeholder-gray-600 focus:bg-[#1a1a1a] focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                             autoComplete="off"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">
+                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
                             {lang === 'zh' ? '分公司地点' : 'Branch Location'} <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -628,7 +632,7 @@ export default function Home({ params }: PageProps) {
                             value={formData.branch_location}
                             onChange={(e) => setFormData(prev => ({ ...prev, branch_location: e.target.value }))}
                             placeholder="如: 上海徐汇分部、深圳总部"
-                            className="w-full px-3 py-2 bg-[#151515] border border-white/5 rounded-xl text-sm text-[#e0e0e0] placeholder-gray-600 focus:bg-[#1a1a1a] focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                           />
                         </div>
                       </div>
@@ -636,7 +640,7 @@ export default function Home({ params }: PageProps) {
                       {/* Position Info Inputs */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="md:col-span-2">
-                          <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">
+                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
                             {lang === 'zh' ? '岗位/职位名称' : 'Position Title'} <span className="text-rose-500">*</span>
                           </label>
                           <input
@@ -645,21 +649,21 @@ export default function Home({ params }: PageProps) {
                             value={formData.position}
                             onChange={(e) => setFormData(prev => ({ ...prev, position: e.target.value }))}
                             placeholder="如: 后端研发工程师"
-                            className="w-full px-3 py-2 bg-[#151515] border border-white/5 rounded-xl text-sm text-[#e0e0e0] placeholder-gray-600 focus:bg-[#1a1a1a] focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">
+                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
                             {lang === 'zh' ? '在职状态' : 'Employment Status'}
                           </label>
                           <select
                             value={formData.employment_status}
                             onChange={(e) => setFormData(prev => ({ ...prev, employment_status: e.target.value }))}
-                            className="w-full px-3 py-2.5 bg-[#151515] border border-white/5 rounded-xl text-sm text-[#e0e0e0] focus:bg-[#1a1a1a] focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2.5 bg-muted/40 border border-border rounded-xl text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
                           >
-                            <option value="current" className="bg-[#151515]">{lang === 'zh' ? '目前在职' : 'Current'}</option>
-                            <option value="former" className="bg-[#151515]">{lang === 'zh' ? '已经离职' : 'Former'}</option>
+                            <option value="current" className="bg-popover text-popover-foreground">{lang === 'zh' ? '目前在职' : 'Current'}</option>
+                            <option value="former" className="bg-popover text-popover-foreground">{lang === 'zh' ? '已经离职' : 'Former'}</option>
                           </select>
                         </div>
                       </div>
@@ -667,7 +671,7 @@ export default function Home({ params }: PageProps) {
                       {/* Salary and details */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">
+                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
                             {lang === 'zh' ? '基本月薪 (元/CNY)' : 'Base Monthly Salary (CNY)'}
                           </label>
                           <input
@@ -675,12 +679,12 @@ export default function Home({ params }: PageProps) {
                             value={formData.salary}
                             onChange={(e) => setFormData(prev => ({ ...prev, salary: e.target.value }))}
                             placeholder="如: 25000"
-                            className="w-full px-3 py-2 bg-[#151515] border border-white/5 rounded-xl text-sm text-[#e0e0e0] placeholder-gray-600 focus:bg-[#1a1a1a] focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">
+                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
                             {lang === 'zh' ? '大约年终奖 (元)' : 'Expected Annual Bonus (CNY)'}
                           </label>
                           <input
@@ -688,12 +692,12 @@ export default function Home({ params }: PageProps) {
                             value={formData.bonus}
                             onChange={(e) => setFormData(prev => ({ ...prev, bonus: e.target.value }))}
                             placeholder="如: 80000"
-                            className="w-full px-3 py-2 bg-[#151515] border border-white/5 rounded-xl text-sm text-[#e0e0e0] placeholder-gray-600 focus:bg-[#1a1a1a] focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">
+                          <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
                             {lang === 'zh' ? '相关经验年限' : 'Experience Years'}
                           </label>
                           <input
@@ -701,14 +705,14 @@ export default function Home({ params }: PageProps) {
                             value={formData.experience_years}
                             onChange={(e) => setFormData(prev => ({ ...prev, experience_years: e.target.value }))}
                             placeholder="如: 3"
-                            className="w-full px-3 py-2 bg-[#151515] border border-white/5 rounded-xl text-sm text-[#e0e0e0] placeholder-gray-600 focus:bg-[#1a1a1a] focus:border-emerald-500 outline-none"
+                            className="w-full px-3 py-2 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none"
                           />
                         </div>
                       </div>
 
                       {/* Multi-dimensional Sliders */}
-                      <div className="bg-[#151515] border border-white/5 rounded-xl p-4 space-y-4">
-                        <span className="block text-xs font-extrabold text-gray-300 uppercase border-b border-white/5 pb-2">
+                      <div className="bg-muted/40 border border-border rounded-xl p-4 space-y-4">
+                        <span className="block text-xs font-extrabold text-foreground uppercase border-b border-border pb-2">
                           {lang === 'zh' ? '多维度满意度评分 (1 - 5 星)' : 'Satisfaction Metrics (1 - 5 Stars)'}
                         </span>
 
@@ -721,8 +725,8 @@ export default function Home({ params }: PageProps) {
                         ].map((slider) => (
                           <div key={slider.key} className="flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs">
                             <div className="md:w-1/2">
-                              <span className="font-semibold text-gray-300 block">{slider.label}</span>
-                              <span className="text-[10px] text-gray-500">{slider.desc}</span>
+                              <span className="font-semibold text-foreground block">{slider.label}</span>
+                              <span className="text-[10px] text-muted-foreground">{slider.desc}</span>
                             </div>
                             <div className="flex items-center gap-3">
                               <input
@@ -732,9 +736,9 @@ export default function Home({ params }: PageProps) {
                                 step="1"
                                 value={formData[slider.key as keyof typeof formData]}
                                 onChange={(e) => setFormData(prev => ({ ...prev, [slider.key]: Number(e.target.value) }))}
-                                className="w-40 h-1.5 bg-white/5 rounded-full appearance-none cursor-pointer accent-emerald-500"
+                                className="w-40 h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-emerald-500"
                               />
-                              <span className="w-10 text-right font-bold text-emerald-400 text-sm">
+                              <span className="w-10 text-right font-bold text-emerald-500 text-sm">
                                 {formData[slider.key as keyof typeof formData]} {lang === 'zh' ? '星' : 'Stars'}
                               </span>
                             </div>
@@ -744,7 +748,7 @@ export default function Home({ params }: PageProps) {
 
                       {/* Detailed Text Area */}
                       <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">
+                        <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
                           {lang === 'zh' ? '匿名评论详情描述' : 'Review Details'} <span className="text-rose-500">*</span>
                         </label>
                         <textarea
@@ -755,23 +759,23 @@ export default function Home({ params }: PageProps) {
                           placeholder={lang === 'zh' 
                             ? '请写下您在该公司的真实就职体验，例如：日常工作流程、团队加班状态、考核机制、办公室环境及食堂福利等细节。字数需多于15个字。'
                             : 'Provide authentic detail concerning work pace, pressure, corporate management styles, and workplace benefits (min. 15 chars).'}
-                          className="w-full px-3 py-2.5 bg-[#151515] border border-white/5 rounded-xl text-sm text-[#e0e0e0] placeholder-gray-600 focus:bg-[#1a1a1a] focus:border-emerald-500 outline-none resize-none"
+                          className="w-full px-3 py-2.5 bg-muted/40 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:bg-background focus:border-emerald-500 outline-none resize-none"
                         />
                       </div>
 
                       {/* Buttons */}
-                      <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
+                      <div className="flex justify-end gap-3 pt-4 border-t border-border">
                         <button
                           type="button"
                           onClick={() => setShowSubmitForm(false)}
-                          className="px-5 py-2 border border-white/10 hover:bg-white/5 text-gray-400 hover:text-white rounded-xl text-xs font-bold transition-colors"
+                          className="px-5 py-2 border border-border hover:bg-accent text-muted-foreground hover:text-foreground rounded-xl text-xs font-bold transition-colors cursor-pointer"
                         >
                           {lang === 'zh' ? '取消' : 'Cancel'}
                         </button>
                         <button
                           type="submit"
                           disabled={isSubmitting}
-                          className="inline-flex items-center gap-1.5 px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-xs font-bold transition-colors shadow-xs"
+                          className="inline-flex items-center gap-1.5 px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-xl text-xs font-bold transition-colors shadow-xs cursor-pointer"
                         >
                           {isSubmitting && <Loader2 className="w-3 h-3 animate-spin text-black" />}
                           <span>{lang === 'zh' ? '确认匿名提交' : 'Submit Review'}</span>
@@ -787,7 +791,7 @@ export default function Home({ params }: PageProps) {
       </div>
 
       {/* Footer */}
-      <footer className="bg-[#0a0a0a] border-t border-white/5 mt-20 py-8 text-xs text-gray-500" id="footer">
+      <footer className="bg-muted/30 border-t border-border mt-20 py-8 text-xs text-muted-foreground" id="footer">
         <div className="max-w-5xl mx-auto px-4 text-center space-y-2">
           <p>
             {lang === 'zh'
