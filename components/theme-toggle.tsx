@@ -6,7 +6,11 @@ import { Sun, Moon } from 'lucide-react';
 
 const emptySubscribe = () => () => {};
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  className?: string;
+}
+
+export function ThemeToggle({ className }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
   const mounted = React.useSyncExternalStore(
     emptySubscribe,
@@ -14,9 +18,11 @@ export function ThemeToggle() {
     () => false
   );
 
+  const defaultClasses = "inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-white/10 text-white/90 hover:text-white transition-colors cursor-pointer";
+
   if (!mounted) {
     return (
-      <div className="w-9 h-9 rounded-full border border-border bg-background/50" />
+      <div className={className || defaultClasses} />
     );
   }
 
@@ -26,15 +32,16 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-border/60 bg-background/80 hover:bg-accent hover:text-accent-foreground transition-colors backdrop-blur-sm cursor-pointer"
+      className={className || defaultClasses}
       title={isDark ? '切换至浅色模式 / Switch to Light Mode' : '切换至深色模式 / Switch to Dark Mode'}
       aria-label="Toggle Theme"
     >
       {isDark ? (
         <Sun className="w-4 h-4 text-amber-400 transition-all" />
       ) : (
-        <Moon className="w-4 h-4 text-slate-700 transition-all" />
+        <Moon className="w-4 h-4 text-amber-300 dark:text-amber-400 transition-all" />
       )}
     </button>
   );
 }
+

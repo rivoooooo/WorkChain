@@ -25,7 +25,8 @@ import {
   Lock,
   Loader2,
   ChevronRight,
-  PlusCircle
+  PlusCircle,
+  Languages
 } from 'lucide-react';
 
 interface Company {
@@ -233,17 +234,19 @@ export default function Home({ params }: PageProps) {
           </div>
 
           {/* Action CTAs & Controls */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Theme Toggle */}
-            <ThemeToggle />
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Theme Toggle (Circular Ghost) */}
+            <ThemeToggle className="w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center" />
 
-            {/* Language Switcher */}
+            {/* Language Switcher (Circular Ghost) */}
             <button
+              type="button"
               onClick={toggleLang}
-              className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-full transition-colors flex items-center gap-1 cursor-pointer"
+              className="w-9 h-9 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors cursor-pointer flex items-center justify-center relative group"
+              title={lang === 'zh' ? 'Switch to English' : '切换为中文'}
+              aria-label="Toggle Language"
             >
-              <span>🌐</span>
-              <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
+              <Languages className="w-4 h-4 text-emerald-400" />
             </button>
 
             {/* Write Review Capsule Button */}
@@ -266,7 +269,7 @@ export default function Home({ params }: PageProps) {
                 });
                 setShowSubmitForm(true);
               }}
-              className="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-full transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-full transition-all shadow-md flex items-center gap-1.5 cursor-pointer ml-1"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{t.addReview}</span>
@@ -275,17 +278,17 @@ export default function Home({ params }: PageProps) {
         </header>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 pb-16" id="app_container">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 border-x border-border min-h-screen pb-16" id="app_container">
 
         {!hasSearched ? (
           <div className="space-y-12 sm:space-y-16">
             
-            {/* HERO PIXEL ART IMAGE BANNER */}
+            {/* HERO PIXEL ART IMAGE BANNER - SHARP RIGHT-ANGLED CORNERS */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="w-full rounded-3xl overflow-hidden shadow-2xl border border-border bg-card relative aspect-[16/9] sm:aspect-[21/9]"
+              className="w-full rounded-none shadow-xl border border-border bg-card relative aspect-[16/9] sm:aspect-[21/9]"
               id="hero_banner_container"
             >
               <Image
