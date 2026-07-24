@@ -136,11 +136,11 @@ export function CitySelect({
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full" ref={containerRef}>
-      {/* 所在国家 (可打字/下拉搜索) */}
+      {/* 国家/地区 (可打字/下拉搜索) */}
       <div className="sm:col-span-1 relative">
         <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5 flex items-center gap-1">
           <Globe className="w-3 h-3 text-emerald-500" />
-          <span>{lang === 'zh' ? '所在国家' : 'Country'}</span>
+          <span>{lang === 'zh' ? '国家/地区' : 'Country / Region'}</span>
         </label>
         <div className="relative">
           <input
@@ -156,24 +156,24 @@ export function CitySelect({
               setIsCountryOpen(true);
               setIsCityOpen(false);
             }}
-            placeholder={lang === 'zh' ? '搜索国家 (如 中国, 美国)' : 'Search country (e.g. China, US)'}
+            placeholder={lang === 'zh' ? '搜索国家/地区 (如 中国, 美国)' : 'Search country/region (e.g. China, US)'}
             className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none pr-8 font-medium truncate"
           />
           <ChevronDown className="w-4 h-4 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
 
-        {/* 可搜索国家下拉弹窗 */}
+        {/* 可搜索国家/地区下拉弹窗 */}
         {isCountryOpen && (
           <div className="absolute left-0 right-0 top-full mt-1 bg-card border border-border shadow-xl z-50 max-h-56 overflow-y-auto rounded-none text-card-foreground">
             {filteredCountries.length === 0 ? (
               <div className="p-3 text-center text-xs text-muted-foreground">
-                {lang === 'zh' ? '未找到匹配国家' : 'No country found'}
+                {lang === 'zh' ? '未找到匹配国家/地区' : 'No country/region found'}
               </div>
             ) : (
               <div className="py-1">
                 <div className="px-3 py-1 text-[10px] font-extrabold uppercase text-muted-foreground bg-muted/30 border-b border-border flex items-center justify-between">
-                  <span>{lang === 'zh' ? '选择或搜索国家' : 'Select Country'}</span>
-                  <span>{filteredCountries.length} COUNTRIES</span>
+                  <span>{lang === 'zh' ? '选择或搜索国家/地区' : 'Select Country / Region'}</span>
+                  <span>{filteredCountries.length} COUNTRIES/REGIONS</span>
                 </div>
                 {filteredCountries.map((c) => {
                   const isSelected = c.code.toUpperCase() === selectedCountryCode.toUpperCase();

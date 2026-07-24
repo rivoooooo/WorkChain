@@ -703,11 +703,11 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
 
-                {/* 所在国家与城市 */}
+                {/* 国家/地区与城市 */}
                 <div className="border border-border p-4 bg-card rounded-none space-y-1">
                   <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
                     <Globe className="w-3.5 h-3.5 text-emerald-500" />
-                    {lang === 'zh' ? '所在国家与城市' : 'Country & City'}
+                    {lang === 'zh' ? '国家/地区与城市' : 'Country / Region & City'}
                   </span>
                   <div className="text-sm font-bold text-foreground truncate">
                     {[company.country_name || company.country_code, company.province, company.city].filter(Boolean).join(' · ') || (lang === 'zh' ? '中国' : 'China')}
