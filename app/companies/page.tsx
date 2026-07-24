@@ -217,6 +217,14 @@ export default function CompaniesPage() {
               <span>🌐</span>
               <span>{lang === 'zh' ? 'EN' : 'ZH'}</span>
             </button>
+
+            <Link
+              href="/download"
+              className="inline-flex items-center gap-1.5 text-gray-400 hover:text-white font-semibold text-xs bg-[#121212] hover:bg-[#1a1a1a] border border-white/5 px-2.5 py-1 rounded-lg transition-colors"
+            >
+              <Database className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{t.downloadNavLabel}</span>
+            </Link>
           </div>
 
           <div className="inline-flex items-center gap-2 text-xs text-gray-500">

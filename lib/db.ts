@@ -37,6 +37,14 @@ if (!global._localReviews) {
   global._localReviews = loadLocalReviews();
 }
 
+// Start automatic backup task check-and-run daemon asynchronously
+try {
+  const { initBackupScheduler } = require('./backups');
+  initBackupScheduler();
+} catch (e) {
+  console.error('Failed to initialize backup scheduler daemon:', e);
+}
+
 // Function to calculate cryptographic hash for a review
 export function calculateReviewHash(review: Omit<Review, 'hash'>): string {
   const dataString = [

@@ -641,6 +641,14 @@ export default function Home() {
               <TrendingUp className="w-4 h-4 text-emerald-400" />
               <span>{t.viewRankings}</span>
             </Link>
+
+            <Link 
+              href="/download"
+              className="text-xs md:text-sm font-semibold text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-1.5"
+            >
+              <Database className="w-4 h-4 text-emerald-400" />
+              <span>{t.downloadNavLabel}</span>
+            </Link>
             {!submittedQuery && !showSubmitForm && (
               <button
                 onClick={() => setShowSubmitForm(true)}

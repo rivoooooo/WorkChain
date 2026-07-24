@@ -119,7 +119,25 @@ export const i18n = {
     dirNoResults: '未找到匹配的公司',
     dirNoResultsDesc: '目前还没有该公司下的评价，或者搜索拼写不准确。您可以返回主页提交该公司下的第一笔匿名评价！',
     dirRowReviewCount: '笔评价',
-    dirRowOverall: '综合分'
+    dirRowOverall: '综合分',
+
+    // Download page
+    downloadTitle: '数据备份与归档下载中心',
+    downloadSub: '系统于每天凌晨 00:00 自动生成完整的匿名口碑数据集备份，包含 CSV、XLSX、SQL 三种格式，方便进行数据迁移、研究或本地备份。数据采用离线二进制存储，无须动态查询。',
+    downloadColDate: '备份日期',
+    downloadColRecords: '记录数',
+    downloadColFiles: '可用文件下载',
+    downloadTriggerBtn: '手动触发备份',
+    downloadTriggering: '备份生成中...',
+    downloadTriggerSuccess: '手动备份成功！已记录至独立数据归档表。',
+    downloadTriggerFail: '备份触发失败，请稍后重试。',
+    downloadSize: '大小',
+    downloadBtnCsv: '下载 CSV',
+    downloadBtnXlsx: '下载 Excel (XLSX)',
+    downloadBtnSql: '下载 SQL Dump',
+    downloadNoData: '暂无备份数据。',
+    downloadBackBtn: '返回主页',
+    downloadNavLabel: '数据备份下载'
   },
   en: {
     // Top banner & general
@@ -238,6 +256,24 @@ export const i18n = {
     dirNoResults: 'No Companies Matched',
     dirNoResultsDesc: 'We couldn\'t find any reviews under this name. Return to home to submit the first review for this company!',
     dirRowReviewCount: 'Reviews',
-    dirRowOverall: 'Score'
+    dirRowOverall: 'Score',
+
+    // Download page
+    downloadTitle: 'Data Backup & Archive Center',
+    downloadSub: 'The system automatically generates a comprehensive review dataset backup daily at 00:00, available in CSV, XLSX, and SQL formats for secure off-site archiving, data migration, or research. Storage is isolated to binary tables, eliminating dynamic processing overhead.',
+    downloadColDate: 'Backup Date',
+    downloadColRecords: 'Records',
+    downloadColFiles: 'Available Formats',
+    downloadTriggerBtn: 'Trigger Manual Backup',
+    downloadTriggering: 'Generating Backup...',
+    downloadTriggerSuccess: 'Manual backup succeeded! Saved to the isolated ledger database.',
+    downloadTriggerFail: 'Failed to trigger backup. Try again later.',
+    downloadSize: 'Size',
+    downloadBtnCsv: 'Download CSV',
+    downloadBtnXlsx: 'Download Excel (XLSX)',
+    downloadBtnSql: 'Download SQL Dump',
+    downloadNoData: 'No backups available.',
+    downloadBackBtn: 'Back to Home',
+    downloadNavLabel: 'Backups Center'
   }
 };
