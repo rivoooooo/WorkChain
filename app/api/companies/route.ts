@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: company });
     }
 
-    const companies = await getCompanies();
+    const search = searchParams.get('search') || searchParams.get('q') || undefined;
+    const companies = await getCompanies(search || undefined);
     return NextResponse.json({ success: true, data: companies });
   } catch (error: any) {
     console.error('API Error in GET companies:', error);

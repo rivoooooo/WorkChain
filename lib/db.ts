@@ -341,15 +341,16 @@ export async function getCompanyReviews(companyName: string): Promise<Review[]> 
   return getCompanyReviewsById(companyId);
 }
 
-// Get all companies list
-export async function getCompanies(): Promise<Company[]> {
+// Get all companies list with optional search parameter
+export async function getCompanies(search?: string): Promise<Company[]> {
   const supabase = getSupabaseClient();
   if (supabase) {
     try {
-      const { data, error } = await supabase
-        .from('companies')
-        .select('*')
-        .order('name', { ascending: true });
+      let query = supabase.from('companies').select('*');
+      if (search) {
+        query = query.ilike('name', `%${search.trim()}%`);
+      }
+      const { data, error } = await query.order('name', { ascending: true });
 
       if (!error && data) {
         const mapped: Company[] = data.map((item: any) => ({
@@ -366,8 +367,11 @@ export async function getCompanies(): Promise<Company[]> {
           avg_salary: Number(item.avg_salary !== undefined ? item.avg_salary : item.avgSalary || 0),
           avg_bonus: Number(item.avg_bonus !== undefined ? item.avg_bonus : item.avgBonus || 0)
         }));
-        global._localCompanies = mapped;
-        saveCompaniesToDisk(mapped);
+        // Only update local global cache with full list if not searching
+        if (!search) {
+          global._localCompanies = mapped;
+          saveCompaniesToDisk(mapped);
+        }
         return mapped;
       }
       console.warn('[DB] Supabase companies select error, calculating on-the-fly:', error);
@@ -377,18 +381,22 @@ export async function getCompanies(): Promise<Company[]> {
   }
 
   // File system fallback
-  const local = loadLocalCompanies();
-  if (local.length > 0) {
+  let local = loadLocalCompanies();
+  if (local.length === 0) {
+    // Calculate from reviews dynamically if no companies list is saved
+    const reviews = await getReviews();
+    local = await recalculateAllCompanies(reviews);
     global._localCompanies = local;
-    return local;
+    saveCompaniesToDisk(local);
+  } else {
+    global._localCompanies = local;
   }
 
-  // Calculate from reviews dynamically if no companies list is saved
-  const reviews = await getReviews();
-  const calculated = await recalculateAllCompanies(reviews);
-  global._localCompanies = calculated;
-  saveCompaniesToDisk(calculated);
-  return calculated;
+  if (search) {
+    const term = search.trim().toLowerCase();
+    return local.filter(c => c.name.toLowerCase().includes(term));
+  }
+  return local;
 }
 
 // Get single company details by its ID
