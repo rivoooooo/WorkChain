@@ -39,6 +39,11 @@ export const companies = pgTable('companies', {
     to: 'public',
     using: sql.raw('true'),
   }),
+  pgPolicy('Allow delete for companies', {
+    for: 'delete',
+    to: 'public',
+    using: sql.raw('true'),
+  }),
 ]).enableRLS();
 
 // 2. 评价主表 (reviews)
@@ -79,6 +84,16 @@ export const reviews = pgTable('reviews', {
     to: 'public',
     withCheck: sql.raw('true'),
   }),
+  pgPolicy('Allow update for reviews', {
+    for: 'update',
+    to: 'public',
+    using: sql.raw('true'),
+  }),
+  pgPolicy('Allow delete for reviews', {
+    for: 'delete',
+    to: 'public',
+    using: sql.raw('true'),
+  }),
 ]).enableRLS();
 
 // 3. 自动归档备份元数据表 (backups_metadata)
@@ -102,6 +117,16 @@ export const backupsMetadata = pgTable('backups_metadata', {
     to: 'public',
     withCheck: sql.raw('true'),
   }),
+  pgPolicy('Allow update for backups_metadata', {
+    for: 'update',
+    to: 'public',
+    using: sql.raw('true'),
+  }),
+  pgPolicy('Allow delete for backups_metadata', {
+    for: 'delete',
+    to: 'public',
+    using: sql.raw('true'),
+  }),
 ]).enableRLS();
 
 // 4. 自动归档备份二进制存储表 (backups_binary)
@@ -120,6 +145,16 @@ export const backupsBinary = pgTable('backups_binary', {
     for: 'insert',
     to: 'public',
     withCheck: sql.raw('true'),
+  }),
+  pgPolicy('Allow update for backups_binary', {
+    for: 'update',
+    to: 'public',
+    using: sql.raw('true'),
+  }),
+  pgPolicy('Allow delete for backups_binary', {
+    for: 'delete',
+    to: 'public',
+    using: sql.raw('true'),
   }),
 ]).enableRLS();
 
@@ -194,6 +229,11 @@ export const companyDetails = pgTable('company_details', {
     to: 'public',
     using: sql.raw('true'),
   }),
+  pgPolicy('Allow delete for company_details', {
+    for: 'delete',
+    to: 'public',
+    using: sql.raw('true'),
+  }),
 ]).enableRLS();
 
 // 7. 国家地理位置表 (geo_countries)
@@ -211,6 +251,16 @@ export const geoCountries = pgTable('geo_countries', {
     for: 'insert',
     to: 'public',
     withCheck: sql.raw('true'),
+  }),
+  pgPolicy('Allow update for geo_countries', {
+    for: 'update',
+    to: 'public',
+    using: sql.raw('true'),
+  }),
+  pgPolicy('Allow delete for geo_countries', {
+    for: 'delete',
+    to: 'public',
+    using: sql.raw('true'),
   }),
 ]).enableRLS();
 
@@ -239,5 +289,16 @@ export const geoCities = pgTable('geo_cities', {
     to: 'public',
     withCheck: sql.raw('true'),
   }),
+  pgPolicy('Allow update for geo_cities', {
+    for: 'update',
+    to: 'public',
+    using: sql.raw('true'),
+  }),
+  pgPolicy('Allow delete for geo_cities', {
+    for: 'delete',
+    to: 'public',
+    using: sql.raw('true'),
+  }),
 ]).enableRLS();
+
 
