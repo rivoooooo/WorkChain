@@ -8,8 +8,20 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const vibeLoftWebAuthKey = process.env.VIBELOFT_WEB_AUTH_KEY;
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {vibeLoftWebAuthKey && (
+          <script
+            defer
+            src="https://vibeloft.ai/telemetry/v1.js"
+            data-vl-product-id="f0fcfd1a-5175-431d-bf71-5a8aa10af4c6"
+            data-vl-auth-key={vibeLoftWebAuthKey}
+          />
+        )}
+      </head>
       <body suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
