@@ -6,9 +6,6 @@ import { i18n, Language } from '../../../lib/i18n';
 import {
   Download,
   FileText,
-  RefreshCw,
-  CheckCircle2,
-  AlertCircle,
   Loader2,
   FileSpreadsheet,
   FileJson,
@@ -41,9 +38,7 @@ export default function DownloadPage({ params }: PageProps) {
 
   const [backups, setBackups] = useState<BackupMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isTriggering, setIsTriggering] = useState(false);
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const t = i18n[lang];
 
@@ -66,46 +61,9 @@ export default function DownloadPage({ params }: PageProps) {
   };
 
   useEffect(() => {
-    fetchBackups(false);
+    const timer = window.setTimeout(() => void fetchBackups(false), 0);
+    return () => window.clearTimeout(timer);
   }, []);
-
-  // Trigger a manual backup
-  const handleTriggerBackup = async () => {
-    if (isTriggering) return;
-    setIsTriggering(true);
-    setNotification(null);
-
-    try {
-      const res = await fetch('/api/backups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setNotification({
-          type: 'success',
-          message: t.downloadTriggerSuccess
-        });
-        await fetchBackups();
-      } else {
-        setNotification({
-          type: 'error',
-          message: data.error || t.downloadTriggerFail
-        });
-      }
-    } catch (err) {
-      console.error('Failed to trigger backup:', err);
-      setNotification({
-        type: 'error',
-        message: t.downloadTriggerFail
-      });
-    } finally {
-      setIsTriggering(false);
-      setTimeout(() => {
-        setNotification(null);
-      }, 5000);
-    }
-  };
 
   // Helper: Format byte size
   const formatBytes = (bytes: number) => {
@@ -189,29 +147,6 @@ export default function DownloadPage({ params }: PageProps) {
             </div>
           </div>
         </div>
-
-        {/* Toast Notification */}
-        <AnimatePresence>
-          {notification && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={`p-4 rounded-none mb-6 flex items-center gap-3 border ${
-                notification.type === 'success'
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
-                  : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
-              }`}
-            >
-              {notification.type === 'success' ? (
-                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-              ) : (
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              )}
-              <span className="text-xs font-bold">{notification.message}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Hex Copy Success Banner */}
         <AnimatePresence>
@@ -391,23 +326,6 @@ export default function DownloadPage({ params }: PageProps) {
               </p>
             </div>
 
-            <button
-              onClick={handleTriggerBackup}
-              disabled={isTriggering || isLoading}
-              className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:bg-emerald-800 disabled:text-emerald-500 text-black font-bold rounded-none text-xs transition-colors flex items-center gap-2 shadow-xs cursor-pointer uppercase tracking-wider"
-            >
-              {isTriggering ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{t.downloadTriggering}</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4" />
-                  <span>{t.downloadTriggerBtn}</span>
-                </>
-              )}
-            </button>
           </div>
         </div>
 

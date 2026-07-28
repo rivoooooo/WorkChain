@@ -8,7 +8,7 @@
   - 启动开发服务：`bun run dev`
   - 构建项目：`bun run build`
   - 代码校验：`bun run lint`
-  - 推送/同步数据库迁移：`bun run db:migrate` (或 `bun run db:push`)
+  - 推送/同步数据库结构：`bun run db:push`（正式环境使用 `bun run db:push:prod`）
   - 导出 ORM 迁移脚本：`bun run db:generate`
   - 填充城市国家地理数据：`bun run import:geo`
   - 转换导入企业注册 CSV：`bun run import:kinginsun <CSV文件路径>` 或 `bun run import:kinginsun --dir <文件夹路径>`
@@ -21,8 +21,9 @@
   - `companies` 主表以 **统一社会信用代码 (`credit_code`)** 作为唯一索引与匹配 Key。
   - 扩展详细工商属性置于 `company_details`，相关媒体链接置于 `company_links`，地理信息置于 `geo_cities` / `geo_countries`。
 - **通用转换层架构**：数据导入必须遵循 `lib/converters/` 架构，使用转换适配器统一转为 `StandardCompanyDTO` 后再进行以 `credit_code` 为 Key 的 Upsert 增量更新。
-- **初始化 SQL**：表结构及 RLS 安全策略同时保留在 `supabase/migrations/20260724000000_init_tables.sql`。
-- **种子数据**：移除了内置 seed 种子数据，所有测试与线上环境使用干净的表结构。
+- **结构唯一来源**：表、约束、视图与 RLS 只在 `drizzle/schema.ts` 维护；迁移文件只能由 Drizzle Kit 生成。
+- **数据不可变**：导入与业务写入只允许追加；冲突跳过，禁止更新和删除。
+- **环境隔离**：测试企业与测试评价只允许进入测试数据库，生产只执行 Drizzle 结构推送和通过校验的 INSERT-only 数据 SQL。
 
 ## Git Commit 提交规范
 

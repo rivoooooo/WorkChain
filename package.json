@@ -9,10 +9,14 @@
     "lint": "eslint .",
     "clean": "next clean",
     "db:push": "drizzle-kit push",
-    "db:migrate": "bun run scripts/migrate.ts",
+    "db:push:prod": "bun run scripts/db-push-production.ts",
     "db:generate": "drizzle-kit generate",
+    "db:check": "drizzle-kit check",
+    "db:preflight": "bun run scripts/db-preflight.ts",
     "db:studio": "drizzle-kit studio",
-    "import:geo": "bun run scripts/import-geonames.ts"
+    "import:geo": "bun run scripts/import-geonames.ts",
+    "import:kinginsun": "bun run scripts/import-kinginsun.ts",
+    "data:check-sql": "bun run scripts/check-insert-only-sql.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

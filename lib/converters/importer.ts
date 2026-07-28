@@ -88,7 +88,7 @@ export async function importCompanyData(
           };
         });
 
-        // 批量 Upsert 到 companies 表
+        // Immutable import: existing companies are never rewritten.
         await tx`
           INSERT INTO companies ${tx(
             companyBatch,
@@ -100,12 +100,7 @@ export async function importCompanyData(
             'province',
             'city'
           )}
-          ON CONFLICT (credit_code) DO UPDATE SET
-            name = EXCLUDED.name,
-            country_code = EXCLUDED.country_code,
-            country_name = EXCLUDED.country_name,
-            province = COALESCE(EXCLUDED.province, companies.province),
-            city = COALESCE(EXCLUDED.city, companies.city);
+          ON CONFLICT (credit_code) DO NOTHING;
         `;
 
         interface DetailRow {
@@ -163,14 +158,7 @@ export async function importCompanyData(
               'establishment_date',
               'company_type'
             )}
-            ON CONFLICT (company_id) DO UPDATE SET
-              legal_representative = COALESCE(EXCLUDED.legal_representative, company_details.legal_representative),
-              registered_capital = COALESCE(EXCLUDED.registered_capital, company_details.registered_capital),
-              business_scope = COALESCE(EXCLUDED.business_scope, company_details.business_scope),
-              registered_address = COALESCE(EXCLUDED.registered_address, company_details.registered_address),
-              establishment_date = COALESCE(EXCLUDED.establishment_date, company_details.establishment_date),
-              company_type = COALESCE(EXCLUDED.company_type, company_details.company_type),
-              updated_at = NOW();
+            ON CONFLICT (company_id) DO NOTHING;
           `;
         }
       });

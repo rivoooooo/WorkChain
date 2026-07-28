@@ -30,11 +30,12 @@
 
 在配置好 `.env` 中的 `DATABASE_URL` 之后，系统提供开箱即用的命令行脚本工具：
 
-### 1. 数据库安全迁移与结构同步
-运行迁移脚本，自动为数据库补充全新字段、表结构与 RLS 安全策略（不丢失原已有数据）：
+### 1. 数据库结构同步
+`drizzle/schema.ts` 是唯一结构源。开发环境推送：
 ```bash
-bun run db:migrate
+bun run db:push
 ```
+正式环境使用带项目目标和显式确认保护的 `bun run db:push:prod`，详见 [SCRIPTS.md](SCRIPTS.md)。
 
 ### 2. 初始化填充城市与国家数据库
 脚本会自动从仓库内部数据源 `data/cities500.txt` 提取并导入 23.5 万全球/中国城市与 246 个国家：
@@ -56,7 +57,7 @@ bun run import:kinginsun /path/to/enterprise.csv
 
 *特质说明*：
 - **通用转换适配器**：自动映射统一社会信用代码、企业名称、法人代表、资金、经营范围、企业类型等列名。
-- **增量 Upsert**：以 **统一社会信用代码 (`credit_code`)** 作为唯一 Key。若企业已存在则增量更新属性，不存在则新建。
+- **不可变追加**：以 **统一社会信用代码 (`credit_code`)** 作为唯一 Key；已存在记录跳过，不覆写历史数据。
 
 ---
 
@@ -82,7 +83,7 @@ bun run import:kinginsun /path/to/enterprise.csv
    bun install
    ```
 2. **环境配置**：
-   复制并配置 `.env` 文件中的 `DATABASE_URL`、`NEXT_PUBLIC_SUPABASE_URL` 与 `NEXT_PUBLIC_SUPABASE_ANON_KEY`。
+   复制 `.env.example`，配置 `DATABASE_OWNER_URL`、`APP_DATABASE_URL` 与 Supabase 参数。
 3. **启动服务**：
    ```bash
    bun run dev
@@ -94,9 +95,11 @@ bun run import:kinginsun /path/to/enterprise.csv
 
 | 脚本命令 | 说明 |
 | :--- | :--- |
-| `bun run scripts/migrate.ts` | 运行增量 DDL 脚本，自动初始化/迁移数据库表结构与 RLS |
+| `bun run db:push` | 从 Drizzle schema 同步开发数据库结构 |
+| `bun run db:push:prod` | 带环境、确认文本和 Supabase 项目标识保护的生产结构推送 |
 | `bun run scripts/import-geonames.ts` | 从仓库数据源 `data/cities500.txt` 批量写入 23.5 万城市与 246 个国家 |
-| `bun run scripts/import-kinginsun.ts --dir <path>` | 支持 `--dir` 递归转换并批量导入目录下所有 CSV，按统一社会信用代码 Upsert 入库 |
+| `bun run scripts/import-kinginsun.ts --dir <path>` | 转换 CSV 并只插入尚不存在的统一社会信用代码 |
+| `bun run data:check-sql <file>` | 拒绝含 DDL、更新或删除语句的数据 SQL |
 
 ---
 

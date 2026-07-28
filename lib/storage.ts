@@ -27,15 +27,15 @@ export async function uploadCompanyMedia(options: UploadOptions): Promise<Upload
   const { companyId, file, fileName, contentType, type = 'image' } = options;
 
   const ext = fileName.includes('.') ? fileName.split('.').pop() : 'png';
-  const time = Date.now();
-  const safeFileName = `${type}_${time}.${ext}`;
+  const uniqueId = globalThis.crypto.randomUUID();
+  const safeFileName = `${type}_${uniqueId}.${ext}`;
   const storagePath = `companies/${companyId}/${safeFileName}`;
 
   const { data, error } = await supabase.storage
     .from(BUCKET_NAME)
     .upload(storagePath, file, {
       contentType: contentType || 'image/png',
-      upsert: true,
+      upsert: false,
     });
 
   if (error) {

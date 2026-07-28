@@ -123,8 +123,7 @@ async function importGeonames() {
     await sql`
       INSERT INTO geo_countries (code, name, chinese_name)
       VALUES (${code}, ${val.en}, ${val.cn})
-      ON CONFLICT (code) DO UPDATE
-      SET name = EXCLUDED.name, chinese_name = EXCLUDED.chinese_name;
+      ON CONFLICT (code) DO NOTHING;
     `;
   }
 
@@ -148,10 +147,7 @@ async function insertBatch(sql: any, batch: any[]) {
       'latitude',
       'longitude'
     )}
-    ON CONFLICT (id) DO UPDATE SET
-      name = EXCLUDED.name,
-      chinese_name = COALESCE(EXCLUDED.chinese_name, geo_cities.chinese_name),
-      alternate_names = EXCLUDED.alternate_names;
+    ON CONFLICT (id) DO NOTHING;
   `;
 }
 

@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCompanies, getCompanyById } from '../../../lib/db';
+import { createCompany } from '@/lib/company-governance';
+import { guardPublicWrite } from '@/lib/security/public-write';
+import {
+  publicWriteFailure,
+  publicWriteSuccess,
+} from '@/lib/api/public-write-response';
 
 export async function GET(req: NextRequest) {
   try {
@@ -27,5 +33,31 @@ export async function GET(req: NextRequest) {
       { success: false, error: '获取企业目录失败，请稍后重试。' },
       { status: 500 }
     );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = (await req.json()) as Record<string, unknown>;
+    const humanVerificationToken =
+      typeof body.humanVerificationToken === 'string'
+        ? body.humanVerificationToken
+        : undefined;
+    const profile =
+      body.profile && typeof body.profile === 'object' && !Array.isArray(body.profile)
+        ? (body.profile as Record<string, unknown>)
+        : Object.fromEntries(
+            Object.entries(body).filter(([key]) => key !== 'humanVerificationToken')
+          );
+
+    const identity = await guardPublicWrite(
+      req,
+      'company-create',
+      humanVerificationToken
+    );
+    const result = await createCompany(profile);
+    return publicWriteSuccess(identity, result, result.created ? 201 : 200);
+  } catch (error) {
+    return publicWriteFailure(error);
   }
 }

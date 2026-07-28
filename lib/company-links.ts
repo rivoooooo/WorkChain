@@ -41,8 +41,3 @@ export async function getCompanyLinks(companyId: string) {
     .where(eq(companyLinks.company_id, companyId))
     .orderBy(desc(companyLinks.created_at));
 }
-
-export async function deleteCompanyLink(linkId: string) {
-  await db.delete(companyLinks).where(eq(companyLinks.id, linkId));
-  return true;
-}

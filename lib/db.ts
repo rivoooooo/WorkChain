@@ -1,27 +1,28 @@
 import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
-import { createClient } from '@supabase/supabase-js';
+import { sqlClient } from '@/drizzle/db';
+import { createCompany } from './company-governance';
+import { canonicalJson } from './company-profile';
 
 export interface Review {
   id: string;
-  company_id: string; // Linked unique id of the company
+  company_id: string;
   company_name: string;
   branch_location: string;
   position: string;
-  employment_status: string; // 'current' | 'former'
-  salary: number; // Monthly salary in CNY
-  bonus: number; // Annual bonus in CNY
+  employment_status: string;
+  salary: number;
+  bonus: number;
   experience_years: number;
-  rating_career: number; // 1-5
-  rating_balance: number; // 1-5
-  rating_management: number; // 1-5
-  rating_compensation: number; // 1-5
-  rating_culture: number; // 1-5
+  rating_career: number;
+  rating_balance: number;
+  rating_management: number;
+  rating_compensation: number;
+  rating_culture: number;
   review_text: string;
   created_at: string;
-  previous_hash: string;
+  previous_hash: string | null;
   hash: string;
+  hash_version?: number | null;
 }
 
 export interface Company {
@@ -44,515 +45,386 @@ export interface Company {
   avg_bonus: number;
 }
 
-// Global cached in-memory fallback to avoid frequent disk reads and ensure state consistency
-declare global {
-  var _localReviews: Review[] | undefined;
-  var _localCompanies: Company[] | undefined;
+function toNumber(value: unknown): number {
+  const result = Number(value || 0);
+  return Number.isFinite(result) ? result : 0;
 }
 
-const LOCAL_DIR = path.join(process.cwd(), 'data');
-const LOCAL_FILE = path.join(LOCAL_DIR, 'reviews.json');
-const COMPANIES_FILE = path.join(LOCAL_DIR, 'companies.json');
-const BACKUP_FILE = '/tmp/reviews_backup.json';
-
-// Helper: Ensure directories exist
-function ensureDirectories() {
-  try {
-    if (!fs.existsSync(LOCAL_DIR)) {
-      fs.mkdirSync(LOCAL_DIR, { recursive: true });
-    }
-  } catch (err) {
-    // Suppress filesystem folder errors on read-only serverless edge containers
-  }
-}
-
-// Helper: Determine unique company id from company name
-export function getCompanyIdFromName(name: string): string {
-  const cleanName = name.trim().toLowerCase();
-  return 'comp-' + crypto.createHash('md5').update(cleanName).digest('hex').substring(0, 12);
-}
-
-// Initialize in-memory caches
-if (!global._localReviews) {
-  global._localReviews = loadLocalReviews();
-}
-if (!global._localCompanies) {
-  global._localCompanies = loadLocalCompanies();
-}
-
-// Note: The backup scheduler daemon is now initialized lazily at runtime (e.g. inside API routes)
-// to prevent circular dependency issues and ReferenceError: Cannot access 'z' before initialization during build time.
-
-// Function to calculate cryptographic hash for a review
-export function calculateReviewHash(review: Omit<Review, 'hash'>): string {
-  const dataString = [
-    review.company_id,
-    review.company_name,
-    review.branch_location,
-    review.position,
-    review.employment_status,
-    review.salary.toString(),
-    review.bonus.toString(),
-    review.experience_years.toString(),
-    review.rating_career.toString(),
-    review.rating_balance.toString(),
-    review.rating_management.toString(),
-    review.rating_compensation.toString(),
-    review.rating_culture.toString(),
-    review.review_text,
-    review.created_at,
-    review.previous_hash
-  ].join('|');
-
-  return crypto.createHash('sha256').update(dataString).digest('hex');
-}
-
-// Load reviews from disk
-function loadLocalReviews(): Review[] {
-  try {
-    if (fs.existsSync(LOCAL_FILE)) {
-      const content = fs.readFileSync(LOCAL_FILE, 'utf-8');
-      const parsed: Review[] = JSON.parse(content);
-      // Migrate reviews that don't have company_id
-      let changed = false;
-      const migrated = parsed.map(r => {
-        if (!r.company_id) {
-          r.company_id = getCompanyIdFromName(r.company_name);
-          changed = true;
-        }
-        return r;
-      });
-      if (changed) {
-        saveReviewsToDisk(migrated);
-      }
-      return migrated;
-    }
-  } catch (error) {
-    console.warn('Error reading reviews from primary storage, trying backup:', error);
-  }
-
-  try {
-    if (fs.existsSync(BACKUP_FILE)) {
-      const content = fs.readFileSync(BACKUP_FILE, 'utf-8');
-      const parsed: Review[] = JSON.parse(content);
-      return parsed.map(r => {
-        if (!r.company_id) {
-          r.company_id = getCompanyIdFromName(r.company_name);
-        }
-        return r;
-      });
-    }
-  } catch (error) {
-    console.error('Error reading reviews from backup storage:', error);
-  }
-
-  return [];
-}
-
-// Load companies from disk fallback
-function loadLocalCompanies(): Company[] {
-  try {
-    if (fs.existsSync(COMPANIES_FILE)) {
-      const content = fs.readFileSync(COMPANIES_FILE, 'utf-8');
-      return JSON.parse(content);
-    }
-  } catch (error) {
-    console.warn('Error reading companies from primary storage:', error);
-  }
-  return [];
-}
-
-// Save reviews to disk
-function saveReviewsToDisk(reviews: Review[]) {
-  try {
-    ensureDirectories();
-    fs.writeFileSync(LOCAL_FILE, JSON.stringify(reviews, null, 2), 'utf-8');
-  } catch (error) {
-    console.warn('Failed to write reviews to primary disk storage, trying backup storage:', error);
-  }
-
-  try {
-    fs.writeFileSync(BACKUP_FILE, JSON.stringify(reviews, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Failed to write reviews to backup storage:', error);
-  }
-}
-
-// Save companies to disk fallback
-function saveCompaniesToDisk(companies: Company[]) {
-  try {
-    ensureDirectories();
-    fs.writeFileSync(COMPANIES_FILE, JSON.stringify(companies, null, 2), 'utf-8');
-  } catch (error) {
-    console.warn('Failed to write companies to disk:', error);
-  }
-}
-
-// Initialize Supabase Client dynamically to prevent crash if env vars are missing
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
-  if (url && key) {
-    return createClient(url, key);
-  }
-  return null;
-}
-
-// Public API: Get all reviews
-export async function getReviews(): Promise<Review[]> {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .select('*')
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        // Sync local cache with Supabase (even if empty) and return
-        const mappedData = data.map((r: any) => {
-          if (!r.company_id) {
-            r.company_id = getCompanyIdFromName(r.company_name);
-          }
-          return r as Review;
-        });
-        global._localReviews = mappedData;
-        saveReviewsToDisk(global._localReviews);
-        return global._localReviews;
-      }
-    } catch (e) {
-      console.error('Failed to fetch from Supabase, falling back to local storage:', e);
-    }
-  }
-
-  return global._localReviews || [];
-}
-
-// Get reviews of a specific company by its ID
-export async function getCompanyReviewsById(companyId: string): Promise<Review[]> {
-  const allReviews = await getReviews();
-  return allReviews.filter(
-    (r) => r.company_id === companyId
-  );
-}
-
-// Get reviews of a specific company by its name (legacy fallback)
-export async function getCompanyReviews(companyName: string): Promise<Review[]> {
-  const companyId = getCompanyIdFromName(companyName);
-  return getCompanyReviewsById(companyId);
-}
-
-// Get all companies list with optional search parameter
-// Get companies list with fuzzy keyword search and limit (default 50 records)
-export async function getCompanies(search?: string, limit: number = 50): Promise<Company[]> {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      let query = supabase.from('companies').select('*');
-      if (search && search.trim()) {
-        const term = search.trim();
-        query = query.or(`name.ilike.%${term}%,credit_code.ilike.%${term}%`);
-      }
-      const { data, error } = await query
-        .order('review_count', { ascending: false })
-        .order('name', { ascending: true })
-        .limit(limit);
-
-      if (!error && data) {
-        const mapped: Company[] = data
-          .filter((item: any) => item.id !== 'comp-unknown')
-          .map((item: any) => ({
-            id: item.id,
-            name: item.name,
-            credit_code: item.credit_code || null,
-            country_code: item.country_code || null,
-            country_name: item.country_name || null,
-            province: item.province || null,
-            city: item.city || null,
-            created_at: item.created_at || item.createdAt,
-            review_count: item.review_count !== undefined ? item.review_count : item.reviewCount,
-            avg_rating: Number(item.avg_rating !== undefined ? item.avg_rating : item.avgRating || 0),
-            avg_career: Number(item.avg_career !== undefined ? item.avg_career : item.avgCareer || 0),
-            avg_balance: Number(item.avg_balance !== undefined ? item.avg_balance : item.avgBalance || 0),
-            avg_management: Number(item.avg_management !== undefined ? item.avg_management : item.avgManagement || 0),
-            avg_compensation: Number(item.avg_compensation !== undefined ? item.avg_compensation : item.avgCompensation || 0),
-            avg_culture: Number(item.avg_culture !== undefined ? item.avg_culture : item.avgCulture || 0),
-            avg_salary: Number(item.avg_salary !== undefined ? item.avg_salary : item.avgSalary || 0),
-            avg_bonus: Number(item.avg_bonus !== undefined ? item.avg_bonus : item.avgBonus || 0)
-          }));
-        return mapped;
-      }
-      console.warn('[DB] Supabase companies select error, calculating on-the-fly:', error);
-    } catch (dbError) {
-      console.warn('[DB] Failed to load companies from Supabase, falling back to local or calculated:', dbError);
-    }
-  }
-
-  // File system fallback (capped at limit 50)
-  let local = loadLocalCompanies().filter(c => c.id !== 'comp-unknown');
-  if (local.length === 0) {
-    const reviews = await getReviews();
-    local = (await recalculateAllCompanies(reviews)).filter(c => c.id !== 'comp-unknown');
-    global._localCompanies = local;
-    saveCompaniesToDisk(local);
-  } else {
-    global._localCompanies = local;
-  }
-
-  if (search && search.trim()) {
-    const term = search.trim().toLowerCase();
-    return local.filter(c => c.name.toLowerCase().includes(term) || (c.credit_code && c.credit_code.toLowerCase().includes(term))).slice(0, limit);
-  }
-  return local.slice(0, limit);
-}
-
-// Get single company details by its ID
-export async function getCompanyById(companyId: string): Promise<Company | null> {
-  const companies = await getCompanies();
-  const found = companies.find(c => c.id === companyId);
-  if (found) {
-    return found;
-  }
-
-  // Robust fallback: if not found in the cached/database list, check if reviews exist
-  // and construct the company stats dynamically. This prevents "Company Not Found"
-  const reviews = await getCompanyReviewsById(companyId);
-  if (reviews.length > 0) {
-    const name = reviews[0].company_name;
-    const stats = calculateStatsForReviews(reviews);
-    const calculated: Company = {
-      id: companyId,
-      name,
-      created_at: reviews[0].created_at || new Date().toISOString(),
-      ...stats
-    };
-    return calculated;
-  }
-
-  return null;
-}
-
-// Recalculate company metrics for robust local consistency
-export async function recalculateAllCompanies(reviews: Review[]): Promise<Company[]> {
-  const companiesMap = new Map<string, Review[]>();
-  reviews.forEach(r => {
-    const cId = r.company_id || getCompanyIdFromName(r.company_name);
-    if (!companiesMap.has(cId)) {
-      companiesMap.set(cId, []);
-    }
-    companiesMap.get(cId)!.push(r);
-  });
-
-  const companies: Company[] = [];
-  for (const [cId, compReviews] of companiesMap.entries()) {
-    const name = compReviews[0].company_name;
-    const stats = calculateStatsForReviews(compReviews);
-    companies.push({
-      id: cId,
-      name,
-      created_at: compReviews[0].created_at || new Date().toISOString(),
-      ...stats
-    });
-  }
-  return companies;
-}
-
-// Helper: Calculate average stats from reviews list
-function calculateStatsForReviews(reviews: Review[]) {
-  const len = reviews.length;
-  if (len === 0) {
-    return {
-      review_count: 0,
-      avg_rating: 0,
-      avg_career: 0,
-      avg_balance: 0,
-      avg_management: 0,
-      avg_compensation: 0,
-      avg_culture: 0,
-      avg_salary: 0,
-      avg_bonus: 0
-    };
-  }
-
-  const career = reviews.reduce((sum, r) => sum + r.rating_career, 0) / len;
-  const balance = reviews.reduce((sum, r) => sum + r.rating_balance, 0) / len;
-  const management = reviews.reduce((sum, r) => sum + r.rating_management, 0) / len;
-  const compensation = reviews.reduce((sum, r) => sum + r.rating_compensation, 0) / len;
-  const culture = reviews.reduce((sum, r) => sum + r.rating_culture, 0) / len;
-
-  const salaries = reviews.map(r => r.salary).filter(s => s > 0);
-  const avgSalary = salaries.length > 0 ? salaries.reduce((sum, s) => sum + s, 0) / salaries.length : 0;
-
-  const bonuses = reviews.map(r => r.bonus).filter(b => b > 0);
-  const avgBonus = bonuses.length > 0 ? bonuses.reduce((sum, b) => sum + b, 0) / bonuses.length : 0;
-
-  const avgRating = (career + balance + management + compensation + culture) / 5;
-
+function mapReview(row: Record<string, unknown>): Review {
   return {
-    review_count: len,
-    avg_rating: Number(avgRating.toFixed(2)),
-    avg_career: Number(career.toFixed(2)),
-    avg_balance: Number(balance.toFixed(2)),
-    avg_management: Number(management.toFixed(2)),
-    avg_compensation: Number(compensation.toFixed(2)),
-    avg_culture: Number(culture.toFixed(2)),
-    avg_salary: Math.round(avgSalary),
-    avg_bonus: Math.round(avgBonus)
+    id: String(row.id),
+    company_id: String(row.company_id),
+    company_name: String(row.company_name),
+    branch_location: String(row.branch_location),
+    position: String(row.position),
+    employment_status: String(row.employment_status || 'current'),
+    salary: toNumber(row.salary),
+    bonus: toNumber(row.bonus),
+    experience_years: toNumber(row.experience_years),
+    rating_career: toNumber(row.rating_career),
+    rating_balance: toNumber(row.rating_balance),
+    rating_management: toNumber(row.rating_management),
+    rating_compensation: toNumber(row.rating_compensation),
+    rating_culture: toNumber(row.rating_culture),
+    review_text: String(row.review_text),
+    created_at: String(row.created_at),
+    previous_hash: row.previous_hash ? String(row.previous_hash) : null,
+    hash: String(row.hash),
+    hash_version: row.hash_version === null ? null : toNumber(row.hash_version),
   };
 }
 
-// Public API: Add a review and automatically associate with / create / update company
-export async function addReview(reviewData: Omit<Review, 'id' | 'company_id' | 'created_at' | 'previous_hash' | 'hash'>): Promise<Review> {
-  const allReviews = await getReviews();
-  
-  // Find company_id
-  const companyName = reviewData.company_name.trim();
-  const companyId = getCompanyIdFromName(companyName);
+function mapCompany(row: Record<string, unknown>): Company {
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    credit_code: row.credit_code ? String(row.credit_code) : null,
+    country_code: row.country_code ? String(row.country_code) : null,
+    country_name: row.country_name ? String(row.country_name) : null,
+    province: row.province ? String(row.province) : null,
+    city: row.city ? String(row.city) : null,
+    created_at: String(row.created_at),
+    review_count: toNumber(row.review_count),
+    avg_rating: toNumber(row.avg_rating),
+    avg_career: toNumber(row.avg_career),
+    avg_balance: toNumber(row.avg_balance),
+    avg_management: toNumber(row.avg_management),
+    avg_compensation: toNumber(row.avg_compensation),
+    avg_culture: toNumber(row.avg_culture),
+    avg_salary: toNumber(row.avg_salary),
+    avg_bonus: toNumber(row.avg_bonus),
+  };
+}
 
-  // Find previous review of this company to build blockchain ledger
-  const companyReviews = allReviews.filter(
-    (r) => r.company_id === companyId
+export function getCompanyIdFromName(name: string): string {
+  return `comp-${crypto
+    .createHash('sha256')
+    .update(name.normalize('NFKC').trim().toLocaleLowerCase())
+    .digest('hex')
+    .slice(0, 24)}`;
+}
+
+function reviewHashPayload(review: Omit<Review, 'hash'>) {
+  return {
+    companyId: review.company_id,
+    companyName: review.company_name,
+    branchLocation: review.branch_location,
+    position: review.position,
+    employmentStatus: review.employment_status,
+    salary: review.salary,
+    bonus: review.bonus,
+    experienceYears: review.experience_years,
+    ratingCareer: review.rating_career,
+    ratingBalance: review.rating_balance,
+    ratingManagement: review.rating_management,
+    ratingCompensation: review.rating_compensation,
+    ratingCulture: review.rating_culture,
+    reviewText: review.review_text,
+    createdAt: review.created_at,
+    previousHash: review.previous_hash,
+    hashVersion: review.hash_version || 2,
+  };
+}
+
+export function calculateReviewHash(review: Omit<Review, 'hash'>): string {
+  if (!review.hash_version || review.hash_version === 1) {
+    const legacyData = [
+      review.company_id,
+      review.company_name,
+      review.branch_location,
+      review.position,
+      review.employment_status,
+      review.salary.toString(),
+      review.bonus.toString(),
+      review.experience_years.toString(),
+      review.rating_career.toString(),
+      review.rating_balance.toString(),
+      review.rating_management.toString(),
+      review.rating_compensation.toString(),
+      review.rating_culture.toString(),
+      review.review_text,
+      review.created_at,
+      review.previous_hash || '0',
+    ].join('|');
+    return crypto.createHash('sha256').update(legacyData).digest('hex');
+  }
+
+  return crypto
+    .createHash('sha256')
+    .update(canonicalJson(reviewHashPayload(review)))
+    .digest('hex');
+}
+
+export async function getReviews(): Promise<Review[]> {
+  const rows = await sqlClient`
+    select *
+    from reviews
+    order by company_id, created_at, id
+  `;
+  return rows.map(mapReview);
+}
+
+export async function getCompanyReviewsById(companyId: string): Promise<Review[]> {
+  const rows = await sqlClient`
+    select *
+    from reviews
+    where company_id = ${companyId}
+    order by created_at, id
+  `;
+  return rows.map(mapReview);
+}
+
+export async function getCompanyReviews(companyName: string): Promise<Review[]> {
+  const companyRows = await sqlClient<{ id: string }[]>`
+    select c.id
+    from companies c
+    left join current_company_profiles p on p.company_id = c.id
+    where lower(coalesce(p.profile_data ->> 'name', c.name)) = lower(${companyName.trim()})
+    order by c.created_at
+    limit 1
+  `;
+  return companyRows[0] ? getCompanyReviewsById(companyRows[0].id) : [];
+}
+
+const COMPANY_SELECT = `
+  select
+    c.id,
+    coalesce(p.profile_data ->> 'name', c.name) as name,
+    coalesce(p.profile_data ->> 'creditCode', c.credit_code) as credit_code,
+    coalesce(p.profile_data ->> 'countryCode', c.country_code) as country_code,
+    coalesce(p.profile_data ->> 'countryName', c.country_name) as country_name,
+    coalesce(p.profile_data ->> 'province', c.province) as province,
+    coalesce(p.profile_data ->> 'city', c.city) as city,
+    c.created_at,
+    coalesce(s.review_count, 0) as review_count,
+    coalesce(s.avg_rating, 0) as avg_rating,
+    coalesce(s.avg_career, 0) as avg_career,
+    coalesce(s.avg_balance, 0) as avg_balance,
+    coalesce(s.avg_management, 0) as avg_management,
+    coalesce(s.avg_compensation, 0) as avg_compensation,
+    coalesce(s.avg_culture, 0) as avg_culture,
+    coalesce(s.avg_salary, 0) as avg_salary,
+    coalesce(s.avg_bonus, 0) as avg_bonus
+  from companies c
+  left join current_company_profiles p on p.company_id = c.id
+  left join company_statistics s on s.company_id = c.id
+`;
+
+export async function getCompanies(search?: string, limit = 50): Promise<Company[]> {
+  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 200);
+  const term = search?.trim() || '';
+  const rows = term
+    ? await sqlClient.unsafe(
+        `${COMPANY_SELECT}
+         where c.id <> 'comp-unknown'
+           and (
+             coalesce(p.profile_data ->> 'name', c.name) ilike $1
+             or coalesce(p.profile_data ->> 'creditCode', c.credit_code, '') ilike $1
+           )
+         order by coalesce(s.review_count, 0) desc, name
+         limit $2`,
+        [`%${term}%`, safeLimit]
+      )
+    : await sqlClient.unsafe(
+        `${COMPANY_SELECT}
+         where c.id <> 'comp-unknown'
+         order by coalesce(s.review_count, 0) desc, name
+         limit $1`,
+        [safeLimit]
+      );
+  return rows.map(mapCompany);
+}
+
+export async function getCompanyById(companyId: string): Promise<Company | null> {
+  const rows = await sqlClient.unsafe(
+    `${COMPANY_SELECT}
+     where c.id = $1
+     limit 1`,
+    [companyId]
   );
-
-  const previousReview = companyReviews[companyReviews.length - 1];
-  const previousHash = previousReview ? previousReview.hash : '0';
-
-  const newReview: Review = {
-    ...reviewData,
-    company_id: companyId,
-    id: `rev-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    created_at: new Date().toISOString(),
-    previous_hash: previousHash,
-    hash: ''
-  };
-
-  // Generate cryptographic hash
-  newReview.hash = calculateReviewHash(newReview);
-
-  // Add to cached reviews
-  const updatedReviews = [...allReviews, newReview];
-  global._localReviews = updatedReviews;
-  saveReviewsToDisk(updatedReviews);
-
-  // Recalculate company stats
-  const companyReviewsUpdated = [...companyReviews, newReview];
-  const stats = calculateStatsForReviews(companyReviewsUpdated);
-  const company: Company = {
-    id: companyId,
-    name: companyName,
-    created_at: companyReviews[0]?.created_at || newReview.created_at,
-    ...stats
-  };
-
-  // Update company list cache
-  const allCompanies = await getCompanies();
-  const existingIdx = allCompanies.findIndex(c => c.id === companyId);
-  if (existingIdx >= 0) {
-    allCompanies[existingIdx] = company;
-  } else {
-    allCompanies.push(company);
-  }
-  global._localCompanies = allCompanies;
-  saveCompaniesToDisk(allCompanies);
-
-  // Try saving both review and company to Supabase if configured
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    // 1. 检查公司是否已存在（避免使用 upsert 触发 PostgREST 的 RLS UPDATE 校验）
-    const { data: existingCompany } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('id', company.id)
-      .maybeSingle();
-
-    if (!existingCompany) {
-      const { error: compError } = await supabase
-        .from('companies')
-        .insert([{
-          id: company.id,
-          name: company.name,
-          created_at: company.created_at,
-          review_count: company.review_count,
-          avg_rating: company.avg_rating,
-          avg_career: company.avg_career,
-          avg_balance: company.avg_balance,
-          avg_management: company.avg_management,
-          avg_compensation: company.avg_compensation,
-          avg_culture: company.avg_culture,
-          avg_salary: company.avg_salary,
-          avg_bonus: company.avg_bonus
-        }]);
-
-      if (compError && !compError.message.includes('duplicate key') && !compError.message.includes('already exists')) {
-        console.error('Error inserting company into Supabase:', compError);
-        throw new Error(`创建公司失败: ${compError.message}`);
-      } else {
-        console.log('Successfully saved new company info to Supabase');
-      }
-    }
-
-    // 2. Insert review to reviews table
-    const { error: revError } = await supabase.from('reviews').insert([newReview]);
-    if (revError) {
-      console.error('Error inserting review into Supabase:', revError);
-      throw new Error(`创建评价失败: ${revError.message}。由于 reviews 表中可能没有 company_id 字段，请在 Supabase 中运行 /migration.sql 执行数据库迁移！`);
-    } else {
-      console.log('Successfully saved review to Supabase');
-    }
-  }
-
-  return newReview;
+  return rows[0] ? mapCompany(rows[0]) : null;
 }
 
-// Ledger integrity verification function
+function isUniqueViolation(error: unknown): boolean {
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code?: string }).code === '23505'
+  );
+}
+
+async function resolveCompanyId(
+  companyName: string,
+  profile: { countryCode?: string; city?: string } = {}
+): Promise<string> {
+  const rows = await sqlClient<{ id: string }[]>`
+    select c.id
+    from companies c
+    left join current_company_profiles p on p.company_id = c.id
+    where lower(coalesce(p.profile_data ->> 'name', c.name)) = lower(${companyName})
+    order by c.created_at
+    limit 1
+  `;
+  if (rows[0]) return rows[0].id;
+  return (
+    await createCompany({
+      name: companyName,
+      countryCode: profile.countryCode,
+      city: profile.city,
+    })
+  ).companyId;
+}
+
+export async function addReview(
+  reviewData: Omit<
+    Review,
+    'id' | 'company_id' | 'created_at' | 'previous_hash' | 'hash' | 'hash_version'
+  >,
+  companyProfile: { countryCode?: string; city?: string } = {}
+): Promise<Review> {
+  const companyName = reviewData.company_name.normalize('NFKC').trim();
+  const companyId = await resolveCompanyId(companyName, companyProfile);
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await sqlClient.begin(async (tx) => {
+        await tx`select id from companies where id = ${companyId} for update`;
+        const previousRows = await tx<{ hash: string }[]>`
+          select hash
+          from reviews
+          where company_id = ${companyId}
+          order by created_at desc, id desc
+          limit 1
+        `;
+
+        const reviewWithoutHash: Omit<Review, 'hash'> = {
+          ...reviewData,
+          company_name: companyName,
+          company_id: companyId,
+          id: `review-${crypto.randomUUID().replace(/-/g, '')}`,
+          created_at: new Date().toISOString(),
+          previous_hash: previousRows[0]?.hash || null,
+          hash_version: 2,
+        };
+        const review: Review = {
+          ...reviewWithoutHash,
+          hash: calculateReviewHash(reviewWithoutHash),
+        };
+
+        await tx`
+          insert into reviews (
+            id,
+            company_id,
+            company_name,
+            branch_location,
+            position,
+            employment_status,
+            salary,
+            bonus,
+            experience_years,
+            rating_career,
+            rating_balance,
+            rating_management,
+            rating_compensation,
+            rating_culture,
+            review_text,
+            created_at,
+            previous_hash,
+            hash,
+            hash_version
+          )
+          values (
+            ${review.id},
+            ${review.company_id},
+            ${review.company_name},
+            ${review.branch_location},
+            ${review.position},
+            ${review.employment_status},
+            ${review.salary},
+            ${review.bonus},
+            ${review.experience_years},
+            ${review.rating_career},
+            ${review.rating_balance},
+            ${review.rating_management},
+            ${review.rating_compensation},
+            ${review.rating_culture},
+            ${review.review_text},
+            ${review.created_at},
+            ${review.previous_hash},
+            ${review.hash},
+            ${review.hash_version || 2}
+          )
+        `;
+        return review;
+      });
+    } catch (error) {
+      if (!isUniqueViolation(error) || attempt === 2) throw error;
+    }
+  }
+
+  throw new Error('Unable to append the review after retrying.');
+}
+
 export function verifyLedgerIntegrity(reviews: Review[]): {
   isValid: boolean;
   tamperedIndex: number | null;
-  details: { index: number; reviewId: string; status: 'ok' | 'hash_mismatch' | 'chain_broken'; computedHash: string; storedHash: string }[];
+  details: {
+    index: number;
+    reviewId: string;
+    status: 'ok' | 'hash_mismatch' | 'chain_broken';
+    computedHash: string;
+    storedHash: string;
+  }[];
 } {
-  const details: { index: number; reviewId: string; status: 'ok' | 'hash_mismatch' | 'chain_broken'; computedHash: string; storedHash: string }[] = [];
-  
-  for (let i = 0; i < reviews.length; i++) {
-    const r = reviews[i];
-    const computedHash = calculateReviewHash(r);
+  const ordered = [...reviews].sort((left, right) =>
+    `${left.company_id}:${left.created_at}:${left.id}`.localeCompare(
+      `${right.company_id}:${right.created_at}:${right.id}`
+    )
+  );
+  const previousByCompany = new Map<string, string>();
+  const details: {
+    index: number;
+    reviewId: string;
+    status: 'ok' | 'hash_mismatch' | 'chain_broken';
+    computedHash: string;
+    storedHash: string;
+  }[] = [];
 
-    // 1. Verify block self-integrity (is the current stored hash correct based on content?)
-    if (computedHash !== r.hash) {
+  for (let index = 0; index < ordered.length; index += 1) {
+    const review = ordered[index];
+    const computedHash = calculateReviewHash(review);
+    if (computedHash !== review.hash) {
       details.push({
-        index: i,
-        reviewId: r.id,
+        index,
+        reviewId: review.id,
         status: 'hash_mismatch',
         computedHash,
-        storedHash: r.hash
+        storedHash: review.hash,
       });
-      return { isValid: false, tamperedIndex: i, details };
+      return { isValid: false, tamperedIndex: index, details };
     }
 
-    // 2. Verify blockchain link integrity (does the block's prev_hash match the previous block's hash?)
-    if (i > 0) {
-      const expectedPrev = reviews[i - 1].hash;
-      if (r.previous_hash !== expectedPrev) {
-        details.push({
-          index: i,
-          reviewId: r.id,
-          status: 'chain_broken',
-          computedHash,
-          storedHash: r.hash
-        });
-        return { isValid: false, tamperedIndex: i, details };
-      }
+    const expectedPrevious = previousByCompany.get(review.company_id) || null;
+    const normalizedPrevious = review.previous_hash === '0' ? null : review.previous_hash;
+    if (normalizedPrevious !== expectedPrevious) {
+      details.push({
+        index,
+        reviewId: review.id,
+        status: 'chain_broken',
+        computedHash,
+        storedHash: review.hash,
+      });
+      return { isValid: false, tamperedIndex: index, details };
     }
-    
+
+    previousByCompany.set(review.company_id, review.hash);
     details.push({
-      index: i,
-      reviewId: r.id,
+      index,
+      reviewId: review.id,
       status: 'ok',
       computedHash,
-      storedHash: r.hash
+      storedHash: review.hash,
     });
   }
 

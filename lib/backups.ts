@@ -1,638 +1,359 @@
-import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto';
 import * as XLSX from 'xlsx';
 import { createClient } from '@supabase/supabase-js';
-import { getReviews, Review } from './db';
+import { sqlClient } from '@/drizzle/db';
+import { getReviews, type Review } from './db';
+import { canonicalJson } from './company-profile';
 
 export interface BackupMetadata {
-  id: string; // e.g., backup-2026-07-24
-  date: string; // YYYY-MM-DD
-  createdAt: string; // ISO timestamp
+  id: string;
+  date: string;
+  createdAt: string;
   reviewCount: number;
-  csvSize: number; // bytes
-  xlsxSize: number; // bytes
-  sqlSize: number; // bytes
-  csvHash?: string; // SHA-256 hex checksum
-  xlsxHash?: string; // SHA-256 hex checksum
-  sqlHash?: string; // SHA-256 hex checksum
+  csvSize: number;
+  xlsxSize: number;
+  sqlSize: number;
+  csvHash?: string;
+  xlsxHash?: string;
+  sqlHash?: string;
 }
 
-export interface BackupBinaryData {
-  csvBase64: string;
-  xlsxBase64: string;
-  sqlBase64: string;
+interface SnapshotFile {
+  path: string;
+  size: number;
+  sha256: string;
+  contentType: string;
 }
 
-// Global backup storage caches to prevent crashing or losing status in ephemeral serverless edge deployments
-declare global {
-  var _localBackupMetadata: BackupMetadata[] | undefined;
-  var _localBackupBinaries: Record<string, BackupBinaryData> | undefined;
+type SnapshotFiles = Record<'csv' | 'xlsx' | 'sql' | 'manifest', SnapshotFile>;
+
+interface SnapshotRow {
+  id: string;
+  snapshot_date: string;
+  files: SnapshotFiles;
+  row_counts: Record<string, number>;
+  created_at: string;
+  expires_at: string;
 }
 
-if (!global._localBackupMetadata) {
-  global._localBackupMetadata = [];
-}
-if (!global._localBackupBinaries) {
-  global._localBackupBinaries = {};
-}
-
-const DATA_DIR = path.join(process.cwd(), 'data');
-const BACKUPS_DIR = path.join(DATA_DIR, 'backups');
-const METADATA_FILE = path.join(DATA_DIR, 'backups.json');
-const BINARY_FILE = path.join(DATA_DIR, 'backups_binary.json');
-
-// Helper: Ensure local folder paths exist
-function ensureDirectories() {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    if (!fs.existsSync(BACKUPS_DIR)) {
-      fs.mkdirSync(BACKUPS_DIR, { recursive: true });
-    }
-  } catch (err) {
-    // Suppress filesystem folder errors on read-only serverless edge containers
+function getStorageClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRoleKey) {
+    throw new Error(
+      'NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for snapshots.'
+    );
   }
-}
-
-// Initialize Supabase client dynamically if variables exist
-function getSupabaseClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
-  if (url && key) {
-    return createClient(url, key);
-  }
-  return null;
-}
-
-// Load backup metadata list
-export async function loadBackupMetadata(): Promise<BackupMetadata[]> {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('backups_metadata')
-        .select('*')
-        .order('date', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        const mapped: BackupMetadata[] = data.map((item: any) => ({
-          id: item.id,
-          date: item.date,
-          createdAt: item.created_at || item.createdAt,
-          reviewCount: item.review_count !== undefined ? item.review_count : item.reviewCount,
-          csvSize: item.csv_size !== undefined ? item.csv_size : item.csvSize,
-          xlsxSize: item.xlsx_size !== undefined ? item.xlsx_size : item.xlsxSize,
-          sqlSize: item.sql_size !== undefined ? item.sql_size : item.sqlSize,
-          csvHash: item.csv_hash || item.csvHash || crypto.createHash('sha256').update(`${item.id}-csv-${item.review_count}`).digest('hex'),
-          xlsxHash: item.xlsx_hash || item.xlsxHash || crypto.createHash('sha256').update(`${item.id}-xlsx-${item.review_count}`).digest('hex'),
-          sqlHash: item.sql_hash || item.sqlHash || crypto.createHash('sha256').update(`${item.id}-sql-${item.review_count}`).digest('hex')
-        }));
-        global._localBackupMetadata = mapped;
-        return mapped;
-      }
-    } catch (dbError) {
-      console.warn('[Backup System] Failed to load metadata from Supabase database table, attempting fallback:', dbError);
-    }
-  }
-
-  // Fallback to local files
-  ensureDirectories();
-  try {
-    if (fs.existsSync(METADATA_FILE)) {
-      const content = fs.readFileSync(METADATA_FILE, 'utf-8');
-      const parsed = JSON.parse(content);
-      global._localBackupMetadata = parsed;
-      return parsed;
-    }
-  } catch (error) {
-    console.warn('[Backup System] Error reading local backup metadata file (likely edge runtime):', error);
-  }
-
-  return global._localBackupMetadata || [];
-}
-
-// Save backup metadata list
-async function saveBackupMetadata(metadata: BackupMetadata[]) {
-  global._localBackupMetadata = metadata;
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const dbRows = metadata.map(m => ({
-        id: m.id,
-        date: m.date,
-        created_at: m.createdAt,
-        review_count: m.reviewCount,
-        csv_size: m.csvSize,
-        xlsx_size: m.xlsxSize,
-        sql_size: m.sqlSize
-      }));
-
-      const { error } = await supabase
-        .from('backups_metadata')
-        .insert(dbRows);
-
-      if (error && !error.message.includes('duplicate key') && !error.message.includes('already exists')) {
-        console.error('[Backup System] Error inserting metadata to Supabase:', error);
-      } else {
-        console.log('[Backup System] Successfully saved metadata to Supabase table');
-      }
-    } catch (dbError) {
-      console.error('[Backup System] Database upsert error:', dbError);
-    }
-  }
-
-  // Write to local files as a robust local backup fallback
-  try {
-    ensureDirectories();
-    fs.writeFileSync(METADATA_FILE, JSON.stringify(metadata, null, 2), 'utf-8');
-  } catch (error) {
-    console.warn('[Backup System] Local metadata write skipped (common on edge environments):', error);
-  }
-}
-
-// Get specific binary backup from binary storage
-export async function getBackupBinary(id: string): Promise<BackupBinaryData | null> {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('backups_binary')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        const mapped: BackupBinaryData = {
-          csvBase64: data.csv_base64 || data.csvBase64,
-          xlsxBase64: data.xlsx_base64 || data.xlsxBase64,
-          sqlBase64: data.sql_base64 || data.sqlBase64
-        };
-        if (global._localBackupBinaries) {
-          global._localBackupBinaries[id] = mapped;
-        }
-        return mapped;
-      }
-    } catch (dbError) {
-      console.warn(`[Backup System] Failed to load binary backup ${id} from database, attempting fallback:`, dbError);
-    }
-  }
-
-  // Fallback 1: global memory cache
-  if (global._localBackupBinaries && global._localBackupBinaries[id]) {
-    return global._localBackupBinaries[id];
-  }
-
-  // Fallback 2: file system JSON
-  try {
-    ensureDirectories();
-    if (fs.existsSync(BINARY_FILE)) {
-      const content = fs.readFileSync(BINARY_FILE, 'utf-8');
-      const allBinaries = JSON.parse(content);
-      if (allBinaries[id]) {
-        return allBinaries[id];
-      }
-    }
-  } catch (error) {
-    console.warn('[Backup System] Error reading local backups binary file:', error);
-  }
-
-  // Fallback 3: physical individual files
-  const csvPath = path.join(BACKUPS_DIR, `${id}.csv`);
-  const xlsxPath = path.join(BACKUPS_DIR, `${id}.xlsx`);
-  const sqlPath = path.join(BACKUPS_DIR, `${id}.sql`);
-
-  if (fs.existsSync(csvPath) && fs.existsSync(xlsxPath) && fs.existsSync(sqlPath)) {
-    try {
-      const csvContent = fs.readFileSync(csvPath);
-      const xlsxContent = fs.readFileSync(xlsxPath);
-      const sqlContent = fs.readFileSync(sqlPath);
-      const data = {
-        csvBase64: csvContent.toString('base64'),
-        xlsxBase64: xlsxContent.toString('base64'),
-        sqlBase64: sqlContent.toString('base64'),
-      };
-      if (global._localBackupBinaries) {
-        global._localBackupBinaries[id] = data;
-      }
-      return data;
-    } catch (e) {
-      console.error('[Backup System] Fallback read from physical files failed:', e);
-    }
-  }
-
-  return null;
-}
-
-// Save binary data to separate binary storage table (isolated from metadata to avoid payload size overhead)
-async function saveBackupBinary(id: string, binaryData: BackupBinaryData) {
-  if (global._localBackupBinaries) {
-    global._localBackupBinaries[id] = binaryData;
-  }
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const dbRow = {
-        id,
-        csv_base64: binaryData.csvBase64,
-        xlsx_base64: binaryData.xlsxBase64,
-        sql_base64: binaryData.sqlBase64
-      };
-
-      const { error } = await supabase
-        .from('backups_binary')
-        .insert([dbRow]);
-
-      if (error && !error.message.includes('duplicate key') && !error.message.includes('already exists')) {
-        console.error(`[Backup System] Error inserting binary ${id} to Supabase:`, error);
-      } else {
-        console.log(`[Backup System] Successfully saved binary ${id} to Supabase table`);
-      }
-    } catch (dbError) {
-      console.error(`[Backup System] Database upsert error for binary ${id}:`, dbError);
-    }
-  }
-
-  // File system fallback
-  try {
-    ensureDirectories();
-    let allBinaries: Record<string, BackupBinaryData> = {};
-    if (fs.existsSync(BINARY_FILE)) {
-      try {
-        const content = fs.readFileSync(BINARY_FILE, 'utf-8');
-        allBinaries = JSON.parse(content);
-      } catch (e) {
-        console.warn('Binary storage empty or corrupt, initializing brand new:', e);
-      }
-    }
-
-    allBinaries[id] = binaryData;
-    fs.writeFileSync(BINARY_FILE, JSON.stringify(allBinaries, null, 2), 'utf-8');
-  } catch (error) {
-    console.warn('[Backup System] Local binary save skipped (common on edge environments):', error);
-  }
-}
-
-// Helper: Escape CSV string
-function escapeCSV(val: any): string {
-  if (val === null || val === undefined) return '';
-  const str = String(val);
-  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
-
-// Helper: Escape SQL string
-function escapeSQL(val: any): string {
-  if (val === null || val === undefined) return 'NULL';
-  if (typeof val === 'number') return String(val);
-  const str = String(val);
-  return `'${str.replace(/'/g, "''")}'`;
-}
-
-// Generate CSV string
-function generateCSV(reviews: Review[]): string {
-  const headers = [
-    'id', 'company_id', 'company_name', 'branch_location', 'position', 'employment_status',
-    'salary', 'bonus', 'experience_years', 'rating_career', 'rating_balance',
-    'rating_management', 'rating_compensation', 'rating_culture', 'review_text',
-    'created_at', 'previous_hash', 'hash'
-  ];
-
-  const rows = reviews.map(r => [
-    r.id, r.company_id, r.company_name, r.branch_location, r.position, r.employment_status,
-    r.salary, r.bonus, r.experience_years, r.rating_career, r.rating_balance,
-    r.rating_management, r.rating_compensation, r.rating_culture, r.review_text,
-    r.created_at, r.previous_hash, r.hash
-  ].map(escapeCSV).join(','));
-
-  return [headers.join(','), ...rows].join('\n');
-}
-
-// Generate SQL string
-function generateSQL(reviews: Review[], dateStr: string): string {
-  let sql = `-- Workplace Anonymous Review Ledger System SQL Dump\n`;
-  sql += `-- Generated on: ${dateStr}\n`;
-  sql += `-- Total Records: ${reviews.length}\n\n`;
-
-  sql += `CREATE TABLE IF NOT EXISTS reviews (\n`;
-  sql += `  id VARCHAR(255) PRIMARY KEY,\n`;
-  sql += `  company_id VARCHAR(255),\n`;
-  sql += `  company_name VARCHAR(255) NOT NULL,\n`;
-  sql += `  branch_location VARCHAR(255) NOT NULL,\n`;
-  sql += `  position VARCHAR(255) NOT NULL,\n`;
-  sql += `  employment_status VARCHAR(50) DEFAULT 'current',\n`;
-  sql += `  salary INT DEFAULT 0,\n`;
-  sql += `  bonus INT DEFAULT 0,\n`;
-  sql += `  experience_years INT DEFAULT 1,\n`;
-  sql += `  rating_career INT DEFAULT 5,\n`;
-  sql += `  rating_balance INT DEFAULT 5,\n`;
-  sql += `  rating_management INT DEFAULT 5,\n`;
-  sql += `  rating_compensation INT DEFAULT 5,\n`;
-  sql += `  rating_culture INT DEFAULT 5,\n`;
-  sql += `  review_text TEXT NOT NULL,\n`;
-  sql += `  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n`;
-  sql += `  previous_hash VARCHAR(255),\n`;
-  sql += `  hash VARCHAR(255)\n`;
-  sql += `);\n\n`;
-
-  if (reviews.length === 0) {
-    sql += `-- No reviews data to insert.\n`;
-    return sql;
-  }
-
-  sql += `INSERT INTO reviews (id, company_id, company_name, branch_location, position, employment_status, salary, bonus, experience_years, rating_career, rating_balance, rating_management, rating_compensation, rating_culture, review_text, created_at, previous_hash, hash) VALUES\n`;
-
-  const valuesList = reviews.map(r => {
-    return `  (${escapeSQL(r.id)}, ${escapeSQL(r.company_id)}, ${escapeSQL(r.company_name)}, ${escapeSQL(r.branch_location)}, ${escapeSQL(r.position)}, ${escapeSQL(r.employment_status)}, ${r.salary}, ${r.bonus}, ${r.experience_years}, ${r.rating_career}, ${r.rating_balance}, ${r.rating_management}, ${r.rating_compensation}, ${r.rating_culture}, ${escapeSQL(r.review_text)}, ${escapeSQL(r.created_at)}, ${escapeSQL(r.previous_hash)}, ${escapeSQL(r.hash)})`;
+  return createClient(url, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
   });
-
-  sql += valuesList.join(',\n') + ';\n';
-  return sql;
 }
 
-// Generate XLSX buffer
-function generateXLSXBuffer(reviews: Review[]): Buffer {
-  const formattedData = reviews.map(r => ({
-    'ID': r.id,
-    '公司唯一ID': r.company_id,
-    '公司名称': r.company_name,
-    '分部/地点': r.branch_location,
-    '职位名称': r.position,
-    '在职状态': r.employment_status === 'current' ? '在职' : '离职',
-    '月薪(元)': r.salary,
-    '年终奖(元)': r.bonus,
-    '工作年限(年)': r.experience_years,
-    '职业发展评分': r.rating_career,
-    '生活平衡评分': r.rating_balance,
-    '管理层评分': r.rating_management,
-    '福利待遇评分': r.rating_compensation,
-    '企业文化评分': r.rating_culture,
-    '评价内容': r.review_text,
-    '发布时间': r.created_at,
-    '前序区块哈希': r.previous_hash,
-    '区块哈希': r.hash
-  }));
+function getBucketName(): string {
+  return process.env.PUBLIC_DATA_SNAPSHOT_BUCKET || 'public-data-snapshots';
+}
 
-  const worksheet = XLSX.utils.json_to_sheet(formattedData);
-  
-  const colWidths = [
-    { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 20 }, { wch: 10 },
-    { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
-    { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 45 }, { wch: 25 },
-    { wch: 30 }, { wch: 30 }
+function sha256(buffer: Buffer): string {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
+}
+
+function escapeCsv(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  let text = String(value);
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function escapeSql(value: unknown): string {
+  if (value === null || value === undefined) return 'NULL';
+  if (typeof value === 'number') return String(value);
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+function generateReviewCsv(reviews: Review[]): Buffer {
+  const fields: (keyof Review)[] = [
+    'id',
+    'company_id',
+    'company_name',
+    'branch_location',
+    'position',
+    'employment_status',
+    'salary',
+    'bonus',
+    'experience_years',
+    'rating_career',
+    'rating_balance',
+    'rating_management',
+    'rating_compensation',
+    'rating_culture',
+    'review_text',
+    'created_at',
+    'previous_hash',
+    'hash',
+    'hash_version',
   ];
-  worksheet['!cols'] = colWidths;
+  const lines = [
+    fields.join(','),
+    ...reviews.map((review) => fields.map((field) => escapeCsv(review[field])).join(',')),
+  ];
+  return Buffer.from(lines.join('\n'), 'utf8');
+}
 
+function spreadsheetSafe(value: unknown): unknown {
+  return typeof value === 'string' && /^[=+\-@]/.test(value) ? `'${value}` : value;
+}
+
+function generateReviewWorkbook(reviews: Review[]): Buffer {
+  const safeRows = reviews.map((review) =>
+    Object.fromEntries(
+      Object.entries(review).map(([key, value]) => [key, spreadsheetSafe(value)])
+    )
+  );
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, '职场匿名评价');
-  
+  XLSX.utils.book_append_sheet(
+    workbook,
+    XLSX.utils.json_to_sheet(safeRows),
+    'reviews'
+  );
   return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 }
 
-// Core execution function to trigger backup
-export async function createBackupForDate(dateStr: string): Promise<BackupMetadata | null> {
-  console.log(`[Backup System] Generating daily backup archive for: ${dateStr}`);
+async function generateDataOnlySql(reviews: Review[]): Promise<Buffer> {
+  const companies = await sqlClient`
+    select
+      id, credit_code, name, country_code, country_name, province, city,
+      created_at, creation_source, creation_hash
+    from companies
+    order by id
+  `;
+  const lines = [
+    '-- Work-Chain append-only public data snapshot',
+    '-- Apply the Drizzle schema before importing this file.',
+    'BEGIN;',
+  ];
 
-  try {
-    const reviews = await getReviews();
-    const id = `backup-${dateStr}`;
-
-    // 1. Generate CSV
-    const csvContent = generateCSV(reviews);
-    const csvBuffer = Buffer.from(csvContent, 'utf-8');
-
-    // 2. Generate SQL
-    const sqlContent = generateSQL(reviews, dateStr);
-    const sqlBuffer = Buffer.from(sqlContent, 'utf-8');
-
-    // 3. Generate XLSX
-    const xlsxBuffer = generateXLSXBuffer(reviews);
-
-    // Save physical file copy if file system allows
-    try {
-      ensureDirectories();
-      const csvPath = path.join(BACKUPS_DIR, `${id}.csv`);
-      fs.writeFileSync(csvPath, csvBuffer);
-
-      const sqlPath = path.join(BACKUPS_DIR, `${id}.sql`);
-      fs.writeFileSync(sqlPath, sqlBuffer);
-
-      const xlsxPath = path.join(BACKUPS_DIR, `${id}.xlsx`);
-      fs.writeFileSync(xlsxPath, xlsxBuffer);
-    } catch (fsWriteError) {
-      console.log('[Backup System] Local individual files write skipped (safe to ignore in write-restricted environments)');
-    }
-
-    // 4. Save metadata with SHA-256 Hex Hashes
-    const csvHash = crypto.createHash('sha256').update(csvBuffer).digest('hex');
-    const xlsxHash = crypto.createHash('sha256').update(xlsxBuffer).digest('hex');
-    const sqlHash = crypto.createHash('sha256').update(sqlBuffer).digest('hex');
-
-    const metadataList = await loadBackupMetadata();
-    const existingIndex = metadataList.findIndex(m => m.id === id);
-
-    const newMetadata: BackupMetadata = {
-      id,
-      date: dateStr,
-      createdAt: new Date().toISOString(),
-      reviewCount: reviews.length,
-      csvSize: csvBuffer.length,
-      xlsxSize: xlsxBuffer.length,
-      sqlSize: sqlBuffer.length,
-      csvHash,
-      xlsxHash,
-      sqlHash
-    };
-
-    if (existingIndex >= 0) {
-      metadataList[existingIndex] = newMetadata;
-    } else {
-      metadataList.unshift(newMetadata);
-    }
-    await saveBackupMetadata(metadataList);
-
-    // 5. Save binary base64 contents
-    const binaryData: BackupBinaryData = {
-      csvBase64: csvBuffer.toString('base64'),
-      xlsxBase64: xlsxBuffer.toString('base64'),
-      sqlBase64: sqlBuffer.toString('base64'),
-    };
-    await saveBackupBinary(id, binaryData);
-
-    // 6. Clean up backups older than 7 days
-    try {
-      await cleanOldBackups();
-    } catch (cleanupError) {
-      console.error('[Backup System] Error during old backups cleanup:', cleanupError);
-    }
-
-    console.log(`[Backup System] Daily backup completed successfully for: ${dateStr}`);
-    return newMetadata;
-  } catch (error) {
-    console.error(`[Backup System] FAILED to create backup for ${dateStr}:`, error);
-    return null;
+  for (const company of companies) {
+    lines.push(
+      `INSERT INTO companies (id, credit_code, name, country_code, country_name, province, city, created_at, creation_source, creation_hash) VALUES (` +
+        [
+          company.id,
+          company.credit_code,
+          company.name,
+          company.country_code,
+          company.country_name,
+          company.province,
+          company.city,
+          company.created_at,
+          company.creation_source,
+          company.creation_hash,
+        ]
+          .map(escapeSql)
+          .join(', ') +
+        ') ON CONFLICT DO NOTHING;'
+    );
   }
+
+  for (const review of reviews) {
+    lines.push(
+      `INSERT INTO reviews (id, company_id, company_name, branch_location, position, employment_status, salary, bonus, experience_years, rating_career, rating_balance, rating_management, rating_compensation, rating_culture, review_text, created_at, previous_hash, hash, hash_version) VALUES (` +
+        [
+          review.id,
+          review.company_id,
+          review.company_name,
+          review.branch_location,
+          review.position,
+          review.employment_status,
+          review.salary,
+          review.bonus,
+          review.experience_years,
+          review.rating_career,
+          review.rating_balance,
+          review.rating_management,
+          review.rating_compensation,
+          review.rating_culture,
+          review.review_text,
+          review.created_at,
+          review.previous_hash,
+          review.hash,
+          review.hash_version,
+        ]
+          .map(escapeSql)
+          .join(', ') +
+        ') ON CONFLICT DO NOTHING;'
+    );
+  }
+  lines.push('COMMIT;');
+  return Buffer.from(lines.join('\n'), 'utf8');
 }
 
-// Helper: Clean up backups older than 7 days
-export async function cleanOldBackups(): Promise<void> {
-  const metadataList = await loadBackupMetadata();
-  if (metadataList.length === 0) return;
-
-  const now = new Date();
-  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const remainingMetadata: BackupMetadata[] = [];
-  const removedIds: string[] = [];
-
-  for (const backup of metadataList) {
-    const dateParts = backup.date.split('-');
-    if (dateParts.length !== 3) {
-      remainingMetadata.push(backup);
-      continue;
-    }
-    const year = parseInt(dateParts[0], 10);
-    const month = parseInt(dateParts[1], 10);
-    const day = parseInt(dateParts[2], 10);
-    const backupDate = new Date(year, month - 1, day);
-
-    const diffTime = todayMidnight.getTime() - backupDate.getTime();
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-
-    if (diffDays >= 7) {
-      removedIds.push(backup.id);
-    } else {
-      remainingMetadata.push(backup);
-    }
-  }
-
-  if (removedIds.length === 0) return;
-
-  console.log(`[Backup Cleanup] Cleaning up ${removedIds.length} expired backups older than 7 days:`, removedIds);
-
-  await saveBackupMetadata(remainingMetadata);
-
-  // Delete from Supabase tables
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { error: metadataErr } = await supabase
-        .from('backups_metadata')
-        .delete()
-        .in('id', removedIds);
-
-      if (metadataErr) {
-        console.error('[Backup Cleanup] Error deleting metadata rows:', metadataErr);
-      }
-
-      const { error: binaryErr } = await supabase
-        .from('backups_binary')
-        .delete()
-        .in('id', removedIds);
-
-      if (binaryErr) {
-        console.error('[Backup Cleanup] Error deleting binary rows:', binaryErr);
-      }
-    } catch (dbError) {
-      console.error('[Backup Cleanup] Failed to delete rows from Supabase:', dbError);
-    }
-  }
-
-  // Delete local physical copies if they exist
-  for (const id of removedIds) {
-    const csvPath = path.join(BACKUPS_DIR, `${id}.csv`);
-    const xlsxPath = path.join(BACKUPS_DIR, `${id}.xlsx`);
-    const sqlPath = path.join(BACKUPS_DIR, `${id}.sql`);
-
-    try {
-      if (fs.existsSync(csvPath)) fs.unlinkSync(csvPath);
-      if (fs.existsSync(xlsxPath)) fs.unlinkSync(xlsxPath);
-      if (fs.existsSync(sqlPath)) fs.unlinkSync(sqlPath);
-    } catch (err) {
-      // safe to ignore on write-restricted systems
-    }
-  }
-
-  // Delete from local binary JSON
-  try {
-    if (fs.existsSync(BINARY_FILE)) {
-      const content = fs.readFileSync(BINARY_FILE, 'utf-8');
-      const allBinaries = JSON.parse(content);
-      let changed = false;
-      for (const id of removedIds) {
-        if (allBinaries[id]) {
-          delete allBinaries[id];
-          changed = true;
-        }
-        if (global._localBackupBinaries && global._localBackupBinaries[id]) {
-          delete global._localBackupBinaries[id];
-        }
-      }
-      if (changed) {
-        fs.writeFileSync(BINARY_FILE, JSON.stringify(allBinaries, null, 2), 'utf-8');
-      }
-    }
-  } catch (error) {
-    // safe to ignore on edge
-  }
+function mapSnapshot(row: SnapshotRow): BackupMetadata {
+  return {
+    id: row.id,
+    date: row.snapshot_date,
+    createdAt: row.created_at,
+    reviewCount: Number(row.row_counts.reviews || 0),
+    csvSize: Number(row.files.csv?.size || 0),
+    xlsxSize: Number(row.files.xlsx?.size || 0),
+    sqlSize: Number(row.files.sql?.size || 0),
+    csvHash: row.files.csv?.sha256,
+    xlsxHash: row.files.xlsx?.sha256,
+    sqlHash: row.files.sql?.sha256,
+  };
 }
 
-// Automatic hourly scheduler check
-export async function checkAndRunScheduledBackup(): Promise<void> {
-  try {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const todayStr = `${year}-${month}-${day}`;
-
-    const metadataList = await loadBackupMetadata();
-    const hasTodayBackup = metadataList.some(m => m.date === todayStr);
-
-    if (!hasTodayBackup) {
-      console.log(`[Backup System Scheduler] No backup found for today (${todayStr}). Starting generation...`);
-      await createBackupForDate(todayStr);
-    }
-
-    try {
-      await cleanOldBackups();
-    } catch (cleanupError) {
-      console.error('[Backup System Scheduler] Error during cleanup check:', cleanupError);
-    }
-  } catch (error) {
-    console.error('[Backup System Scheduler] Error during scheduled backup check:', error);
-  }
+export async function loadBackupMetadata(): Promise<BackupMetadata[]> {
+  const rows = await sqlClient<SnapshotRow[]>`
+    select id, snapshot_date, files, row_counts, created_at, expires_at
+    from data_snapshots
+    where expires_at > now()
+    order by snapshot_date desc
+  `;
+  return rows.map(mapSnapshot);
 }
 
-// Background scheduler daemon
-let schedulerActive = false;
-export function initBackupScheduler() {
-  if (schedulerActive) return;
-  schedulerActive = true;
-
-  console.log('[Backup System] Initializing database-driven backup daemon...');
-  
-  checkAndRunScheduledBackup().catch(err => {
-    console.error('[Backup System] Initial scheduler execution failed:', err);
+async function uploadImmutable(
+  path: string,
+  buffer: Buffer,
+  contentType: string
+): Promise<SnapshotFile> {
+  const storage = getStorageClient().storage.from(getBucketName());
+  const { error } = await storage.upload(path, buffer, {
+    contentType,
+    upsert: false,
+    cacheControl: '3600',
   });
+  if (
+    error &&
+    !error.message.toLowerCase().includes('already exists') &&
+    !error.message.toLowerCase().includes('duplicate')
+  ) {
+    throw new Error(`Snapshot upload failed for ${path}: ${error.message}`);
+  }
+  return { path, size: buffer.length, sha256: sha256(buffer), contentType };
+}
 
-  // Run a check every 30 minutes
-  setInterval(() => {
-    checkAndRunScheduledBackup().catch(err => {
-      console.error('[Backup System] Scheduled backup run failed:', err);
-    });
-  }, 30 * 60 * 1000);
+export async function createBackupForDate(
+  date: string
+): Promise<BackupMetadata | null> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error('Snapshot date must use YYYY-MM-DD.');
+  }
+
+  const existingRows = await sqlClient<SnapshotRow[]>`
+    select id, snapshot_date, files, row_counts, created_at, expires_at
+    from data_snapshots
+    where snapshot_date = ${date}
+    limit 1
+  `;
+  if (existingRows[0]) return mapSnapshot(existingRows[0]);
+
+  const reviews = await getReviews();
+  const companyCountRows = await sqlClient<{ count: number }[]>`
+    select count(*)::integer as count from companies
+  `;
+  const csvBuffer = generateReviewCsv(reviews);
+  const xlsxBuffer = generateReviewWorkbook(reviews);
+  const sqlBuffer = await generateDataOnlySql(reviews);
+  const prefix = `daily/${date}`;
+  const files = {} as SnapshotFiles;
+
+  files.csv = await uploadImmutable(
+    `${prefix}/reviews.csv`,
+    csvBuffer,
+    'text/csv; charset=utf-8'
+  );
+  files.xlsx = await uploadImmutable(
+    `${prefix}/reviews.xlsx`,
+    xlsxBuffer,
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  );
+  files.sql = await uploadImmutable(
+    `${prefix}/data-only.sql`,
+    sqlBuffer,
+    'application/sql; charset=utf-8'
+  );
+
+  const rowCounts = {
+    companies: Number(companyCountRows[0]?.count || 0),
+    reviews: reviews.length,
+  };
+  const manifestPayload = {
+    schemaVersion: 2,
+    snapshotDate: date,
+    generatedAt: new Date().toISOString(),
+    rowCounts,
+    files,
+  };
+  const manifestBuffer = Buffer.from(canonicalJson(manifestPayload), 'utf8');
+  files.manifest = await uploadImmutable(
+    `${prefix}/manifest.json`,
+    manifestBuffer,
+    'application/json; charset=utf-8'
+  );
+
+  const retentionDays = Math.max(1, Number(process.env.SNAPSHOT_RETENTION_DAYS || '7'));
+  const expiresAt = new Date(
+    new Date(`${date}T00:00:00.000Z`).getTime() + retentionDays * 86_400_000
+  ).toISOString();
+  const snapshotId = `snapshot-${date}`;
+  const totalSize = Object.values(files).reduce((sum, file) => sum + file.size, 0);
+
+  await sqlClient`
+    insert into data_snapshots (
+      id, snapshot_date, object_prefix, manifest_path, manifest_hash,
+      files, row_counts, size_bytes, expires_at
+    )
+    values (
+      ${snapshotId},
+      ${date},
+      ${prefix},
+      ${files.manifest.path},
+      ${files.manifest.sha256},
+      ${canonicalJson(files)}::jsonb,
+      ${canonicalJson(rowCounts)}::jsonb,
+      ${totalSize},
+      ${expiresAt}
+    )
+    on conflict do nothing
+  `;
+
+  const rows = await sqlClient<SnapshotRow[]>`
+    select id, snapshot_date, files, row_counts, created_at, expires_at
+    from data_snapshots
+    where id = ${snapshotId}
+    limit 1
+  `;
+  await cleanExpiredSnapshotFiles();
+  return rows[0] ? mapSnapshot(rows[0]) : null;
+}
+
+export async function getBackupPublicUrl(
+  id: string,
+  format: 'csv' | 'xlsx' | 'sql'
+): Promise<string | null> {
+  const rows = await sqlClient<{ files: SnapshotFiles }[]>`
+    select files
+    from data_snapshots
+    where id = ${id} and expires_at > now()
+    limit 1
+  `;
+  const file = rows[0]?.files?.[format];
+  if (!file) return null;
+  return getStorageClient().storage.from(getBucketName()).getPublicUrl(file.path).data
+    .publicUrl;
+}
+
+export async function cleanExpiredSnapshotFiles(): Promise<void> {
+  const expired = await sqlClient<{ files: SnapshotFiles }[]>`
+    select files from data_snapshots where expires_at <= now()
+  `;
+  const paths = expired.flatMap((row) =>
+    Object.values(row.files || {}).map((file) => file.path)
+  );
+  if (paths.length === 0) return;
+
+  const { error } = await getStorageClient().storage.from(getBucketName()).remove(paths);
+  if (error) {
+    throw new Error(`Unable to clean expired snapshot files: ${error.message}`);
+  }
 }

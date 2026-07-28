@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCompanyReviews, addReview, getReviews } from '../../../lib/db';
+import { guardPublicWrite } from '../../../lib/security/public-write';
+import {
+  publicWriteFailure,
+  publicWriteSuccess,
+} from '../../../lib/api/public-write-response';
 
 export async function GET(req: NextRequest) {
   try {
@@ -38,6 +43,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       company_name,
+      country_code,
       branch_location,
       position,
       employment_status,
@@ -49,7 +55,8 @@ export async function POST(req: NextRequest) {
       rating_management,
       rating_compensation,
       rating_culture,
-      review_text
+      review_text,
+      humanVerificationToken
     } = body;
 
     // Validate inputs
@@ -73,28 +80,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const newReview = await addReview({
-      company_name: company_name.trim(),
-      branch_location: branch_location.trim(),
-      position: position.trim(),
-      employment_status: employment_status || 'current',
-      salary: Number(salary) || 0,
-      bonus: Number(bonus) || 0,
-      experience_years: Number(experience_years) || 1,
-      rating_career: Number(rating_career),
-      rating_balance: Number(rating_balance),
-      rating_management: Number(rating_management),
-      rating_compensation: Number(rating_compensation),
-      rating_culture: Number(rating_culture),
-      review_text: review_text.trim()
-    });
+    const identity = await guardPublicWrite(
+      req,
+      'review-create',
+      humanVerificationToken,
+      company_name.trim().toLowerCase()
+    );
+    const newReview = await addReview(
+      {
+        company_name: company_name.trim(),
+        branch_location: branch_location.trim(),
+        position: position.trim(),
+        employment_status: employment_status || 'current',
+        salary: Number(salary) || 0,
+        bonus: Number(bonus) || 0,
+        experience_years: Number(experience_years) || 1,
+        rating_career: Number(rating_career),
+        rating_balance: Number(rating_balance),
+        rating_management: Number(rating_management),
+        rating_compensation: Number(rating_compensation),
+        rating_culture: Number(rating_culture),
+        review_text: review_text.trim(),
+      },
+      {
+        countryCode: typeof country_code === 'string' ? country_code.trim() : undefined,
+        city: branch_location.trim(),
+      }
+    );
 
-    return NextResponse.json({ success: true, data: newReview });
+    return publicWriteSuccess(identity, newReview);
   } catch (error: any) {
     console.error('API Error in POST reviews:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || '提交评价失败，请检查数据后重试。' },
-      { status: 500 }
-    );
+    return publicWriteFailure(error);
   }
 }
