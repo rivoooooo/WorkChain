@@ -455,6 +455,13 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                                 }));
                               }}
                               placeholder={t.formPlaceholderCompany}
+                              messages={{
+                                loading: t.companySelectLoading,
+                                noMatch: t.companySelectNoMatch,
+                                empty: t.companySelectEmpty,
+                                existing: t.companySelectExisting,
+                                autocomplete: t.companySelectAutocomplete,
+                              }}
                             />
                           </div>
 
@@ -473,7 +480,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                                   country_name: event.target.value,
                                 }))
                               }
-                              placeholder={lang === 'zh' ? '例如：中国、美国' : 'e.g. China, United States'}
+                              placeholder={t.formPlaceholderCountry}
                               className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
                             />
                           </div>
@@ -492,7 +499,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                                   branch_location: event.target.value,
                                 }))
                               }
-                              placeholder={lang === 'zh' ? '例如：广州、上海' : 'e.g. Guangzhou, Shanghai'}
+                              placeholder={t.formPlaceholderLocation}
                               className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
                             />
                           </div>

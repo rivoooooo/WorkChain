@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language, resolveLanguage } from '../../../../lib/i18n';
 import { CompanyGovernancePanel } from '../../../../components/company-governance-panel';
+import { CompanyShareCard } from '../../../../components/company-share-card';
 import {
   getPublicCompanyById,
   getPublicCompanyDetails,
@@ -40,7 +41,8 @@ import {
   Link2,
   Image as ImageIcon,
   Plus,
-  Upload
+  Upload,
+  Share2
 } from 'lucide-react';
 
 interface CompanyDetailsInfo {
@@ -152,6 +154,85 @@ const getExternalUrl = (value: string): string | null => {
   }
 };
 
+function CompanyDetailSkeleton() {
+  return (
+    <div className="w-full animate-pulse font-sans" id="company_detail_loading" aria-busy="true">
+      <div className="mb-8 flex flex-col justify-between gap-5 border-b border-border pb-6 md:flex-row md:items-end">
+        <div className="space-y-3">
+          <div className="h-10 w-64 max-w-[75vw] bg-muted sm:h-14 sm:w-96" />
+          <div className="flex gap-3">
+            <div className="h-3 w-28 bg-muted" />
+            <div className="h-3 w-20 bg-muted" />
+            <div className="h-3 w-24 bg-muted" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <div className="h-9 w-20 bg-muted" />
+          <div className="h-9 w-28 bg-muted" />
+          <div className="h-9 w-24 bg-muted" />
+        </div>
+      </div>
+
+      <div className="mb-8 flex gap-2 border-b border-border pb-3">
+        <div className="h-7 w-24 bg-muted" />
+        <div className="h-7 w-28 bg-muted" />
+        <div className="h-7 w-24 bg-muted" />
+        <div className="h-7 w-24 bg-muted" />
+      </div>
+
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
+        <aside className="space-y-6 lg:col-span-4 lg:border-r lg:border-border lg:pr-6">
+          <div className="space-y-4 border border-border bg-card p-4">
+            <div className="h-4 w-36 bg-muted" />
+            {Array.from({ length: 5 }, (_, index) => (
+              <div key={index} className="space-y-2">
+                <div className="flex justify-between">
+                  <div className="h-3 w-24 bg-muted" />
+                  <div className="h-3 w-8 bg-muted" />
+                </div>
+                <div className="h-1 w-full bg-muted" />
+              </div>
+            ))}
+          </div>
+          <div className="space-y-4 border border-border bg-card p-4">
+            <div className="h-4 w-28 bg-muted" />
+            <div className="h-8 w-40 bg-muted" />
+            <div className="h-3 w-3/4 bg-muted" />
+          </div>
+        </aside>
+
+        <main className="space-y-5 lg:col-span-8">
+          <div className="flex flex-col gap-3 border border-border bg-card p-3 sm:flex-row">
+            <div className="h-8 flex-1 bg-muted" />
+            <div className="h-8 w-full bg-muted sm:w-28" />
+            <div className="h-8 w-full bg-muted sm:w-28" />
+          </div>
+
+          {Array.from({ length: 3 }, (_, index) => (
+            <div key={index} className="space-y-4 border border-border bg-card p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="h-5 w-40 bg-muted" />
+                  <div className="h-3 w-28 bg-muted" />
+                </div>
+                <div className="h-7 w-16 bg-muted" />
+              </div>
+              <div className="h-3 w-full bg-muted" />
+              <div className="h-3 w-11/12 bg-muted" />
+              <div className="h-3 w-2/3 bg-muted" />
+              <div className="flex gap-2 pt-2">
+                <div className="h-5 w-16 bg-muted" />
+                <div className="h-5 w-20 bg-muted" />
+                <div className="h-5 w-14 bg-muted" />
+              </div>
+            </div>
+          ))}
+        </main>
+      </div>
+    </div>
+  );
+}
+
 const reportCacheKey = (companyId: string, relatedIds: string[] = []) =>
   `ai_report_cache_${companyId}_${[...relatedIds].sort().join('_')}`;
 
@@ -210,6 +291,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showGovernancePanel, setShowGovernancePanel] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
   const [activeTab, setActiveTab] = useState<CompanyTab>(() =>
     getCompanyTab(searchParams.get('tab'))
   );
@@ -377,14 +459,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   };
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 font-sans" id="loading_screen">
-        <Loader2 className="w-8 h-8 text-foreground animate-spin mb-4" />
-        <p className="text-xs text-muted-foreground font-mono">
-          {lang === 'zh' ? '正在加载企业专属口碑看板与存证数据...' : 'Syncing company profile and block reviews...'}
-        </p>
-      </div>
-    );
+    return <CompanyDetailSkeleton />;
   }
 
   if (!company) {
@@ -413,9 +488,6 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
       {/* TOP NEWSPAPER COMPANY MASTHEAD (REFERENCE IMAGE MATCH) */}
       <div className="border-b border-border pb-6 mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4" id="company_masthead">
         <div>
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-1">
-            {lang === 'zh' ? '企业全景口碑与去中心化存证档案' : 'Corporate Telemetry Dossier'}
-          </span>
           <h1 className="text-3xl sm:text-5xl font-black text-foreground tracking-tighter uppercase font-sans">
             {company.name}
           </h1>
@@ -433,6 +505,15 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Action CTAs */}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowShareCard(true)}
+            className="px-3.5 py-2 border border-border hover:bg-muted text-xs font-bold text-foreground flex items-center gap-1.5 cursor-pointer rounded-none"
+          >
+            <Share2 className="w-3.5 h-3.5 text-foreground" />
+            <span>{lang === 'zh' ? '分享' : 'Share'}</span>
+          </button>
+
           <button
             onClick={() => {
               selectTab('aiReport');
@@ -601,7 +682,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                     type="text"
                     value={localSearch}
                     onChange={(e) => setLocalSearch(e.target.value)}
-                    placeholder={lang === 'zh' ? '搜索此公司评价...' : 'Search within reviews...'}
+                    placeholder={t.reviewSearchPlaceholder}
                     className="w-full pl-9 pr-3 py-1.5 bg-muted/40 border border-border focus:border-foreground outline-none text-xs text-foreground placeholder:text-muted-foreground rounded-none transition-colors"
                   />
                 </div>
@@ -1217,6 +1298,27 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
           )}
         </main>
       </div>
+
+      <CompanyShareCard
+        open={showShareCard}
+        onClose={() => setShowShareCard(false)}
+        company={{
+          name: company.name,
+          location: [
+            company.country_name || company.country_code,
+            company.province,
+            company.city,
+          ]
+            .filter(Boolean)
+            .join(' · '),
+          reviewCount: company.review_count,
+          rating: company.avg_rating,
+          companyType: companyDetailsInfo?.company_type,
+          establishmentDate: companyDetailsInfo?.establishment_date,
+          registeredCapital: companyDetailsInfo?.registered_capital,
+        }}
+        lang={lang}
+      />
     </div>
   );
 }

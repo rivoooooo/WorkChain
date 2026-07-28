@@ -13,7 +13,6 @@ import {
   TrendingUp,
   Star,
   DollarSign,
-  Loader2,
   SlidersHorizontal,
   Lock,
   ChevronRight,
@@ -42,6 +41,47 @@ type SortOrder = 'desc' | 'asc';
 
 interface PageProps {
   params: Promise<{ lang: string }>;
+}
+
+function CompaniesListSkeleton() {
+  return (
+    <div
+      className="divide-y divide-border border-y border-border"
+      id="loading_state"
+      aria-busy="true"
+      aria-label="Loading companies"
+    >
+      {Array.from({ length: 6 }, (_, index) => (
+        <div
+          key={index}
+          className="flex animate-pulse flex-col items-start gap-4 px-2 py-5 sm:px-4 md:flex-row md:items-center md:gap-6"
+        >
+          <div className="h-16 w-16 shrink-0 bg-muted sm:h-20 sm:w-20" />
+
+          <div className="flex h-16 w-24 shrink-0 flex-col justify-between border-r border-border pr-4 sm:h-20 sm:w-28 sm:pr-6">
+            <div className="h-6 w-10 bg-muted" />
+            <div className="h-3 w-14 bg-muted" />
+          </div>
+
+          <div className="min-w-[180px] flex-1 space-y-3">
+            <div className="h-5 w-2/3 max-w-56 bg-muted" />
+            <div className="h-3 w-1/2 max-w-40 bg-muted" />
+            <div className="flex gap-2">
+              <div className="h-5 w-16 bg-muted" />
+              <div className="h-5 w-20 bg-muted" />
+              <div className="h-5 w-14 bg-muted" />
+            </div>
+          </div>
+
+          <div className="min-w-[220px] flex-1 space-y-3 border-t border-border pt-3 md:border-t-0 md:pt-0">
+            <div className="h-3 w-full bg-muted" />
+            <div className="h-3 w-5/6 bg-muted" />
+            <div className="h-3 w-2/5 bg-muted" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function CompaniesPage({ params }: PageProps) {
@@ -129,11 +169,8 @@ export default function CompaniesPage({ params }: PageProps) {
       {/* NEWSPAPER MASTHEAD TITLE SECTION (REFERENCE IMAGE MATCH) */}
       <div className="border-b border-border pb-6 mb-8 flex items-end justify-between" id="directory_heading">
         <div>
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-1">
-            {lang === 'zh' ? '全行业公司口碑与存证索引' : 'Corporate Index & Ratings'}
-          </span>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight uppercase">
-            {lang === 'zh' ? '企业口碑龙虎榜' : 'Company Ratings Index'}
+            {t.dirTitle}
           </h1>
         </div>
 
@@ -202,12 +239,7 @@ export default function CompaniesPage({ params }: PageProps) {
 
       {/* NEWSPAPER ROW TABLE LIST (MATCHING REFERENCE IMAGE STRUCTURE) */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 border border-border" id="loading_state">
-          <Loader2 className="w-8 h-8 text-foreground animate-spin mb-4" />
-          <p className="text-xs text-muted-foreground font-mono">
-            {lang === 'zh' ? '正在拉取链上企业榜单数据...' : 'Syncing enterprise ledger stats...'}
-          </p>
-        </div>
+        <CompaniesListSkeleton />
       ) : filteredAndSortedCompanies.length === 0 ? (
         <div className="text-center py-16 border border-border bg-card text-card-foreground rounded-none" id="empty_state">
           <Building className="w-10 h-10 text-muted-foreground mx-auto mb-3" />

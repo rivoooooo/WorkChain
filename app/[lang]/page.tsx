@@ -7,7 +7,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language, resolveLanguage } from '../../lib/i18n';
 import { ThemeToggle } from '../../components/theme-toggle';
 import { BeforeAfterCanvas } from '../../components/before-after-canvas';
-import { getPublicCompanies } from '../../lib/public-data';
+import {
+  getPublicCompanies,
+  getPublicLatestCompanies,
+} from '../../lib/public-data';
 import {
   Search,
   Plus,
@@ -92,7 +95,7 @@ export default function Home({ params }: PageProps) {
     async function fetchCompanies() {
       setIsLoading(true);
       try {
-        setCompanies(await getPublicCompanies('', 200));
+        setCompanies(await getPublicLatestCompanies(10));
       } catch (err) {
         console.error('Failed to fetch companies:', err);
       } finally {
@@ -306,18 +309,15 @@ export default function Home({ params }: PageProps) {
                 className="flex flex-wrap items-center gap-2 pt-2"
                 id="search_suggestions"
               >
-                <span className="text-xs text-muted-foreground font-semibold mr-1">{t.trendingSearch}</span>
-                {companies.slice(0, 6).map((comp) => (
-                  <button
+                <span className="text-xs text-muted-foreground font-semibold mr-1">{t.latestCompanies}</span>
+                {companies.map((comp) => (
+                  <Link
                     key={comp.id}
-                    onClick={() => {
-                      setSearchQuery(comp.name);
-                      handleSearch(comp.name);
-                    }}
+                    href={`/${rawLang}/companies/${comp.id}`}
                     className="text-xs px-3.5 py-1.5 bg-muted/50 border border-border hover:border-emerald-500/40 hover:text-emerald-500 rounded-none text-muted-foreground font-medium transition-all cursor-pointer"
                   >
                     {comp.name}
-                  </button>
+                  </Link>
                 ))}
               </motion.div>
             )}

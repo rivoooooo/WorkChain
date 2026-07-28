@@ -144,6 +144,25 @@ export async function getPublicCompanies(
     .slice(0, safeLimit);
 }
 
+export async function getPublicLatestCompanies(
+  limit = 10
+): Promise<PublicCompany[]> {
+  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 50);
+  const rows = assertResult<Record<string, unknown>[]>(
+    await getClient()
+      .from('companies')
+      .select(
+        'id,name,credit_code,country_code,country_name,province,city,created_at'
+      )
+      .neq('id', 'comp-unknown')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(safeLimit),
+    'Unable to load latest companies'
+  );
+  return enrichCompanies(rows);
+}
+
 export async function getPublicCompanyById(
   companyId: string
 ): Promise<PublicCompany | null> {

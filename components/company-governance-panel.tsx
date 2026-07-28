@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, Loader2, Plus, Vote } from 'lucide-react';
 import type { Language } from '@/lib/i18n';
+import { i18n } from '@/lib/i18n';
 import {
   HumanVerification,
   humanVerificationEnabled,
@@ -50,6 +51,7 @@ export function CompanyGovernancePanel({
   const [message, setMessage] = useState('');
   const [humanVerificationToken, setHumanVerificationToken] = useState<string | null>(null);
   const [humanVerificationResetKey, setHumanVerificationResetKey] = useState(0);
+  const t = i18n[lang];
 
   const isSupplement = useMemo(() => !profile[field]?.trim(), [field, profile]);
 
@@ -163,7 +165,7 @@ export function CompanyGovernancePanel({
         <input
           value={value}
           onChange={(event) => setValue(event.target.value)}
-          placeholder={profile[field] || (lang === 'zh' ? '输入新信息' : 'Enter new value')}
+          placeholder={profile[field] || t.governanceValuePlaceholder}
           className="border border-border bg-background px-3 py-2 text-xs outline-none focus:border-emerald-500"
         />
         <button

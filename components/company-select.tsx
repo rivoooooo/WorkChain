@@ -18,7 +18,14 @@ interface CompanySelectProps {
   value: string;
   onChange: (value: string) => void;
   onCompanySelect?: (company: CompanyItem) => void;
-  placeholder?: string;
+  placeholder: string;
+  messages: {
+    loading: string;
+    noMatch: string;
+    empty: string;
+    existing: string;
+    autocomplete: string;
+  };
   required?: boolean;
 }
 
@@ -26,7 +33,8 @@ export function CompanySelect({
   value,
   onChange,
   onCompanySelect,
-  placeholder = '例如: 腾讯 / 阿里巴巴',
+  placeholder,
+  messages,
   required = false,
 }: CompanySelectProps) {
   const [query, setQuery] = useState<string>(value);
@@ -116,18 +124,20 @@ export function CompanySelect({
           {companies.length === 0 ? (
             <div className="p-3 text-center text-xs text-muted-foreground">
               {isLoading ? (
-                <span>正在检索企业库...</span>
+                <span>{messages.loading}</span>
               ) : (
                 <span>
-                  {query ? `未匹配到已知公司，将作为新公司 "${query}" 创建` : '输入公司名称搜索数据库已知企业'}
+                  {query
+                    ? messages.noMatch.replace('{query}', query)
+                    : messages.empty}
                 </span>
               )}
             </div>
           ) : (
             <div className="py-1">
               <div className="px-3 py-1 text-[10px] font-extrabold uppercase text-muted-foreground bg-muted/30 border-b border-border flex items-center justify-between">
-                <span>数据库已有公司 ({companies.length})</span>
-                <span>选择可自动补全信息</span>
+                <span>{messages.existing.replace('{count}', String(companies.length))}</span>
+                <span>{messages.autocomplete}</span>
               </div>
 
               {companies.map((company) => {
