@@ -4,6 +4,7 @@ import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language } from '../../../../lib/i18n';
+import { CompanyGovernancePanel } from '../../../../components/company-governance-panel';
 import {
   Building,
   Search,
@@ -830,6 +831,25 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 )}
               </div>
+
+              <CompanyGovernancePanel
+                companyId={company.id}
+                lang={lang}
+                profile={{
+                  name: company.name,
+                  creditCode: company.credit_code,
+                  countryCode: company.country_code,
+                  countryName: company.country_name,
+                  province: company.province,
+                  city: company.city,
+                  legalRepresentative: companyDetailsInfo?.legal_representative,
+                  registeredCapital: companyDetailsInfo?.registered_capital,
+                  businessScope: companyDetailsInfo?.business_scope,
+                  registeredAddress: companyDetailsInfo?.registered_address,
+                  establishmentDate: companyDetailsInfo?.establishment_date,
+                  companyType: companyDetailsInfo?.company_type,
+                }}
+              />
             </div>
           )}
 
