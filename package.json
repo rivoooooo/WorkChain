@@ -20,6 +20,7 @@
     "import:geo": "bun run scripts/import-geonames.ts",
     "data:export:geo": "bun run scripts/import-geonames.ts",
     "import:kinginsun": "bun run scripts/import-kinginsun.ts",
+    "data:export:companies": "bun run scripts/import-kinginsun.ts",
     "data:check-sql": "bun run scripts/check-insert-only-sql.ts"
   },
   "dependencies": {

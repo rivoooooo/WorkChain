@@ -50,10 +50,12 @@ bun run data:check-sql data/cities500.sql
 
 ```bash
 # 使用 --dir 参数批量导入目录下（包含子目录）的所有 CSV / TXT 数据
-bun run import:kinginsun --dir /path/to/enterprise_csv_dir
+bun run data:export:companies --dir /path/to/enterprise_csv_dir \
+  --output data/companies.sql
 
 # 或导入单个 CSV 数据文件
-bun run import:kinginsun /path/to/enterprise.csv
+bun run data:export:companies /path/to/enterprise.csv \
+  --output data/companies.sql
 ```
 
 *特质说明*：
@@ -99,7 +101,7 @@ bun run import:kinginsun /path/to/enterprise.csv
 | `bun run db:push` | 从 Drizzle schema 同步开发数据库结构 |
 | `bun run db:push:prod` | 带环境、确认文本和 Supabase 项目标识保护的生产结构推送 |
 | `bun run data:export:geo --output <file>` | 从 `cities500.txt` 生成城市与国家 INSERT-only SQL |
-| `bun run scripts/import-kinginsun.ts --dir <path>` | 转换 CSV 并只插入尚不存在的统一社会信用代码 |
+| `bun run data:export:companies --dir <path> --output <file>` | 转换企业 CSV 并生成确定性的 INSERT-only SQL |
 | `bun run data:check-sql <file>` | 拒绝含 DDL、更新或删除语句的数据 SQL |
 
 ---

@@ -5,6 +5,7 @@ coverage/
 *.log
 *.tsbuildinfo
 .antigravity/
+ignore/
 .env*
 !.env.example
 

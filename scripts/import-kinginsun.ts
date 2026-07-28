@@ -1,143 +1,158 @@
-import fs from 'fs';
-import path from 'path';
+import { createHash } from 'node:crypto';
+import {
+  createWriteStream,
+  existsSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+} from 'node:fs';
+import { mkdir, rename, rm } from 'node:fs/promises';
+import { once } from 'node:events';
+import path from 'node:path';
 import { KinginsunEnterpriseConverter } from '../lib/converters/kinginsun-converter';
-import { importCompanyData } from '../lib/converters/importer';
+import {
+  companyInsertSql,
+  companySqlRecord,
+} from '../lib/converters/company-sql';
 
-// 递归扫描目录下的所有 CSV / TXT 文件
-function scanDirectoryRecursively(dirPath: string): string[] {
-  let results: string[] = [];
-  const list = fs.readdirSync(dirPath);
+interface Options {
+  inputs: string[];
+  output: string;
+  batchSize: number;
+  force: boolean;
+}
 
-  for (const file of list) {
-    const fullPath = path.join(dirPath, file);
-    const stat = fs.statSync(fullPath);
+function filesIn(target: string): string[] {
+  const absolute = path.resolve(target);
+  const stat = statSync(absolute);
+  if (stat.isFile()) return [absolute];
+  return readdirSync(absolute)
+    .flatMap((entry) => filesIn(path.join(absolute, entry)))
+    .filter((file) => /\.(csv|txt)$/i.test(file))
+    .sort();
+}
 
-    if (stat && stat.isDirectory()) {
-      results = results.concat(scanDirectoryRecursively(fullPath));
-    } else if (file.endsWith('.csv') || file.endsWith('.txt')) {
-      results.push(fullPath);
+function options(): Options {
+  const args = process.argv.slice(2);
+  const targets: string[] = [];
+  let output = '';
+  let batchSize = 500;
+  let force = false;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === '--dir' || argument === '-d') {
+      targets.push(args[++index] || '');
+    } else if (argument === '--output' || argument === '-o') {
+      output = path.resolve(args[++index] || '');
+    } else if (argument === '--batch-size') {
+      batchSize = Number(args[++index]);
+    } else if (argument === '--force') {
+      force = true;
+    } else if (!argument.startsWith('-')) {
+      targets.push(argument);
+    } else {
+      throw new Error(`Unknown argument: ${argument}`);
     }
   }
+  if (targets.length === 0 || !output) {
+    throw new Error(
+      'Usage: bun run import:kinginsun <CSV|directory> --output <data.sql>'
+    );
+  }
+  if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 5_000) {
+    throw new Error('--batch-size must be between 1 and 5000.');
+  }
+  return {
+    inputs: [...new Set(targets.flatMap(filesIn))].sort(),
+    output,
+    batchSize,
+    force,
+  };
+}
 
-  return results;
+async function write(
+  stream: ReturnType<typeof createWriteStream>,
+  value: string
+) {
+  if (!stream.write(value)) await once(stream, 'drain');
 }
 
 async function main() {
-  const args = process.argv.slice(2);
-  let targetPath = '';
-
-  // 解析 --dir 参数或位置参数
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--dir' || args[i] === '-d') {
-      targetPath = args[i + 1] || '';
-      break;
-    } else if (!args[i].startsWith('-') && !targetPath) {
-      targetPath = args[i];
-    }
+  const config = options();
+  if (config.inputs.length === 0) throw new Error('No CSV or TXT inputs found.');
+  if (existsSync(config.output) && !config.force) {
+    throw new Error(`Output exists: ${config.output}. Pass --force to replace it.`);
   }
-
-  if (!targetPath) {
-    console.log(`
-====================================================================
- 🏢 Kinginsun Enterprise Registration Data Importer
-====================================================================
- 数据来源与致谢:
-   https://github.com/kinginsun/Enterprise-Registration-Data-of-Chinese-Mainland
-
- 使用说明:
-   1. 使用 --dir 选项导入目录下所有 CSV:
-      bun run scripts/import-kinginsun.ts --dir <目录路径>
-
-   2. 导入单个 CSV 文件:
-      bun run scripts/import-kinginsun.ts <文件路径>
-
- 示例:
-   bun run scripts/import-kinginsun.ts --dir /path/to/enterprise_csv_dir
-   bun run import:kinginsun --dir ./data/kinginsun
-====================================================================
-`);
-    process.exit(1);
-  }
-
-  const absolutePath = path.resolve(targetPath);
-
-  if (!fs.existsSync(absolutePath)) {
-    console.error(`❌ 指定的文件或目录不存在: ${absolutePath}`);
-    process.exit(1);
-  }
-
-  const stat = fs.statSync(absolutePath);
-  let csvFiles: string[] = [];
-
-  if (stat.isFile()) {
-    if (absolutePath.endsWith('.csv') || absolutePath.endsWith('.txt')) {
-      csvFiles.push(absolutePath);
-    } else {
-      console.error('❌ 指定的文件必须是 .csv 或 .txt 格式');
-      process.exit(1);
-    }
-  } else if (stat.isDirectory()) {
-    csvFiles = scanDirectoryRecursively(absolutePath);
-  }
-
-  if (csvFiles.length === 0) {
-    console.error(`❌ 在目录 [${absolutePath}] 中未找到可处理的 CSV / TXT 数据文件`);
-    process.exit(1);
-  }
-
-  console.log(`🚀 找到 ${csvFiles.length} 个待导入的数据文件，开始解析转换...\n`);
 
   const converter = new KinginsunEnterpriseConverter();
-  let grandTotalParsed = 0;
-  let grandTotalSuccess = 0;
-  let grandTotalSkipped = 0;
+  let parsed = 0;
+  let valid = 0;
+  let skipped = 0;
+  const sourceHash = createHash('sha256');
 
-  for (let idx = 0; idx < csvFiles.length; idx++) {
-    const filePath = csvFiles[idx];
-    console.log(`[${idx + 1}/${csvFiles.length}] 读取并解析文件: ${path.relative(process.cwd(), filePath)}`);
-    const startTime = Date.now();
+  await mkdir(path.dirname(config.output), { recursive: true });
+  const temporary = `${config.output}.tmp-${process.pid}`;
+  const writer = createWriteStream(temporary, { encoding: 'utf8', flags: 'wx' });
+  try {
+    await write(
+      writer,
+      '-- Work-Chain company data-only export\n' +
+        '-- schema is managed exclusively by Drizzle ORM\nBEGIN;\n\n'
+    );
 
-    try {
-      const csvContent = fs.readFileSync(filePath, 'utf-8');
-      const parseResult = await converter.parse(csvContent);
+    const commonRoot = path.dirname(
+      config.inputs.reduce((common, file) => {
+        let candidate = common;
+        while (!file.startsWith(`${candidate}${path.sep}`) && candidate !== path.dirname(candidate)) {
+          candidate = path.dirname(candidate);
+        }
+        return candidate;
+      }, path.dirname(config.inputs[0]))
+    );
 
-      grandTotalParsed += parseResult.totalParsed;
-      grandTotalSuccess += parseResult.success.length;
-      grandTotalSkipped += parseResult.skipped.length;
+    for (let fileIndex = 0; fileIndex < config.inputs.length; fileIndex += 1) {
+      const file = config.inputs[fileIndex];
+      const content = readFileSync(file);
+      const relativeFile = path.relative(commonRoot, file);
+      sourceHash.update(relativeFile).update('\0').update(content);
+      const result = await converter.parse(content);
+      parsed += result.totalParsed;
+      valid += result.success.length;
+      skipped += result.skipped.length;
 
-      console.log(`   └─ 共解析 ${parseResult.totalParsed} 行, 有效数据: ${parseResult.success.length} 条, 跳过无效: ${parseResult.skipped.length} 条 (耗时 ${Date.now() - startTime}ms)`);
-
-      if (parseResult.success.length > 0) {
-        console.log(`   └─ 开始按 统一社会信用代码 执行数据库批量 Upsert 增量更新...`);
-        const importSummary = await importCompanyData(parseResult.success, {
-          batchSize: 500,
-          onProgress: (processed, total) => {
-            const pct = Math.round((processed / total) * 100);
-            process.stdout.write(`\r      进度: ${processed}/${total} (${pct}%)`);
-          },
-        });
-        process.stdout.write('\n');
-        console.log(`   ✅ 文件导入完成! 成功入库/更新: ${importSummary.insertedOrUpdated} 条, 失败: ${importSummary.failedCount} 条\n`);
+      for (let index = 0; index < result.success.length; index += config.batchSize) {
+        await write(
+          writer,
+          companyInsertSql(
+            result.success.slice(index, index + config.batchSize).map(companySqlRecord)
+          )
+        );
       }
-    } catch (err: any) {
-      console.error(`❌ 解析/导入文件失败 [${filePath}]:`, err.message || err);
+      console.log(
+        `[${fileIndex + 1}/${config.inputs.length}] ${relativeFile}: ` +
+          `${result.success.length} valid, ${result.skipped.length} skipped`
+      );
     }
+
+    const digest = sourceHash.digest('hex');
+    await write(writer, `-- source-sha256: ${digest}\nCOMMIT;\n`);
+    writer.end();
+    await once(writer, 'finish');
+    await rename(temporary, config.output);
+    console.log(
+      `Generated ${config.output}: ${valid} valid rows, ` +
+        `${parsed} parsed rows, ${skipped} skipped rows.`
+    );
+    console.log(`Source SHA-256: ${digest}`);
+  } catch (error) {
+    writer.destroy();
+    await rm(temporary, { force: true });
+    throw error;
   }
-
-  console.log(`
-====================================================================
- 🎉 批量数据导入完成!
- ------------------------------------------------------------------
-  总处理记录数 : ${grandTotalParsed}
-  成功解析校验 : ${grandTotalSuccess}
-  跳过无效行数 : ${grandTotalSkipped}
-====================================================================
-`);
-
-  process.exit(0);
 }
 
-main().catch((err) => {
-  console.error('❌ 执行企业数据导入脚本失败:', err);
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : error);
   process.exit(1);
 });
