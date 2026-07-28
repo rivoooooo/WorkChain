@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language, resolveLanguage } from '../../../../lib/i18n';
 import { CompanyGovernancePanel } from '../../../../components/company-governance-panel';
@@ -49,6 +50,7 @@ interface CompanyDetailsInfo {
   registered_address?: string | null;
   establishment_date?: string | null;
   company_type?: string | null;
+  website?: string | null;
 }
 
 interface CompanyLinkItem {
@@ -132,6 +134,23 @@ interface CacheEntry {
 }
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000;
+const COMPANY_TABS = ['reviews', 'details', 'aiReport', 'ledger'] as const;
+type CompanyTab = (typeof COMPANY_TABS)[number];
+
+const getCompanyTab = (value: string | null): CompanyTab =>
+  COMPANY_TABS.includes(value as CompanyTab) ? (value as CompanyTab) : 'reviews';
+
+const getExternalUrl = (value: string): string | null => {
+  const candidate = /^[a-z][a-z\d+.-]*:/i.test(value) ? value : `https://${value}`;
+  try {
+    const parsed = new URL(candidate);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+      ? parsed.toString()
+      : null;
+  } catch {
+    return null;
+  }
+};
 
 const reportCacheKey = (companyId: string, relatedIds: string[] = []) =>
   `ai_report_cache_${companyId}_${[...relatedIds].sort().join('_')}`;
@@ -180,6 +199,9 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const { id: companyId, lang: rawLang } = use(params);
   const lang: Language = resolveLanguage(rawLang);
   const t = i18n[lang];
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Component State
   const [company, setCompany] = useState<Company | null>(null);
@@ -187,7 +209,21 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const [companyLinksList, setCompanyLinksList] = useState<CompanyLinkItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'reviews' | 'details' | 'aiReport' | 'ledger'>('reviews');
+  const [showGovernancePanel, setShowGovernancePanel] = useState(false);
+  const [activeTab, setActiveTab] = useState<CompanyTab>(() =>
+    getCompanyTab(searchParams.get('tab'))
+  );
+
+  useEffect(() => {
+    setActiveTab(getCompanyTab(searchParams.get('tab')));
+  }, [searchParams]);
+
+  const selectTab = (tab: CompanyTab) => {
+    setActiveTab(tab);
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set('tab', tab);
+    router.push(`${pathname}?${nextParams.toString()}`, { scroll: false });
+  };
 
   // Search & Filtering inside company
   const [localSearch, setLocalSearch] = useState('');
@@ -399,7 +435,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              setActiveTab('aiReport');
+              selectTab('aiReport');
               if (!aiReport) handleGenerateAIReport(false);
             }}
             className="px-3.5 py-2 border border-border hover:bg-muted text-xs font-bold text-foreground flex items-center gap-1.5 cursor-pointer rounded-none"
@@ -410,7 +446,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
           <button
             onClick={() => {
-              setActiveTab('ledger');
+              selectTab('ledger');
               handleVerifyLedger();
             }}
             className="px-3.5 py-2 bg-foreground text-background font-bold text-xs flex items-center gap-1.5 cursor-pointer rounded-none hover:opacity-90 transition-opacity"
@@ -424,7 +460,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
       {/* TABS ROW */}
       <div className="flex border-b border-border mb-8 font-mono text-xs overflow-x-auto" id="detail_tabs_row">
         <button
-          onClick={() => setActiveTab('reviews')}
+          onClick={() => selectTab('reviews')}
           className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'reviews'
               ? 'border-foreground text-foreground'
@@ -438,7 +474,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         </button>
 
         <button
-          onClick={() => setActiveTab('details')}
+          onClick={() => selectTab('details')}
           className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'details'
               ? 'border-foreground text-foreground'
@@ -453,7 +489,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
         <button
           onClick={() => {
-            setActiveTab('aiReport');
+            selectTab('aiReport');
             if (!aiReport) handleGenerateAIReport(false);
           }}
           className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer ${
@@ -469,7 +505,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         </button>
 
         <button
-          onClick={() => setActiveTab('ledger')}
+          onClick={() => selectTab('ledger')}
           className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer ${
             activeTab === 'ledger'
               ? 'border-foreground text-foreground'
@@ -816,6 +852,31 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 </p>
               </div>
 
+              {/* 官方网站 */}
+              {companyDetailsInfo?.website && (
+                <div className="border border-border p-5 bg-card rounded-none space-y-2">
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 border-b border-border pb-2">
+                    <Globe className="w-4 h-4 text-emerald-500" />
+                    <span>{lang === 'zh' ? '官方网站' : 'Official Website'}</span>
+                  </h4>
+                  {getExternalUrl(companyDetailsInfo.website) ? (
+                    <a
+                      href={getExternalUrl(companyDetailsInfo.website) || undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex max-w-full items-center gap-1.5 break-all text-sm font-medium text-foreground underline underline-offset-4 hover:text-emerald-500"
+                    >
+                      <span>{companyDetailsInfo.website}</span>
+                      <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                    </a>
+                  ) : (
+                    <p className="break-all text-sm text-muted-foreground">
+                      {companyDetailsInfo.website}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* 相关链接与媒体图片 */}
               <div className="border border-border p-5 bg-card rounded-none space-y-4">
                 <div className="flex items-center justify-between border-b border-border pb-2">
@@ -834,56 +895,89 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {companyLinksList.map((link) => (
-                      <div key={link.id} className="border border-border p-3 bg-muted/20 rounded-none flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          {link.type === 'logo' || link.type === 'image' ? (
-                            <div className="w-10 h-10 bg-muted border border-border shrink-0 flex items-center justify-center overflow-hidden">
-                              <img src={link.url} alt={link.title || 'company media'} className="w-full h-full object-cover" />
+                    {companyLinksList.map((link) => {
+                      const externalUrl = getExternalUrl(link.url);
+                      const isImage = link.type === 'logo' || link.type === 'image';
+                      return (
+                        <div key={link.id} className="border border-border p-3 bg-muted/20 rounded-none flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            {isImage && externalUrl ? (
+                              <div className="w-10 h-10 bg-muted border border-border shrink-0 flex items-center justify-center overflow-hidden">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={externalUrl} alt={link.title || 'company media'} className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 shrink-0 flex items-center justify-center">
+                                <Link2 className="w-4 h-4 text-emerald-500" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-foreground block truncate">{link.title || link.url}</span>
+                              <span className="text-[10px] text-muted-foreground font-mono uppercase">{link.type}</span>
                             </div>
-                          ) : (
-                            <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 shrink-0 flex items-center justify-center">
-                              <Link2 className="w-4 h-4 text-emerald-500" />
-                            </div>
-                          )}
-                          <div className="truncate">
-                            <span className="text-xs font-bold text-foreground block truncate">{link.title || link.url}</span>
-                            <span className="text-[10px] text-muted-foreground font-mono uppercase">{link.type}</span>
                           </div>
+                          {externalUrl ? (
+                            <a
+                              href={externalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2.5 py-1 border border-border hover:bg-foreground hover:text-background text-[10px] font-bold transition-colors shrink-0 flex items-center gap-1"
+                            >
+                              <span>{lang === 'zh' ? '打开' : 'Open'}</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">
+                              {lang === 'zh' ? '链接无效' : 'Invalid URL'}
+                            </span>
+                          )}
                         </div>
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-2.5 py-1 border border-border hover:bg-foreground hover:text-background text-[10px] font-bold transition-colors shrink-0 flex items-center gap-1"
-                        >
-                          <span>{lang === 'zh' ? '打开' : 'Open'}</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
-              <CompanyGovernancePanel
-                companyId={company.id}
-                lang={lang}
-                profile={{
-                  name: company.name,
-                  creditCode: company.credit_code,
-                  countryCode: company.country_code,
-                  countryName: company.country_name,
-                  province: company.province,
-                  city: company.city,
-                  legalRepresentative: companyDetailsInfo?.legal_representative,
-                  registeredCapital: companyDetailsInfo?.registered_capital,
-                  businessScope: companyDetailsInfo?.business_scope,
-                  registeredAddress: companyDetailsInfo?.registered_address,
-                  establishmentDate: companyDetailsInfo?.establishment_date,
-                  companyType: companyDetailsInfo?.company_type,
-                }}
-              />
+              {!showGovernancePanel ? (
+                <button
+                  type="button"
+                  onClick={() => setShowGovernancePanel(true)}
+                  className="w-full border border-border bg-card p-5 text-left transition-colors hover:bg-muted/30"
+                  aria-expanded="false"
+                >
+                  <span className="flex items-center gap-2 text-sm font-bold text-foreground">
+                    <Plus className="h-4 w-4 text-emerald-500" />
+                    {lang === 'zh'
+                      ? '社区维护企业档案'
+                      : 'Maintain this company profile'}
+                  </span>
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {lang === 'zh'
+                      ? '补充缺失信息，或提交对现有企业资料的修改建议。'
+                      : 'Add missing information or propose changes to existing company details.'}
+                  </span>
+                </button>
+              ) : (
+                <CompanyGovernancePanel
+                  companyId={company.id}
+                  lang={lang}
+                  profile={{
+                    name: company.name,
+                    creditCode: company.credit_code,
+                    countryCode: company.country_code,
+                    countryName: company.country_name,
+                    province: company.province,
+                    city: company.city,
+                    legalRepresentative: companyDetailsInfo?.legal_representative,
+                    registeredCapital: companyDetailsInfo?.registered_capital,
+                    businessScope: companyDetailsInfo?.business_scope,
+                    registeredAddress: companyDetailsInfo?.registered_address,
+                    establishmentDate: companyDetailsInfo?.establishment_date,
+                    companyType: companyDetailsInfo?.company_type,
+                    website: companyDetailsInfo?.website,
+                  }}
+                />
+              )}
             </div>
           )}
 

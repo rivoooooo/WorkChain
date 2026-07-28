@@ -214,10 +214,13 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
           {/* Left: App Name */}
           <Link
             href={`/${rawLang}`}
-            className="flex items-center group"
+            className="flex items-center gap-2 group"
           >
             <span className="font-black text-foreground text-xl sm:text-2xl tracking-tighter uppercase font-sans group-hover:opacity-80 transition-opacity">
               workchain
+            </span>
+            <span className="border border-amber-500/50 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-amber-600 dark:text-amber-400">
+              Beta
             </span>
           </Link>
 
