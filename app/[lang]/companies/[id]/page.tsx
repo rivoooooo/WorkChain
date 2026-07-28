@@ -3,7 +3,7 @@
 import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { i18n, Language } from '../../../../lib/i18n';
+import { i18n, Language, resolveLanguage } from '../../../../lib/i18n';
 import { CompanyGovernancePanel } from '../../../../components/company-governance-panel';
 import {
   getPublicCompanyById,
@@ -178,7 +178,7 @@ const setCachedAIReport = (
 
 export default function CompanyDetailPage({ params }: { params: Promise<{ id: string; lang: string }> }) {
   const { id: companyId, lang: rawLang } = use(params);
-  const lang: Language = (rawLang === 'zh-cn' || rawLang === 'zh') ? 'zh' : 'en';
+  const lang: Language = resolveLanguage(rawLang);
   const t = i18n[lang];
 
   // Component State

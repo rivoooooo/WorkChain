@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, Loader2, Plus, Vote } from 'lucide-react';
+import type { Language } from '@/lib/i18n';
 import {
   HumanVerification,
   humanVerificationEnabled,
@@ -40,7 +41,7 @@ export function CompanyGovernancePanel({
 }: {
   companyId: string;
   profile: Profile;
-  lang: 'zh' | 'en';
+  lang: Language;
 }) {
   const [field, setField] = useState<(typeof FIELDS)[number][0]>('legalRepresentative');
   const [value, setValue] = useState('');

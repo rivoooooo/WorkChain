@@ -4,7 +4,7 @@ import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
-import { i18n, Language } from '../../lib/i18n';
+import { i18n, Language, resolveLanguage } from '../../lib/i18n';
 import { ThemeToggle } from '../../components/theme-toggle';
 import { BeforeAfterCanvas } from '../../components/before-after-canvas';
 import { getPublicCompanies } from '../../lib/public-data';
@@ -15,16 +15,13 @@ import {
   Briefcase,
   MapPin,
   ShieldAlert,
-  ShieldCheck,
   TrendingUp,
-  Sparkles,
   DollarSign,
   AlertCircle,
   Clock,
   Building,
   Building2,
   Database,
-  Lock,
   Loader2,
   ChevronRight,
   PlusCircle,
@@ -44,7 +41,7 @@ interface PageProps {
 
 export default function Home({ params }: PageProps) {
   const { lang: rawLang } = use(params);
-  const lang: Language = (rawLang === 'zh-cn' || rawLang === 'zh') ? 'zh' : 'en';
+  const lang: Language = resolveLanguage(rawLang);
 
   const toggleLang = () => {
     const nextLangPath = lang === 'zh' ? '/en' : '/zh-cn';
@@ -226,15 +223,10 @@ export default function Home({ params }: PageProps) {
                   transition={{ duration: 0.5, delay: 0.2 }}
                 >
                   <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-foreground tracking-tight leading-[1.15]">
-                    {lang === 'zh' ? (
-                      <>
-                        去中心化匿名点评，<br className="hidden sm:inline" />让真相 <span className="font-serif-italic text-emerald-500 font-normal underline decoration-emerald-500/30 underline-offset-8">永不褪色</span>
-                      </>
-                    ) : (
-                      <>
-                        Say it once, watch truth stay <span className="font-serif-italic text-emerald-500 font-normal underline decoration-emerald-500/30 underline-offset-8">forever</span>
-                      </>
-                    )}
+                    {t.heroTitle}{' '}
+                    <span className="font-serif-italic text-emerald-500 font-normal underline decoration-emerald-500/30 underline-offset-8">
+                      {t.heroAccent}
+                    </span>
                   </h1>
                 </motion.div>
 
@@ -333,39 +325,24 @@ export default function Home({ params }: PageProps) {
             {/* Core Trust & Security Pillars */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 border-t border-border" id="trust_badges">
               <div className="bg-card border border-border p-6 rounded-none transition-colors hover:bg-muted/30">
-                <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-none flex items-center justify-center mb-4">
-                  <ShieldCheck className="w-5 h-5 text-emerald-500" />
-                </div>
                 <h3 className="text-base font-extrabold text-foreground mb-1.5">
-                  {lang === 'zh' ? '100% 密码学匿名' : '100% Anonymous'}
+                  {t.featureAnonymousTitle}
                 </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {lang === 'zh' ? '无追踪代码，无需注册登录账号，不记录 IP 地址与设备指纹。' : 'No account needed, zero trackers, IP logging disabled.'}
-                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{t.featureAnonymousDesc}</p>
               </div>
 
               <div className="bg-card border border-border p-6 rounded-none transition-colors hover:bg-muted/30">
-                <div className="w-10 h-10 bg-indigo-500/10 border border-indigo-500/20 rounded-none flex items-center justify-center mb-4">
-                  <Lock className="w-5 h-5 text-indigo-500" />
-                </div>
                 <h3 className="text-base font-extrabold text-foreground mb-1.5">
-                  {lang === 'zh' ? '区块链 Hash 存证' : 'Ledger Verified'}
+                  {t.featureCommunityTitle}
                 </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {lang === 'zh' ? '基于 SHA-256 算法生成区块哈希与链式前导指针，防篡改防撤回。' : 'Linked via SHA-256 block hashes ensuring immutable audit trail.'}
-                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{t.featureCommunityDesc}</p>
               </div>
 
               <div className="bg-card border border-border p-6 rounded-none transition-colors hover:bg-muted/30">
-                <div className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-none flex items-center justify-center mb-4">
-                  <Sparkles className="w-5 h-5 text-amber-500" />
-                </div>
                 <h3 className="text-base font-extrabold text-foreground mb-1.5">
-                  {lang === 'zh' ? 'Gemini 智能文化透视' : 'AI Culture Auditor'}
+                  {t.featureAiTitle}
                 </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {lang === 'zh' ? '自动分析生成宏观口碑画像、WLB打分、薪资合理度与求职锦囊。' : 'Aggregates employee sentiment, WLB scores and salary fairness.'}
-                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{t.featureAiDesc}</p>
               </div>
             </div>
 

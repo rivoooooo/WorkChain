@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, use } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { i18n, Language } from '../../../lib/i18n';
+import { i18n, Language, resolveLanguage } from '../../../lib/i18n';
 import {
   Download,
   FileText,
@@ -34,7 +34,7 @@ interface PageProps {
 
 export default function DownloadPage({ params }: PageProps) {
   const { lang: rawLang } = use(params);
-  const lang: Language = (rawLang === 'zh-cn' || rawLang === 'zh') ? 'zh' : 'en';
+  const lang: Language = resolveLanguage(rawLang);
 
   const [backups, setBackups] = useState<BackupMetadata[]>([]);
   const [isLoading, setIsLoading] = useState(true);

@@ -3,8 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { Languages, Plus, Loader2, AlertCircle, ShieldCheck, X, Search, Building2, Star, ArrowRight } from 'lucide-react';
-import { Language, i18n } from '../lib/i18n';
+import { Languages, Plus, Loader2, AlertCircle, ShieldCheck, X, Search, Building2, Star, ArrowRight, Github } from 'lucide-react';
+import {
+  Language,
+  i18n,
+  isRtlLanguage,
+  localeOptions,
+  resolveLanguage,
+} from '../lib/i18n';
 import { ThemeToggle } from './theme-toggle';
 import { CompanySelect, CompanyItem as SelectedCompanyItem } from './company-select';
 import {
@@ -26,7 +32,7 @@ interface LayoutFrameProps {
 }
 
 export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
-  const lang: Language = (rawLang === 'zh-cn' || rawLang === 'zh') ? 'zh' : 'en';
+  const lang: Language = resolveLanguage(rawLang);
   const t = i18n[lang];
 
   const [showLangDropdown, setShowLangDropdown] = useState(false);
@@ -45,6 +51,14 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
   const [formSuccess, setFormSuccess] = useState(false);
   const [humanVerificationToken, setHumanVerificationToken] = useState<string | null>(null);
   const [humanVerificationResetKey, setHumanVerificationResetKey] = useState(0);
+
+  useEffect(() => {
+    document.documentElement.lang = rawLang;
+    document.documentElement.dir = isRtlLanguage(lang) ? 'rtl' : 'ltr';
+    return () => {
+      document.documentElement.dir = 'ltr';
+    };
+  }, [lang, rawLang]);
 
   // Listen for custom event 'open-search-modal' from any page/hero search button
   useEffect(() => {
@@ -182,7 +196,12 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors duration-200 relative overflow-hidden font-sans selection:bg-emerald-500/20" id="main_root">
+    <div
+      className="min-h-screen bg-background text-foreground transition-colors duration-200 relative overflow-hidden font-sans selection:bg-emerald-500/20"
+      id="main_root"
+      lang={rawLang}
+      dir={isRtlLanguage(lang) ? 'rtl' : 'ltr'}
+    >
       {/* Ambient Atmospheric Mesh Glows */}
       <div className="absolute top-1/3 left-[-10%] w-[500px] h-[500px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-5%] right-[-5%] w-[600px] h-[600px] bg-amber-500/5 blur-[140px] rounded-full pointer-events-none" />
@@ -218,6 +237,17 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
             {/* Theme Toggle */}
             <ThemeToggle className="w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none" />
 
+            <a
+              href="https://github.com/rivoooooo/WorkChain"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none"
+              title="GitHub · rivoooooo/WorkChain"
+              aria-label="Open WorkChain on GitHub"
+            >
+              <Github className="w-4 h-4 text-foreground" />
+            </a>
+
             {/* Language Switcher Dropdown */}
             <div className="relative">
               <button
@@ -231,34 +261,33 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
               </button>
 
               {showLangDropdown && (
-                <div 
-                  className="absolute right-0 top-full mt-2 w-36 bg-popover text-popover-foreground border border-border rounded-none shadow-lg z-50 py-1"
+                <div
+                  className="absolute end-0 top-full mt-2 w-44 max-h-80 overflow-y-auto bg-popover text-popover-foreground border border-border rounded-none shadow-lg z-50 py-1"
                   onMouseLeave={() => setShowLangDropdown(false)}
                 >
-                  <button
-                    onClick={() => {
-                      setShowLangDropdown(false);
-                      if (lang !== 'en') window.location.href = '/en';
-                    }}
-                    className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
-                      lang === 'en' ? 'bg-muted text-foreground font-bold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
-                  >
-                    <span>English</span>
-                    {lang === 'en' && <span className="w-1.5 h-1.5 bg-foreground rounded-full" />}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowLangDropdown(false);
-                      if (lang !== 'zh') window.location.href = '/zh-cn';
-                    }}
-                    className={`w-full text-left px-4 py-2 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
-                      lang === 'zh' ? 'bg-muted text-foreground font-bold' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }`}
-                  >
-                    <span>简体中文</span>
-                    {lang === 'zh' && <span className="w-1.5 h-1.5 bg-foreground rounded-full" />}
-                  </button>
+                  {localeOptions.map((locale) => (
+                    <button
+                      key={locale.code}
+                      onClick={() => {
+                        setShowLangDropdown(false);
+                        if (lang === locale.code) return;
+                        const segments = window.location.pathname.split('/');
+                        segments[1] = locale.path;
+                        window.location.href = segments.join('/') || `/${locale.path}`;
+                      }}
+                      dir={locale.dir}
+                      className={`w-full text-start px-4 py-2 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
+                        lang === locale.code
+                          ? 'bg-muted text-foreground font-bold'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      <span>{locale.label}</span>
+                      {lang === locale.code && (
+                        <span className="w-1.5 h-1.5 bg-foreground rounded-full" />
+                      )}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -289,7 +318,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
               className="group py-4 px-4 sm:px-6 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors"
             >
               <span className="text-xl sm:text-2xl font-bold tracking-tight">
-                {lang === 'zh' ? '全行业公司口碑龙虎榜' : 'Corporate Ratings & Rankings'}
+                {t.footerCompanies}
               </span>
               <span className="text-muted-foreground group-hover:text-foreground text-lg sm:text-xl font-mono transition-colors">
                 +
@@ -302,7 +331,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
               className="group py-4 px-4 sm:px-6 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors"
             >
               <span className="text-xl sm:text-2xl font-bold tracking-tight">
-                {lang === 'zh' ? '密码学数据链式归档下载' : 'Ledger Data Archives'}
+                {t.footerDownload}
               </span>
               <span className="text-muted-foreground group-hover:text-foreground text-lg sm:text-xl font-mono transition-colors">
                 +
@@ -315,7 +344,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
               className="w-full group py-4 px-4 sm:px-6 flex items-center justify-between text-foreground hover:bg-muted/30 transition-colors text-left cursor-pointer"
             >
               <span className="text-xl sm:text-2xl font-bold tracking-tight">
-                {lang === 'zh' ? '添加企业匿名评价 & 薪资数据' : 'Submit Anonymous Review & Salary'}
+                {t.footerContribute}
               </span>
               <span className="text-muted-foreground group-hover:text-foreground text-lg sm:text-xl font-mono transition-colors">
                 +
@@ -325,16 +354,14 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
 
           {/* Footer Copyright & Privacy Meta */}
           <div className="py-6 px-4 sm:px-6 text-xs text-muted-foreground space-y-2 text-center sm:text-left bg-muted/20">
-            <p>
-              {lang === 'zh'
-                ? '© 2026 WorkChain · 基于密码学 SHA-256 区块链链式防篡改存证的公司匿名评价与薪资分析系统'
-                : '© 2026 WorkChain · Cryptographic SHA-256 Chain Ledger Secure Corporate Review System'}
-            </p>
-            <p>
-              {lang === 'zh'
-                ? '不存储任何账号、姓名、手机、IP、设备标识等可能推断真实身份的任何用户隐私。数据实时存证并同步。'
-                : 'Does not store any user accounts, names, phone numbers, IPs, device fingerprints, or tracking telemetry. Data is cryptographically hashed and validated in real-time.'}
-            </p>
+            <p>{t.footerCopyright}</p>
+            <p>{t.footerPrivacySummary}</p>
+            <Link
+              href={`/${rawLang}/privacy`}
+              className="inline-block underline underline-offset-4 hover:text-foreground transition-colors"
+            >
+              {t.privacyLink}
+            </Link>
           </div>
         </footer>
 
@@ -430,7 +457,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
 
                           <div>
                             <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
-                              {lang === 'zh' ? '国家 / 地区' : 'Country / Region'}
+                              {t.formLabelCountry}
                               <span className="text-rose-500"> *</span>
                             </label>
                             <input
@@ -449,7 +476,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                           </div>
                           <div>
                             <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
-                              {lang === 'zh' ? '城市 / 分区' : 'City / Branch'}
+                              {t.formLabelLocation}
                               <span className="text-rose-500"> *</span>
                             </label>
                             <input
@@ -499,7 +526,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5 whitespace-nowrap">
-                              {lang === 'zh' ? '每天工作时长（小时）' : 'Daily work hours'}
+                              {t.formLabelDailyHours}
                             </label>
                             <input
                               type="number"
@@ -514,7 +541,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                           </div>
                           <div>
                             <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5 whitespace-nowrap">
-                              {lang === 'zh' ? '每周工作天数' : 'Weekly work days'}
+                              {t.formLabelWeeklyDays}
                             </label>
                             <input
                               type="number"

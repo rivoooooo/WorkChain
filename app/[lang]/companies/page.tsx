@@ -4,7 +4,7 @@ import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'motion/react';
-import { i18n, Language } from '../../../lib/i18n';
+import { i18n, Language, resolveLanguage } from '../../../lib/i18n';
 import { getPublicCompanies } from '../../../lib/public-data';
 import {
   Building,
@@ -46,7 +46,7 @@ interface PageProps {
 
 export default function CompaniesPage({ params }: PageProps) {
   const { lang: rawLang } = use(params);
-  const lang: Language = (rawLang === 'zh-cn' || rawLang === 'zh') ? 'zh' : 'en';
+  const lang: Language = resolveLanguage(rawLang);
 
   const [companiesList, setCompaniesList] = useState<CompanyStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
