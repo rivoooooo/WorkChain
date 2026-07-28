@@ -37,10 +37,11 @@ bun run db:push
 ```
 正式环境使用带项目目标和显式确认保护的 `bun run db:push:prod`，详见 [SCRIPTS.md](SCRIPTS.md)。
 
-### 2. 初始化填充城市与国家数据库
-脚本会自动从仓库内部数据源 `data/cities500.txt` 提取并导入 23.5 万全球/中国城市与 246 个国家：
+### 2. 生成城市与国家初始化 SQL
+脚本从 `data/cities500.txt` 清洗并生成只包含 INSERT 的数据 SQL，不直接连接数据库：
 ```bash
-bun run import:geo
+bun run data:export:geo --output data/cities500.sql --force
+bun run data:check-sql data/cities500.sql
 ```
 
 ### 3. 载入企业注册 CSV 数据 (Kinginsun 仓库格式)
@@ -97,7 +98,7 @@ bun run import:kinginsun /path/to/enterprise.csv
 | :--- | :--- |
 | `bun run db:push` | 从 Drizzle schema 同步开发数据库结构 |
 | `bun run db:push:prod` | 带环境、确认文本和 Supabase 项目标识保护的生产结构推送 |
-| `bun run scripts/import-geonames.ts` | 从仓库数据源 `data/cities500.txt` 批量写入 23.5 万城市与 246 个国家 |
+| `bun run data:export:geo --output <file>` | 从 `cities500.txt` 生成城市与国家 INSERT-only SQL |
 | `bun run scripts/import-kinginsun.ts --dir <path>` | 转换 CSV 并只插入尚不存在的统一社会信用代码 |
 | `bun run data:check-sql <file>` | 拒绝含 DDL、更新或删除语句的数据 SQL |
 

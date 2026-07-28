@@ -8,7 +8,7 @@ describe('INSERT-only SQL validation', () => {
         -- work-chain data export
         BEGIN;
         INSERT INTO companies (id, name)
-        VALUES ('one', 'contains DELETE and UPDATE as text')
+        VALUES ('one', 'contains DELETE; UPDATE -- and /* markers */ as text')
         ON CONFLICT DO NOTHING;
         COMMIT;
       `)

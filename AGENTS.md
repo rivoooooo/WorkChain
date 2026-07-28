@@ -10,7 +10,7 @@
   - 代码校验：`bun run lint`
   - 推送/同步数据库结构：`bun run db:push`（正式环境使用 `bun run db:push:prod`）
   - 导出 ORM 迁移脚本：`bun run db:generate`
-  - 填充城市国家地理数据：`bun run import:geo`
+  - 生成城市国家数据 SQL：`bun run data:export:geo --output <SQL文件路径>`
   - 转换导入企业注册 CSV：`bun run import:kinginsun <CSV文件路径>` 或 `bun run import:kinginsun --dir <文件夹路径>`
   - 启动 Drizzle Studio 可视化面板：`bun run db:studio`
 

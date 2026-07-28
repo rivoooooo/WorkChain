@@ -8,7 +8,8 @@ coverage/
 .env*
 !.env.example
 
-# Local runtime fallback data & backups
+# Local runtime fallback data and legacy local backups.
+# Canonical generated INSERT-only SQL files may be tracked explicitly.
 data/*.json
 data/backups/
 !data/cities500.txt

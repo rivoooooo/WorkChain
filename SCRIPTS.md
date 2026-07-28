@@ -33,12 +33,19 @@ bun run db:push:prod
 导入器只追加新数据，唯一键冲突时跳过，不更新或删除已有数据：
 
 ```bash
-bun run import:geo
+bun run data:export:geo \
+  --input data/cities500.txt \
+  --output data/cities500.sql \
+  --force
+
+bun run data:check-sql data/cities500.sql
 bun run import:kinginsun /path/to/file.csv
 bun run import:kinginsun --dir /path/to/directory
 ```
 
 后续数据源应在 `lib/converters/` 新增适配器，先转换为 `StandardCompanyDTO`，再进入统一清洗和导出流程。
+
+GeoNames 导出器不会连接数据库，只生成 `BEGIN`、批量 `INSERT ... ON CONFLICT DO NOTHING` 和 `COMMIT`。输出包含源文件 SHA-256；相同输入与批大小会生成完全相同的 SQL。目标文件已存在时默认拒绝覆盖，需要明确使用 `--force`。
 
 生产数据 SQL 只能包含 `INSERT`（可含 `BEGIN`/`COMMIT` 和 `ON CONFLICT DO NOTHING`）：
 
