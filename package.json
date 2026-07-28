@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "test": "bun test",
+    "security:scan": "bun run scripts/scan-secrets.ts",
     "start": "next start",
     "lint": "eslint .",
     "clean": "next clean",
