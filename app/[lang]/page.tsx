@@ -199,7 +199,7 @@ export default function Home({ params }: PageProps) {
     <div className="w-full">
       {!hasSearched ? (
         <div className="space-y-12 sm:space-y-16">
-            
+
             {/* HERO INTERACTIVE CANVAS BEFORE/AFTER REVEAL BANNER */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -209,15 +209,15 @@ export default function Home({ params }: PageProps) {
               id="hero_banner_container"
             >
               <BeforeAfterCanvas
-                beforeSrc="/before.png"
-                afterSrc="/after.png"
+                beforeSrc="/before.webp"
+                afterSrc="/after.webp"
                 className="w-full aspect-[16/9]"
               />
             </motion.div>
 
             {/* TYPOGRAPHY AS ART + HERO SPLIT SEARCH LAYOUT */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-end pt-4" id="hero_split_layout">
-              
+
               {/* Left Column: Bold Neo-Grotesque Headline with Italic Serif Accent */}
               <div className="lg:col-span-7 space-y-6">
                 <motion.div
@@ -360,7 +360,7 @@ export default function Home({ params }: PageProps) {
 
             <div className="bg-card border border-border rounded-none p-8 text-center relative text-card-foreground">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-2xl" />
-              
+
               <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-none flex items-center justify-center mx-auto mb-6">
                 <Building2 className="w-8 h-8 text-emerald-500" />
               </div>
@@ -369,7 +369,7 @@ export default function Home({ params }: PageProps) {
                 {lang === 'zh' ? `尚未收录 “${searchedName}”` : `“${searchedName}” is not yet listed`}
               </h2>
               <p className="text-sm text-muted-foreground leading-relaxed mb-8 max-w-sm mx-auto">
-                {lang === 'zh' 
+                {lang === 'zh'
                   ? '目前去中心化区块链存证账本中还没有该公司的评价记录。您可以作为第一位提交人，创建该公司并同步链上第一条匿名评价！'
                   : 'No evaluations have been submitted for this company yet. Be the pioneer and launch this company listing on the blockchain!'}
               </p>

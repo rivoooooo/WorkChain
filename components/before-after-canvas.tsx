@@ -9,8 +9,8 @@ interface BeforeAfterCanvasProps {
 }
 
 export function BeforeAfterCanvas({
-  beforeSrc = '/before.png',
-  afterSrc = '/after.png',
+  beforeSrc = '/before.webp',
+  afterSrc = '/after.webp',
   className = ''
 }: BeforeAfterCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);

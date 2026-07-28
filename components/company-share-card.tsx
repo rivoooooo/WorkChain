@@ -117,7 +117,7 @@ export function CompanyShareCard({
     if (!context) return;
 
     const heroImage = new Image();
-    heroImage.src = '/after.png';
+    heroImage.src = '/after.webp';
     await heroImage.decode();
     const heroScale = Math.max(
       canvas.width / heroImage.naturalWidth,
@@ -244,7 +244,7 @@ export function CompanyShareCard({
           >
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: "url('/after.png')" }}
+            style={{ backgroundImage: "url('/after.webp')" }}
             aria-hidden="true"
           />
           <div
