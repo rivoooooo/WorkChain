@@ -26,17 +26,50 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { companyId, companyName: passedCompanyName } = body;
+    const relatedCompanyIds = Array.isArray(body.relatedCompanyIds)
+      ? Array.from(
+          new Set(
+            body.relatedCompanyIds.filter(
+              (value: unknown): value is string =>
+                typeof value === 'string' && /^comp-[0-9a-z-]{8,64}$/i.test(value)
+            )
+          )
+        ).slice(0, 10)
+      : [];
 
     let companyName = passedCompanyName;
-    let reviews = [];
+    let reviews: Awaited<ReturnType<typeof getCompanyReviews>> = [];
+    const includedCompanies: { id: string; name: string; location: string }[] = [];
 
     if (companyId) {
       const { getCompanyById, getCompanyReviewsById } = require('../../../lib/db');
       const company = await getCompanyById(companyId);
       if (company) {
         companyName = company.name;
+        includedCompanies.push({
+          id: company.id,
+          name: company.name,
+          location: [company.province, company.city].filter(Boolean).join(' / '),
+        });
       }
       reviews = await getCompanyReviewsById(companyId);
+      const related = await Promise.all(
+        relatedCompanyIds
+          .filter((id) => id !== companyId)
+          .map(async (id) => {
+            const relatedCompany = await getCompanyById(id);
+            if (!relatedCompany) return [];
+            includedCompanies.push({
+              id: relatedCompany.id,
+              name: relatedCompany.name,
+              location: [relatedCompany.province, relatedCompany.city]
+                .filter(Boolean)
+                .join(' / '),
+            });
+            return getCompanyReviewsById(id);
+          })
+      );
+      reviews = reviews.concat(...related);
     } else if (companyName) {
       reviews = await getCompanyReviews(companyName);
     }
@@ -62,6 +95,20 @@ export async function POST(req: NextRequest) {
     const avgComp = reviews.reduce((acc: number, r: any) => acc + r.rating_compensation, 0) / reviews.length;
     const avgCulture = reviews.reduce((acc: number, r: any) => acc + r.rating_culture, 0) / reviews.length;
     const avgSalary = reviews.reduce((acc: number, r: any) => acc + r.salary, 0) / reviews.length;
+    const workScheduleRows = reviews.filter(
+      (review) =>
+        review.daily_work_hours !== null && review.weekly_work_days !== null
+    );
+    const avgDailyWorkHours =
+      workScheduleRows.reduce(
+        (sum, review) => sum + Number(review.daily_work_hours),
+        0
+      ) / Math.max(workScheduleRows.length, 1);
+    const avgWeeklyWorkDays =
+      workScheduleRows.reduce(
+        (sum, review) => sum + Number(review.weekly_work_days),
+        0
+      ) / Math.max(workScheduleRows.length, 1);
 
     // Build default fallback data in case AI is not configured or fails
     const fallbackReport = {
@@ -89,7 +136,12 @@ export async function POST(req: NextRequest) {
         '数据/结果导向'
       ],
       careerAdvice: `建议求职者在面试时充分沟通该组别的具体加班情况。若看重职业成长速度与薪资包，且对高强度工作节奏适应力强，该公司是极佳选择；若更重视生活平衡，需慎重选择高压业务线。`,
-      salaryAnalysis: `平均月薪约为 ${(avgSalary / 1000).toFixed(1)}K，其中年终奖平均在 ${(reviews.reduce((acc: number, r: any) => acc + r.bonus, 0) / reviews.length / 10000).toFixed(1)} 万左右。薪资分布符合行业大厂常态，高级岗位溢价明显，且普遍具有长期激励（股票）。`
+      salaryAnalysis: `平均月薪约为 ${(avgSalary / 1000).toFixed(1)}K，其中年终奖平均在 ${(reviews.reduce((acc: number, r: any) => acc + r.bonus, 0) / reviews.length / 10000).toFixed(1)} 万左右。薪资分布符合行业大厂常态，高级岗位溢价明显，且普遍具有长期激励（股票）。`,
+      workScheduleAnalysis:
+        workScheduleRows.length > 0
+          ? `基于 ${workScheduleRows.length} 条工时样本，平均每天工作 ${avgDailyWorkHours.toFixed(1)} 小时、每周工作 ${avgWeeklyWorkDays.toFixed(1)} 天。`
+          : '暂时没有足够的工作时长样本。',
+      analysisScope: includedCompanies,
     };
 
     const ai = getGeminiClient();
@@ -103,11 +155,13 @@ export async function POST(req: NextRequest) {
       const reviewsContext = reviews.map((r: any, i: number) => {
         return `评价 ${i + 1} (${r.position} - ${r.branch_location}):
 - 月薪: ${r.salary}元, 年终奖: ${r.bonus}元
+- 工作安排: 每天 ${r.daily_work_hours ?? '未提供'} 小时, 每周 ${r.weekly_work_days ?? '未提供'} 天
 - 评分: 职业发展 ${r.rating_career}/5, WLB ${r.rating_balance}/5, 管理层 ${r.rating_management}/5, 薪酬福利 ${r.rating_compensation}/5, 团队文化 ${r.rating_culture}/5
 - 内容: "${r.review_text}"`;
       }).join('\n\n');
 
-      const prompt = `你是一个资深的职场咨询与企业文化分析专家。请根据以下关于 ${companyName} 的真实匿名员工评价（共 ${reviews.length} 条），进行深度的语义分析和综合评估。
+      const prompt = `你是一个资深的职场咨询与企业文化分析专家。请根据以下关于 ${companyName} 及用户主动选择的相关分区/相似名称企业的真实匿名员工评价（共 ${reviews.length} 条），进行深度的语义分析和综合评估。
+本次分析范围：${includedCompanies.map((item) => `${item.name}（${item.location || '地区未提供'}）`).join('、')}
 请注意：评价数据完全匿名，绝对不能在报告中泄露个人隐私。
 
 员工评价数据：
@@ -120,7 +174,8 @@ ${reviewsContext}
 4. 归纳关键优点（Pros）与槽点（Cons）（各 2-3 条）。
 5. 提取 3 个代表公司文化特点的词汇/标签。
 6. 为求职者提供实用的职业发展建议。
-7. 提供详细的薪资水平与性价比分析报告。`;
+7. 提供详细的薪资水平与性价比分析报告。
+8. 根据每天工作时长与每周工作天数分析工作强度。`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-3.6-flash',
@@ -154,7 +209,8 @@ ${reviewsContext}
                 description: '3个高频文化特征关键词/标签'
               },
               careerAdvice: { type: Type.STRING, description: '给要求职该公司的候选人的建议' },
-              salaryAnalysis: { type: Type.STRING, description: '基于披露数据的薪资水平和性价比分析' }
+              salaryAnalysis: { type: Type.STRING, description: '基于披露数据的薪资水平和性价比分析' },
+              workScheduleAnalysis: { type: Type.STRING, description: '基于每天工作时长和每周工作天数的工作强度分析' }
             },
             required: [
               'sentimentScore',
@@ -169,7 +225,8 @@ ${reviewsContext}
               'cons',
               'cultureCharacteristics',
               'careerAdvice',
-              'salaryAnalysis'
+              'salaryAnalysis',
+              'workScheduleAnalysis'
             ]
           }
         }
@@ -178,7 +235,11 @@ ${reviewsContext}
       const responseText = response.text;
       if (responseText) {
         const reportData = JSON.parse(responseText.trim());
-        return NextResponse.json({ success: true, isMock: false, data: reportData });
+        return NextResponse.json({
+          success: true,
+          isMock: false,
+          data: { ...reportData, analysisScope: includedCompanies },
+        });
       } else {
         throw new Error('Empty text response from Gemini API');
       }

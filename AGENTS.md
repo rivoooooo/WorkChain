@@ -9,6 +9,7 @@
   - 构建项目：`bun run build`
   - 代码校验：`bun run lint`
   - 推送/同步数据库结构：`bun run db:push`（正式环境使用 `bun run db:push:prod`）
+  - 授予前端匿名只读权限：`bun run db:grant-public-read`
   - 导出 ORM 迁移脚本：`bun run db:generate`
   - 生成城市国家数据 SQL：`bun run data:export:geo --output <SQL文件路径>`
   - 转换企业注册 CSV 为 SQL：`bun run data:export:companies <CSV路径> --output <SQL路径>` 或使用 `--dir`
@@ -18,9 +19,9 @@
 
 - **数据库服务**：基于 Supabase / PostgreSQL。
 - **ORM 框架与表结构**：使用 **Drizzle ORM** 管理表结构（`drizzle/schema.ts`）。
-  - `companies` 主表以 **统一社会信用代码 (`credit_code`)** 作为唯一索引与匹配 Key。
-  - 扩展详细工商属性置于 `company_details`，相关媒体链接置于 `company_links`，地理信息置于 `geo_cities` / `geo_countries`。
-- **通用转换层架构**：数据导入必须遵循 `lib/converters/` 架构，使用转换适配器统一转为 `StandardCompanyDTO` 后再进行以 `credit_code` 为 Key 的 Upsert 增量更新。
+  - `companies` 主表以规范化的 **企业名称 + 国家/省份/城市** 作为唯一身份；同名企业在不同地区可独立存在。
+  - 扩展详细工商属性置于 `company_details`，相关媒体链接置于 `company_links`；用户填写的位置字符串索引置于 `location_countries` / `location_cities`。
+- **通用转换层架构**：数据导入必须遵循 `lib/converters/` 架构，使用转换适配器统一转为 `StandardCompanyDTO` 后按企业名称与地区生成确定性身份。
 - **结构唯一来源**：表、约束、视图与 RLS 只在 `drizzle/schema.ts` 维护；迁移文件只能由 Drizzle Kit 生成。
 - **数据不可变**：导入与业务写入只允许追加；冲突跳过，禁止更新和删除。
 - **环境隔离**：测试企业与测试评价只允许进入测试数据库，生产只执行 Drizzle 结构推送和通过校验的 INSERT-only 数据 SQL。

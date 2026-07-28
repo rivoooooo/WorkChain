@@ -1,7 +1,8 @@
 import crypto from 'crypto';
 import { sqlClient } from '@/drizzle/db';
+import type { CompanyProfileData } from '@/drizzle/schema';
 import { createCompany } from './company-governance';
-import { canonicalJson } from './company-profile';
+import { canonicalJson, normalizeCompanyProfile } from './company-profile';
 
 export interface Review {
   id: string;
@@ -13,6 +14,8 @@ export interface Review {
   salary: number;
   bonus: number;
   experience_years: number;
+  daily_work_hours: number | null;
+  weekly_work_days: number | null;
   rating_career: number;
   rating_balance: number;
   rating_management: number;
@@ -61,6 +64,14 @@ function mapReview(row: Record<string, unknown>): Review {
     salary: toNumber(row.salary),
     bonus: toNumber(row.bonus),
     experience_years: toNumber(row.experience_years),
+    daily_work_hours:
+      row.daily_work_hours === null || row.daily_work_hours === undefined
+        ? null
+        : toNumber(row.daily_work_hours),
+    weekly_work_days:
+      row.weekly_work_days === null || row.weekly_work_days === undefined
+        ? null
+        : toNumber(row.weekly_work_days),
     rating_career: toNumber(row.rating_career),
     rating_balance: toNumber(row.rating_balance),
     rating_management: toNumber(row.rating_management),
@@ -96,14 +107,6 @@ function mapCompany(row: Record<string, unknown>): Company {
   };
 }
 
-export function getCompanyIdFromName(name: string): string {
-  return `comp-${crypto
-    .createHash('sha256')
-    .update(name.normalize('NFKC').trim().toLocaleLowerCase())
-    .digest('hex')
-    .slice(0, 24)}`;
-}
-
 function reviewHashPayload(review: Omit<Review, 'hash'>) {
   return {
     companyId: review.company_id,
@@ -114,6 +117,12 @@ function reviewHashPayload(review: Omit<Review, 'hash'>) {
     salary: review.salary,
     bonus: review.bonus,
     experienceYears: review.experience_years,
+    ...(review.hash_version && review.hash_version >= 3
+      ? {
+          dailyWorkHours: review.daily_work_hours,
+          weeklyWorkDays: review.weekly_work_days,
+        }
+      : {}),
     ratingCareer: review.rating_career,
     ratingBalance: review.rating_balance,
     ratingManagement: review.rating_management,
@@ -256,24 +265,37 @@ function isUniqueViolation(error: unknown): boolean {
 
 async function resolveCompanyId(
   companyName: string,
-  profile: { countryCode?: string; city?: string } = {}
+  profile: {
+    countryCode?: string;
+    countryName?: string;
+    province?: string;
+    city?: string;
+  } = {}
 ): Promise<string> {
+  const identity = normalizeCompanyProfile(
+    {
+      name: companyName,
+      countryCode: profile.countryCode,
+      countryName: profile.countryName,
+      province: profile.province,
+      city: profile.city,
+    },
+    { requireName: true }
+  ) as CompanyProfileData;
   const rows = await sqlClient<{ id: string }[]>`
     select c.id
     from companies c
-    left join current_company_profiles p on p.company_id = c.id
-    where lower(coalesce(p.profile_data ->> 'name', c.name)) = lower(${companyName})
-    order by c.created_at
+    where
+      lower(c.name) = lower(${identity.name})
+      and lower(coalesce(c.country_name, c.country_code, '')) =
+        lower(${identity.countryName || identity.countryCode || ''})
+      and lower(coalesce(c.province, '')) = lower(${identity.province || ''})
+      and lower(coalesce(c.city, '')) = lower(${identity.city || ''})
+    order by c.created_at, c.id
     limit 1
   `;
   if (rows[0]) return rows[0].id;
-  return (
-    await createCompany({
-      name: companyName,
-      countryCode: profile.countryCode,
-      city: profile.city,
-    })
-  ).companyId;
+  return (await createCompany({ ...identity })).companyId;
 }
 
 export async function addReview(
@@ -281,7 +303,12 @@ export async function addReview(
     Review,
     'id' | 'company_id' | 'created_at' | 'previous_hash' | 'hash' | 'hash_version'
   >,
-  companyProfile: { countryCode?: string; city?: string } = {}
+  companyProfile: {
+    countryCode?: string;
+    countryName?: string;
+    province?: string;
+    city?: string;
+  } = {}
 ): Promise<Review> {
   const companyName = reviewData.company_name.normalize('NFKC').trim();
   const companyId = await resolveCompanyId(companyName, companyProfile);
@@ -305,7 +332,7 @@ export async function addReview(
           id: `review-${crypto.randomUUID().replace(/-/g, '')}`,
           created_at: new Date().toISOString(),
           previous_hash: previousRows[0]?.hash || null,
-          hash_version: 2,
+          hash_version: 3,
         };
         const review: Review = {
           ...reviewWithoutHash,
@@ -323,6 +350,8 @@ export async function addReview(
             salary,
             bonus,
             experience_years,
+            daily_work_hours,
+            weekly_work_days,
             rating_career,
             rating_balance,
             rating_management,
@@ -344,6 +373,8 @@ export async function addReview(
             ${review.salary},
             ${review.bonus},
             ${review.experience_years},
+            ${review.daily_work_hours},
+            ${review.weekly_work_days},
             ${review.rating_career},
             ${review.rating_balance},
             ${review.rating_management},

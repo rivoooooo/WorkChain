@@ -31,5 +31,14 @@ const child = spawnSync('bunx', ['drizzle-kit', 'push'], {
   stdio: 'inherit',
 });
 
-process.exit(child.status ?? 1);
+if (child.status !== 0) {
+  process.exit(child.status ?? 1);
+}
+
+const grants = spawnSync('bun', ['run', 'db:grant-public-read'], {
+  env: process.env,
+  stdio: 'inherit',
+});
+
+process.exit(grants.status ?? 1);
 import { spawnSync } from 'node:child_process';

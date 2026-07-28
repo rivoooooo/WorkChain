@@ -6,12 +6,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Languages, Plus, Loader2, AlertCircle, ShieldCheck, X, Search, Building2, Star, ArrowRight } from 'lucide-react';
 import { Language, i18n } from '../lib/i18n';
 import { ThemeToggle } from './theme-toggle';
-import { CitySelect } from './city-select';
 import { CompanySelect, CompanyItem as SelectedCompanyItem } from './company-select';
 import {
   HumanVerification,
   humanVerificationEnabled,
 } from './human-verification';
+import { getPublicCompanies } from '@/lib/public-data';
 
 interface CompanyItem {
   id: string;
@@ -57,13 +57,8 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
   useEffect(() => {
     if (showSearchModal && companyList.length === 0) {
       setIsFetchingCompanies(true);
-      fetch('/api/companies')
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            setCompanyList(data.data || []);
-          }
-        })
+      getPublicCompanies('', 200)
+        .then(data => setCompanyList(data))
         .catch(err => console.error('Failed to load companies for search modal:', err))
         .finally(() => setIsFetchingCompanies(false));
     }
@@ -83,13 +78,15 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
 
   const [formData, setFormData] = useState({
     company_name: '',
-    country_code: '',
+    country_name: '中国',
     branch_location: '',
     position: '',
     employment_status: 'current',
     salary: '',
     bonus: '',
     experience_years: '3',
+    daily_work_hours: '8',
+    weekly_work_days: '5',
     rating_career: 4,
     rating_balance: 3,
     rating_management: 3,
@@ -127,6 +124,8 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
           salary: Number(formData.salary) || 0,
           bonus: Number(formData.bonus) || 0,
           experience_years: Number(formData.experience_years) || 1,
+          daily_work_hours: Number(formData.daily_work_hours),
+          weekly_work_days: Number(formData.weekly_work_days),
           humanVerificationToken,
         })
       });
@@ -134,10 +133,14 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
 
       if (json.success) {
         setFormSuccess(true);
+        const targetCompanyId = json.data?.company_id;
         setTimeout(() => {
+          if (targetCompanyId) {
+            window.location.href = `/${rawLang}/companies/${targetCompanyId}`;
+            return;
+          }
           setShowSubmitForm(false);
           setFormSuccess(false);
-          window.location.reload();
         }, 1800);
       } else {
         setFormError(json.error || t.formErrorSubmitFailed);
@@ -155,13 +158,15 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
   const openReviewModal = () => {
     setFormData({
       company_name: '',
-      country_code: '',
+      country_name: '中国',
       branch_location: '',
       position: '',
       employment_status: 'current',
       salary: '',
       bonus: '',
       experience_years: '3',
+      daily_work_hours: '8',
+      weekly_work_days: '5',
       rating_career: 4,
       rating_balance: 3,
       rating_management: 3,
@@ -412,7 +417,10 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                                 setFormData(prev => ({
                                   ...prev,
                                   company_name: comp.name,
-                                  country_code: comp.country_code || prev.country_code,
+                                  country_name:
+                                    comp.country_name ||
+                                    comp.country_code ||
+                                    prev.country_name,
                                   branch_location: comp.city || comp.province || prev.branch_location,
                                 }));
                               }}
@@ -420,13 +428,42 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                             />
                           </div>
 
-                          <div className="md:col-span-2 border-t border-border/50 pt-2">
-                            <CitySelect
-                              countryValue={formData.country_code}
-                              cityValue={formData.branch_location}
-                              onCountryChange={(code) => setFormData(prev => ({ ...prev, country_code: code }))}
-                              onCityChange={(city) => setFormData(prev => ({ ...prev, branch_location: city }))}
-                              lang={lang}
+                          <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                              {lang === 'zh' ? '国家 / 地区' : 'Country / Region'}
+                              <span className="text-rose-500"> *</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.country_name}
+                              onChange={(event) =>
+                                setFormData((previous) => ({
+                                  ...previous,
+                                  country_name: event.target.value,
+                                }))
+                              }
+                              placeholder={lang === 'zh' ? '例如：中国、美国' : 'e.g. China, United States'}
+                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5">
+                              {lang === 'zh' ? '城市 / 分区' : 'City / Branch'}
+                              <span className="text-rose-500"> *</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.branch_location}
+                              onChange={(event) =>
+                                setFormData((previous) => ({
+                                  ...previous,
+                                  branch_location: event.target.value,
+                                }))
+                              }
+                              placeholder={lang === 'zh' ? '例如：广州、上海' : 'e.g. Guangzhou, Shanghai'}
+                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
                             />
                           </div>
                         </div>
@@ -456,6 +493,39 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                               <option value="current" className="bg-popover text-popover-foreground">{t.currentEmployee}</option>
                               <option value="former" className="bg-popover text-popover-foreground">{t.formerEmployee}</option>
                             </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5 whitespace-nowrap">
+                              {lang === 'zh' ? '每天工作时长（小时）' : 'Daily work hours'}
+                            </label>
+                            <input
+                              type="number"
+                              min="0.5"
+                              max="24"
+                              step="0.5"
+                              required
+                              value={formData.daily_work_hours}
+                              onChange={(e) => setFormData(prev => ({ ...prev, daily_work_hours: e.target.value }))}
+                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-muted-foreground uppercase mb-1.5 whitespace-nowrap">
+                              {lang === 'zh' ? '每周工作天数' : 'Weekly work days'}
+                            </label>
+                            <input
+                              type="number"
+                              min="0.5"
+                              max="7"
+                              step="0.5"
+                              required
+                              value={formData.weekly_work_days}
+                              onChange={(e) => setFormData(prev => ({ ...prev, weekly_work_days: e.target.value }))}
+                              className="w-full px-3 py-2 bg-muted/40 border border-border rounded-none text-sm text-foreground focus:bg-background focus:border-emerald-500 outline-none"
+                            />
                           </div>
                         </div>
 

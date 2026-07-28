@@ -30,7 +30,7 @@ export const companies = pgTable(
   'companies',
   {
     id: varchar('id', { length: 255 }).primaryKey(),
-    credit_code: varchar('credit_code', { length: 50 }).unique(),
+    credit_code: varchar('credit_code', { length: 50 }),
     name: varchar('name', { length: 255 }).notNull(),
     country_code: varchar('country_code', { length: 10 }).default('CN'),
     country_name: varchar('country_name', { length: 100 }).default('中国'),
@@ -53,6 +53,12 @@ export const companies = pgTable(
     index('idx_companies_credit_code').on(table.credit_code),
     index('idx_companies_name').on(table.name),
     index('idx_companies_location').on(table.country_code, table.province, table.city),
+    uniqueIndex('companies_name_region_unique').on(
+      sql`lower(${table.name})`,
+      sql`lower(coalesce(${table.country_name}, ${table.country_code}, ''))`,
+      sql`lower(coalesce(${table.province}, ''))`,
+      sql`lower(coalesce(${table.city}, ''))`
+    ),
     uniqueIndex('idx_companies_creation_hash')
       .on(table.creation_hash)
       .where(sql`${table.creation_hash} is not null`),
@@ -73,6 +79,8 @@ export const reviews = pgTable(
     salary: integer('salary').default(0),
     bonus: integer('bonus').default(0),
     experience_years: integer('experience_years').default(1),
+    daily_work_hours: numeric('daily_work_hours', { precision: 4, scale: 2 }),
+    weekly_work_days: numeric('weekly_work_days', { precision: 3, scale: 1 }),
     rating_career: integer('rating_career').notNull(),
     rating_balance: integer('rating_balance').notNull(),
     rating_management: integer('rating_management').notNull(),
@@ -103,6 +111,14 @@ export const reviews = pgTable(
     check('reviews_salary_non_negative', sql`${table.salary} >= 0`),
     check('reviews_bonus_non_negative', sql`${table.bonus} >= 0`),
     check('reviews_experience_non_negative', sql`${table.experience_years} >= 0`),
+    check(
+      'reviews_daily_work_hours_range',
+      sql`${table.daily_work_hours} is null or ${table.daily_work_hours} > 0 and ${table.daily_work_hours} <= 24`
+    ),
+    check(
+      'reviews_weekly_work_days_range',
+      sql`${table.weekly_work_days} is null or ${table.weekly_work_days} > 0 and ${table.weekly_work_days} <= 7`
+    ),
     check('reviews_rating_career_range', sql`${table.rating_career} between 1 and 5`),
     check('reviews_rating_balance_range', sql`${table.rating_balance} between 1 and 5`),
     check('reviews_rating_management_range', sql`${table.rating_management} between 1 and 5`),
@@ -402,13 +418,59 @@ export const geoCities = pgTable(
   ]
 ).enableRLS();
 
+// Community-grown string indexes. They start empty and are populated only when
+// users create companies; no external geographic dataset is required.
+export const locationCountries = pgTable(
+  'location_countries',
+  {
+    id: varchar('id', { length: 64 }).primaryKey(),
+    name: varchar('name', { length: 120 }).notNull(),
+    normalized_name: varchar('normalized_name', { length: 120 }).notNull().unique(),
+    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index('idx_location_countries_name').on(table.name),
+    publicReadPolicy('location_countries'),
+  ]
+).enableRLS();
+
+export const locationCities = pgTable(
+  'location_cities',
+  {
+    id: varchar('id', { length: 64 }).primaryKey(),
+    country_id: varchar('country_id', { length: 64 }).notNull(),
+    name: varchar('name', { length: 120 }).notNull(),
+    normalized_name: varchar('normalized_name', { length: 120 }).notNull(),
+    created_at: timestamp('created_at', { withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    unique('location_cities_country_name_unique').on(
+      table.country_id,
+      table.normalized_name
+    ),
+    index('idx_location_cities_name').on(table.name),
+    foreignKey({
+      name: 'fk_location_cities_country',
+      columns: [table.country_id],
+      foreignColumns: [locationCountries.id],
+    }),
+    publicReadPolicy('location_cities'),
+  ]
+).enableRLS();
+
 export const currentCompanyProfiles = pgView('current_company_profiles', {
   company_id: varchar('company_id', { length: 255 }),
   version_id: varchar('version_id', { length: 255 }),
   profile_data: jsonb('profile_data').$type<CompanyProfileData>(),
   profile_hash: varchar('profile_hash', { length: 64 }),
   created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }),
-}).as(sql`
+})
+  .with({ securityInvoker: true })
+  .as(sql`
   select distinct on (company_id)
     company_id,
     id as version_id,
@@ -430,7 +492,9 @@ export const companyStatistics = pgView('company_statistics', {
   avg_culture: numeric('avg_culture', { precision: 4, scale: 2 }),
   avg_salary: integer('avg_salary'),
   avg_bonus: integer('avg_bonus'),
-}).as(sql`
+})
+  .with({ securityInvoker: true })
+  .as(sql`
   select
     company_id,
     count(*)::integer as review_count,
@@ -453,7 +517,9 @@ export const companyProposalStatus = pgView('company_proposal_status', {
   approval_count: integer('approval_count'),
   resolution: varchar('resolution', { length: 30 }),
   resulting_version_id: varchar('resulting_version_id', { length: 255 }),
-}).as(sql`
+})
+  .with({ securityInvoker: true })
+  .as(sql`
   select
     p.id as proposal_id,
     p.company_id,

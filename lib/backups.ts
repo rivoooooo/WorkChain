@@ -81,6 +81,8 @@ function generateReviewCsv(reviews: Review[]): Buffer {
     'salary',
     'bonus',
     'experience_years',
+    'daily_work_hours',
+    'weekly_work_days',
     'rating_career',
     'rating_balance',
     'rating_management',
@@ -155,7 +157,7 @@ async function generateDataOnlySql(reviews: Review[]): Promise<Buffer> {
 
   for (const review of reviews) {
     lines.push(
-      `INSERT INTO reviews (id, company_id, company_name, branch_location, position, employment_status, salary, bonus, experience_years, rating_career, rating_balance, rating_management, rating_compensation, rating_culture, review_text, created_at, previous_hash, hash, hash_version) VALUES (` +
+      `INSERT INTO reviews (id, company_id, company_name, branch_location, position, employment_status, salary, bonus, experience_years, daily_work_hours, weekly_work_days, rating_career, rating_balance, rating_management, rating_compensation, rating_culture, review_text, created_at, previous_hash, hash, hash_version) VALUES (` +
         [
           review.id,
           review.company_id,
@@ -166,6 +168,8 @@ async function generateDataOnlySql(reviews: Review[]): Promise<Buffer> {
           review.salary,
           review.bonus,
           review.experience_years,
+          review.daily_work_hours,
+          review.weekly_work_days,
           review.rating_career,
           review.rating_balance,
           review.rating_management,

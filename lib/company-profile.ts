@@ -68,8 +68,8 @@ export function normalizeCompanyProfile(
     return {
       name: result.name || '',
       creditCode: result.creditCode ?? null,
-      countryCode: result.countryCode ?? 'CN',
-      countryName: result.countryName ?? '中国',
+      countryCode: result.countryCode ?? null,
+      countryName: result.countryName ?? null,
       province: result.province ?? null,
       city: result.city ?? null,
       legalRepresentative: result.legalRepresentative ?? null,
@@ -107,6 +107,23 @@ export function canonicalJson(value: unknown): string {
 
 export function hashCanonical(value: unknown): string {
   return crypto.createHash('sha256').update(canonicalJson(value)).digest('hex');
+}
+
+export function companyIdentityKey(
+  profile: Pick<
+    CompanyProfileData,
+    'name' | 'countryCode' | 'countryName' | 'province' | 'city'
+  >
+): string {
+  return [
+    'name-region',
+    profile.name.toLocaleLowerCase(),
+    profile.countryName?.toLocaleLowerCase() ||
+      profile.countryCode?.toLocaleUpperCase() ||
+      '',
+    profile.province?.toLocaleLowerCase() || '',
+    profile.city?.toLocaleLowerCase() || '',
+  ].join(':');
 }
 
 export function mergeProfile(

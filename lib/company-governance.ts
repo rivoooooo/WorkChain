@@ -7,6 +7,7 @@ import type {
 } from '@/drizzle/schema';
 import {
   canonicalJson,
+  companyIdentityKey,
   hashCanonical,
   isMissingProfileValue,
   mergeProfile,
@@ -137,15 +138,33 @@ export async function createCompany(
   const profile = normalizeCompanyProfile(input, {
     requireName: true,
   }) as CompanyProfileData;
-  const identityKey = profile.creditCode
-    ? `registry:${profile.countryCode || ''}:${profile.creditCode}`
-    : `name:${profile.countryCode || ''}:${profile.name.toLocaleLowerCase()}:${profile.province || ''}:${profile.city || ''}`;
+  const identityKey = companyIdentityKey(profile);
   const companyId = `comp-${hashCanonical(identityKey).slice(0, 24)}`;
   const creationHash = hashCanonical({ identityKey, profile });
   const profileHash = hashCanonical(profile);
   const profileVersionId = `profile-${hashCanonical({ companyId, profileHash }).slice(0, 32)}`;
+  const countryName = profile.countryName || profile.countryCode || '未指定';
+  const normalizedCountryName = countryName.toLocaleLowerCase();
+  const countryId = `country-${hashCanonical(normalizedCountryName).slice(0, 24)}`;
+  const normalizedCityName = profile.city?.toLocaleLowerCase() || null;
+  const cityId = normalizedCityName
+    ? `city-${hashCanonical({ countryId, normalizedCityName }).slice(0, 24)}`
+    : null;
 
   return sqlClient.begin(async (tx) => {
+    await tx`
+      insert into location_countries (id, name, normalized_name)
+      values (${countryId}, ${countryName}, ${normalizedCountryName})
+      on conflict do nothing
+    `;
+    if (profile.city && normalizedCityName && cityId) {
+      await tx`
+        insert into location_cities (id, country_id, name, normalized_name)
+        values (${cityId}, ${countryId}, ${profile.city}, ${normalizedCityName})
+        on conflict do nothing
+      `;
+    }
+
     const inserted = await tx<{ id: string }[]>`
       insert into companies (
         id,
@@ -173,20 +192,18 @@ export async function createCompany(
       returning id
     `;
 
-    const existingRows = profile.creditCode
-      ? await tx<{ id: string }[]>`
-          select id
-          from companies
-          where id = ${companyId} or credit_code = ${profile.creditCode}
-          order by case when id = ${companyId} then 0 else 1 end
-          limit 1
-        `
-      : await tx<{ id: string }[]>`
-          select id
-          from companies
-          where id = ${companyId}
-          limit 1
-        `;
+    const existingRows = await tx<{ id: string }[]>`
+      select id
+      from companies
+      where
+        lower(name) = lower(${profile.name})
+        and lower(coalesce(country_name, country_code, '')) =
+          lower(${profile.countryName || profile.countryCode || ''})
+        and lower(coalesce(province, '')) = lower(${profile.province || ''})
+        and lower(coalesce(city, '')) = lower(${profile.city || ''})
+      order by created_at, id
+      limit 1
+    `;
     const resolvedCompanyId = existingRows[0]?.id;
     if (!resolvedCompanyId) throw new Error('Unable to create or resolve the company.');
 

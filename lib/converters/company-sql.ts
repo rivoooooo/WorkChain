@@ -1,6 +1,10 @@
 import type { StandardCompanyDTO } from './types';
 import type { CompanyProfileData } from '@/drizzle/schema';
-import { canonicalJson, hashCanonical } from '@/lib/company-profile';
+import {
+  canonicalJson,
+  companyIdentityKey,
+  hashCanonical,
+} from '@/lib/company-profile';
 import { sqlLiteral } from './geonames';
 
 export interface CompanySqlRecord {
@@ -27,7 +31,7 @@ export function companySqlRecord(dto: StandardCompanyDTO): CompanySqlRecord {
     companyType: dto.companyType || null,
     website: null,
   };
-  const identityKey = `registry:${profile.countryCode}:${profile.creditCode}`;
+  const identityKey = companyIdentityKey(profile);
   const companyId = `comp-${hashCanonical(identityKey).slice(0, 24)}`;
   const profileHash = hashCanonical(profile);
   return {

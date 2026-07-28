@@ -6,6 +6,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language } from '../../../../lib/i18n';
 import { CompanyGovernancePanel } from '../../../../components/company-governance-panel';
 import {
+  getPublicCompanyById,
+  getPublicCompanyDetails,
+  getPublicCompanyReviews,
+  getPublicRelatedCompanies,
+} from '../../../../lib/public-data';
+import {
   Building,
   Search,
   ArrowUpDown,
@@ -64,6 +70,8 @@ interface Review {
   salary: number;
   bonus: number;
   experience_years: number;
+  daily_work_hours: number | null;
+  weekly_work_days: number | null;
   rating_career: number;
   rating_balance: number;
   rating_management: number;
@@ -109,6 +117,13 @@ interface AIReport {
   cultureCharacteristics: string[];
   careerAdvice: string;
   salaryAnalysis: string;
+  workScheduleAnalysis?: string;
+  analysisScope?: { id: string; name: string; location: string }[];
+}
+
+interface RelatedCompany extends Company {
+  relation: 'same_name_region' | 'similar_name';
+  similarity: number;
 }
 
 interface CacheEntry {
@@ -118,10 +133,16 @@ interface CacheEntry {
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000;
 
-const getCachedAIReport = (companyId: string): AIReport | null => {
+const reportCacheKey = (companyId: string, relatedIds: string[] = []) =>
+  `ai_report_cache_${companyId}_${[...relatedIds].sort().join('_')}`;
+
+const getCachedAIReport = (
+  companyId: string,
+  relatedIds: string[] = []
+): AIReport | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const key = `ai_report_cache_${companyId}`;
+    const key = reportCacheKey(companyId, relatedIds);
     const itemStr = localStorage.getItem(key);
     if (!itemStr) return null;
     const entry: CacheEntry = JSON.parse(itemStr);
@@ -137,10 +158,14 @@ const getCachedAIReport = (companyId: string): AIReport | null => {
   }
 };
 
-const setCachedAIReport = (companyId: string, data: AIReport) => {
+const setCachedAIReport = (
+  companyId: string,
+  data: AIReport,
+  relatedIds: string[] = []
+) => {
   if (typeof window === 'undefined') return;
   try {
-    const key = `ai_report_cache_${companyId}`;
+    const key = reportCacheKey(companyId, relatedIds);
     const entry: CacheEntry = {
       data,
       timestamp: Date.now()
@@ -174,6 +199,8 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const [aiReport, setAiReport] = useState<AIReport | null>(null);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [relatedCompanies, setRelatedCompanies] = useState<RelatedCompany[]>([]);
+  const [selectedRelatedCompanyIds, setSelectedRelatedCompanyIds] = useState<string[]>([]);
 
   // Blockchain Ledger verification states
   const [isVerifyingLedger, setIsVerifyingLedger] = useState(false);
@@ -188,32 +215,22 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
     async function loadData() {
       setIsLoading(true);
       try {
-        const [compRes, revRes, detailRes] = await Promise.all([
-          fetch(`/api/companies?id=${companyId}`),
-          fetch(`/api/reviews?company_id=${companyId}`),
-          fetch(`/api/companies/details?company_id=${companyId}`),
+        const loadedCompany = await getPublicCompanyById(companyId);
+        if (!loadedCompany) throw new Error('Company not found.');
+        const [loadedReviews, loadedDetails, loadedRelated] = await Promise.all([
+          getPublicCompanyReviews(companyId),
+          getPublicCompanyDetails(companyId),
+          getPublicRelatedCompanies(loadedCompany),
         ]);
-        const [compJson, revJson, detailJson] = await Promise.all([
-          compRes.json(),
-          revRes.json(),
-          detailRes.json(),
-        ]);
-
-        if (compJson.success) {
-          setCompany(compJson.data);
-        }
-
-        if (revJson.success) {
-          setReviews(revJson.data || []);
-        }
-
-        if (detailJson.success && detailJson.data) {
-          setCompanyDetailsInfo(detailJson.data.details || null);
-          setCompanyLinksList(detailJson.data.links || []);
-          if (detailJson.data.company && !compJson.data) {
-            setCompany(detailJson.data.company);
-          }
-        }
+        setCompany(loadedCompany);
+        setReviews(loadedReviews as unknown as Review[]);
+        setCompanyDetailsInfo(
+          loadedDetails.details as unknown as CompanyDetailsInfo
+        );
+        setCompanyLinksList(
+          loadedDetails.links as unknown as CompanyLinkItem[]
+        );
+        setRelatedCompanies(loadedRelated);
 
         const cached = getCachedAIReport(companyId);
         if (cached) {
@@ -255,7 +272,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const handleGenerateAIReport = async (force: boolean = false) => {
     if (!company) return;
     if (!force) {
-      const cached = getCachedAIReport(companyId);
+      const cached = getCachedAIReport(companyId, selectedRelatedCompanyIds);
       if (cached) {
         setAiReport(cached);
         return;
@@ -268,12 +285,15 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
       const res = await fetch('/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyId: companyId }),
+        body: JSON.stringify({
+          companyId,
+          relatedCompanyIds: selectedRelatedCompanyIds,
+        }),
       });
       const json = await res.json();
       if (json.success) {
         setAiReport(json.data);
-        setCachedAIReport(companyId, json.data);
+        setCachedAIReport(companyId, json.data, selectedRelatedCompanyIds);
       } else {
         setAiError(json.error || '无法生成AI分析报告，请稍后再试。');
       }
@@ -655,6 +675,16 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                                 BONUS: {rev.bonus}K
                               </span>
                             )}
+                            {rev.daily_work_hours !== null && (
+                              <span className="border border-border px-2 py-0.5 font-bold text-foreground bg-background">
+                                {rev.daily_work_hours}H / DAY
+                              </span>
+                            )}
+                            {rev.weekly_work_days !== null && (
+                              <span className="border border-border px-2 py-0.5 font-bold text-foreground bg-background">
+                                {rev.weekly_work_days}D / WEEK
+                              </span>
+                            )}
                             <span className="border border-border px-2 py-0.5 font-bold text-foreground bg-background flex items-center gap-1">
                               <Star className="w-3 h-3 fill-foreground text-foreground" />
                               <span>{ratingAvg.toFixed(1)}</span>
@@ -883,6 +913,69 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 )}
               </div>
 
+              {relatedCompanies.length > 0 && (
+                <div className="border border-border p-5 bg-card rounded-none space-y-3">
+                  <div>
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-foreground">
+                      {lang === 'zh'
+                        ? '选择要合并分析的分区或相似企业'
+                        : 'Include regional or similar companies'}
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {lang === 'zh'
+                        ? '只有你勾选的企业评价会加入本次报告，原始企业统计不会被改变。'
+                        : 'Only selected company reviews are included in this report; source statistics remain unchanged.'}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {relatedCompanies.map((related) => {
+                      const checked = selectedRelatedCompanyIds.includes(related.id);
+                      return (
+                        <label
+                          key={related.id}
+                          className="flex items-start gap-2 border border-border p-3 cursor-pointer hover:bg-muted/40"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setSelectedRelatedCompanyIds((current) =>
+                                checked
+                                  ? current.filter((id) => id !== related.id)
+                                  : [...current, related.id]
+                              );
+                              setAiReport(null);
+                              setAiError('');
+                            }}
+                            className="mt-0.5 accent-emerald-500"
+                          />
+                          <span className="min-w-0">
+                            <span className="block text-xs font-bold text-foreground truncate">
+                              {related.name}
+                            </span>
+                            <span className="block text-[11px] text-muted-foreground">
+                              {[related.province, related.city].filter(Boolean).join(' / ') ||
+                                (lang === 'zh' ? '地区未提供' : 'Location unavailable')}
+                              {' · '}
+                              {related.review_count}
+                              {lang === 'zh' ? ' 条评价' : ' reviews'}
+                              {' · '}
+                              {related.relation === 'same_name_region'
+                                ? lang === 'zh'
+                                  ? '同名分区'
+                                  : 'Same-name region'
+                                : lang === 'zh'
+                                  ? '名称相似'
+                                  : 'Similar name'}
+                            </span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {isGeneratingAI ? (
                 <div className="py-16 text-center border border-border bg-card rounded-none flex flex-col items-center justify-center">
                   <Loader2 className="w-8 h-8 text-foreground animate-spin mb-4" />
@@ -919,6 +1012,19 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                     <p className="text-xs text-foreground leading-relaxed font-sans">
                       {aiReport.overallSummary}
                     </p>
+                    {aiReport.workScheduleAnalysis && (
+                      <p className="text-xs text-muted-foreground leading-relaxed border-t border-border pt-3">
+                        {aiReport.workScheduleAnalysis}
+                      </p>
+                    )}
+                    {aiReport.analysisScope && aiReport.analysisScope.length > 0 && (
+                      <p className="text-[11px] text-muted-foreground border-t border-border pt-3">
+                        {lang === 'zh' ? '分析范围：' : 'Scope: '}
+                        {aiReport.analysisScope
+                          .map((item) => `${item.name}（${item.location || '-'}）`)
+                          .join('、')}
+                      </p>
+                    )}
                   </div>
 
                   {/* PROS & CONS GRID */}

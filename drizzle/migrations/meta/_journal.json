@@ -22,6 +22,13 @@
       "when": 1785245448120,
       "tag": "0002_complete_rage",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785273051947,
+      "tag": "0003_long_polaris",
+      "breakpoints": true
     }
   ]
 }

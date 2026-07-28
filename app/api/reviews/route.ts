@@ -44,12 +44,15 @@ export async function POST(req: NextRequest) {
     const {
       company_name,
       country_code,
+      country_name,
       branch_location,
       position,
       employment_status,
       salary,
       bonus,
       experience_years,
+      daily_work_hours,
+      weekly_work_days,
       rating_career,
       rating_balance,
       rating_management,
@@ -60,7 +63,13 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validate inputs
-    if (!company_name || !branch_location || !position || !review_text) {
+    if (
+      !company_name ||
+      !country_name ||
+      !branch_location ||
+      !position ||
+      !review_text
+    ) {
       return NextResponse.json(
         { success: false, error: '必填项未填写完整。' },
         { status: 400 }
@@ -80,6 +89,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const dailyHours = Number(daily_work_hours);
+    const weeklyDays = Number(weekly_work_days);
+    if (
+      !Number.isFinite(dailyHours) ||
+      dailyHours <= 0 ||
+      dailyHours > 24 ||
+      !Number.isFinite(weeklyDays) ||
+      weeklyDays <= 0 ||
+      weeklyDays > 7
+    ) {
+      return NextResponse.json(
+        { success: false, error: '每天工作时长或每周工作天数不合法。' },
+        { status: 400 }
+      );
+    }
+
     const identity = await guardPublicWrite(
       req,
       'review-create',
@@ -95,6 +120,8 @@ export async function POST(req: NextRequest) {
         salary: Number(salary) || 0,
         bonus: Number(bonus) || 0,
         experience_years: Number(experience_years) || 1,
+        daily_work_hours: dailyHours,
+        weekly_work_days: weeklyDays,
         rating_career: Number(rating_career),
         rating_balance: Number(rating_balance),
         rating_management: Number(rating_management),
@@ -104,6 +131,8 @@ export async function POST(req: NextRequest) {
       },
       {
         countryCode: typeof country_code === 'string' ? country_code.trim() : undefined,
+        countryName:
+          typeof country_name === 'string' ? country_name.trim() : undefined,
         city: branch_location.trim(),
       }
     );

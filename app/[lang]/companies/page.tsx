@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'motion/react';
 import { i18n, Language } from '../../../lib/i18n';
+import { getPublicCompanies } from '../../../lib/public-data';
 import {
   Building,
   Search,
@@ -60,13 +61,12 @@ export default function CompaniesPage({ params }: PageProps) {
     async function fetchCompanies() {
       setIsLoading(true);
       try {
-        const res = await fetch('/api/companies');
-        const json = await res.json();
-        if (json.success) {
-          const stats: CompanyStats[] = (json.data || []).map((c: any) => ({
+        const companies = await getPublicCompanies('', 500);
+        {
+          const stats: CompanyStats[] = companies.map((c) => ({
             id: c.id,
             name: c.name,
-            logoUrl: c.logo_url || null,
+            logoUrl: undefined,
             reviewCount: c.review_count,
             avgRating: c.avg_rating,
             avgCareer: c.avg_career,
@@ -76,8 +76,8 @@ export default function CompaniesPage({ params }: PageProps) {
             avgCulture: c.avg_culture,
             avgSalary: Math.round(c.avg_salary / 1000),
             avgBonus: Math.round(c.avg_bonus / 1000),
-            latestReviewSnippet: c.latest_review_snippet || (lang === 'zh' ? '包含已归档存证的匿名员工真实职场与薪资评价。' : 'Cryptographically verified anonymous corporate reviews & salary telemetry.'),
-            location: c.branch_location || (lang === 'zh' ? '全部分部' : 'All Locations')
+            latestReviewSnippet: lang === 'zh' ? '包含已归档存证的匿名员工真实职场与薪资评价。' : 'Cryptographically verified anonymous corporate reviews & salary telemetry.',
+            location: [c.province, c.city].filter(Boolean).join(' / ') || (lang === 'zh' ? '地区未提供' : 'Location unavailable')
           }));
           setCompaniesList(stats);
         }

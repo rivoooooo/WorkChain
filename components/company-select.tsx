@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Building2, Check, Loader2, MapPin } from 'lucide-react';
+import { getPublicCompanies } from '@/lib/public-data';
 
 export interface CompanyItem {
   id: string;
@@ -45,12 +46,9 @@ export function CompanySelect({
     setIsLoading(true);
 
     const timer = setTimeout(() => {
-      fetch(`/api/companies?search=${encodeURIComponent(query.trim())}`)
-        .then((res) => res.json())
+      getPublicCompanies(query.trim(), 50)
         .then((data) => {
-          if (active && data.success && data.data) {
-            setCompanies(data.data);
-          }
+          if (active) setCompanies(data);
         })
         .catch((err) => console.error('Failed to fetch companies:', err))
         .finally(() => {

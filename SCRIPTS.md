@@ -50,7 +50,7 @@ bun run data:check-sql data/companies.sql
 
 后续数据源应在 `lib/converters/` 新增适配器，先转换为 `StandardCompanyDTO`，再进入统一清洗和导出流程。
 
-企业导出器逐文件、逐批处理，不会把整个数据仓库载入内存。公司 ID、创建哈希、档案版本 ID 和档案哈希均由规范化内容确定性生成；数据库按统一社会信用代码和初始档案来源键执行 `DO NOTHING` 去重，排序后的首次记录获胜。输出只写入 `companies` 与 `company_profile_versions`，不会直连或查询数据库。
+企业导出器逐文件、逐批处理，不会把整个数据仓库载入内存。公司 ID、创建哈希、档案版本 ID 和档案哈希均由规范化内容确定性生成；数据库按企业名称与国家/省份/城市以及初始档案来源键执行 `DO NOTHING` 去重，排序后的首次记录获胜。输出只写入 `companies` 与 `company_profile_versions`，不会直连或查询数据库。
 
 GeoNames 导出器不会连接数据库，只生成 `BEGIN`、批量 `INSERT ... ON CONFLICT DO NOTHING` 和 `COMMIT`。输出包含源文件 SHA-256；相同输入与批大小会生成完全相同的 SQL。目标文件已存在时默认拒绝覆盖，需要明确使用 `--force`。
 

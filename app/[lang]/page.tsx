@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language } from '../../lib/i18n';
 import { ThemeToggle } from '../../components/theme-toggle';
 import { BeforeAfterCanvas } from '../../components/before-after-canvas';
+import { getPublicCompanies } from '../../lib/public-data';
 import {
   Search,
   Plus,
@@ -72,12 +73,15 @@ export default function Home({ params }: PageProps) {
 
   const [formData, setFormData] = useState({
     company_name: '',
+    country_name: '中国',
     branch_location: '',
     position: '',
     employment_status: 'current',
     salary: '',
     bonus: '',
     experience_years: '3',
+    daily_work_hours: '8',
+    weekly_work_days: '5',
     rating_career: 4,
     rating_balance: 3,
     rating_management: 3,
@@ -91,11 +95,7 @@ export default function Home({ params }: PageProps) {
     async function fetchCompanies() {
       setIsLoading(true);
       try {
-        const res = await fetch('/api/companies');
-        const json = await res.json();
-        if (json.success) {
-          setCompanies(json.data || []);
-        }
+        setCompanies(await getPublicCompanies('', 200));
       } catch (err) {
         console.error('Failed to fetch companies:', err);
       } finally {
@@ -108,7 +108,7 @@ export default function Home({ params }: PageProps) {
   const distinctCompanyNames = companies.map(c => c.name);
 
   // Handle Search Submission
-  const handleSearch = (nameToSearch?: string) => {
+  const handleSearch = async (nameToSearch?: string) => {
     const query = (nameToSearch || searchQuery).trim();
     if (!query) return;
 
@@ -116,7 +116,11 @@ export default function Home({ params }: PageProps) {
     setHasSearched(true);
 
     // Look up company
-    const found = companies.find(c => c.name.toLowerCase().trim() === query.toLowerCase().trim());
+    const matches = await getPublicCompanies(query, 20);
+    const found = matches.find(
+      (company) =>
+        company.name.toLowerCase().trim() === query.toLowerCase().trim()
+    );
     if (found) {
       // If company already exists, redirect immediately to company detail page
       window.location.href = `/${rawLang}/companies/${found.id}`;
@@ -158,7 +162,9 @@ export default function Home({ params }: PageProps) {
           ...formData,
           salary: Number(formData.salary) || 0,
           bonus: Number(formData.bonus) || 0,
-          experience_years: Number(formData.experience_years) || 1
+          experience_years: Number(formData.experience_years) || 1,
+          daily_work_hours: Number(formData.daily_work_hours),
+          weekly_work_days: Number(formData.weekly_work_days),
         }),
       });
 
