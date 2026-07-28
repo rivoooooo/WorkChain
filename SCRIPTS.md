@@ -53,3 +53,17 @@ bun run data:check-sql /path/to/data-only.sql
 定时任务以 `Authorization: Bearer $CRON_SECRET` 调用 `POST /api/backups`。CSV、XLSX、仅数据 SQL 和 manifest 直接写入 Supabase Storage，不落本地磁盘或仓库。公开页面只列出最近 7 天未过期快照；清理任务只删除过期的派生对象，不删除数据库业务数据。
 
 KV 适配器当前使用一个简单 HTTP 合约：`POST $SUPABASE_KV_URL/consume`，Bearer token 鉴权，请求体为 `{ namespace, key, limit, windowSeconds }`，响应为 `{ allowed, remaining, retryAfterSeconds? }`。正式环境没有 KV 时公开写入会失败关闭。
+
+## Cloudflare Turnstile
+
+公开写入支持 Cloudflare Turnstile。开发和生产应创建不同 Widget，并限制允许的 hostname：
+
+```dotenv
+HUMAN_VERIFICATION_PROVIDER="turnstile"
+NEXT_PUBLIC_HUMAN_VERIFICATION_PROVIDER="turnstile"
+NEXT_PUBLIC_HUMAN_VERIFICATION_SITE_KEY="公开 site key"
+HUMAN_VERIFICATION_SECRET_KEY="仅服务端 secret key"
+HUMAN_VERIFICATION_ALLOWED_HOSTNAMES="localhost,work-chain.example.com"
+```
+
+前端完成挑战后将一次性 token 随写入请求提交，服务端通过 Siteverify 验证 token、来源 IP 和 hostname。token 在每次提交后都会重置。正式环境中客户端和服务端 provider 不一致、缺失 secret 或关闭验证时，写入会失败关闭。

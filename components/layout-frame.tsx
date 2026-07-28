@@ -8,6 +8,10 @@ import { Language, i18n } from '../lib/i18n';
 import { ThemeToggle } from './theme-toggle';
 import { CitySelect } from './city-select';
 import { CompanySelect, CompanyItem as SelectedCompanyItem } from './company-select';
+import {
+  HumanVerification,
+  humanVerificationEnabled,
+} from './human-verification';
 
 interface CompanyItem {
   id: string;
@@ -39,6 +43,8 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState(false);
+  const [humanVerificationToken, setHumanVerificationToken] = useState<string | null>(null);
+  const [humanVerificationResetKey, setHumanVerificationResetKey] = useState(0);
 
   // Listen for custom event 'open-search-modal' from any page/hero search button
   useEffect(() => {
@@ -102,6 +108,12 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
       setFormError(t.formErrorTextLength);
       return;
     }
+    if (humanVerificationEnabled && !humanVerificationToken) {
+      setFormError(
+        lang === 'zh' ? '请先完成人机验证。' : 'Please complete human verification.'
+      );
+      return;
+    }
 
     setIsSubmitting(true);
     setFormError('');
@@ -114,7 +126,8 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
           ...formData,
           salary: Number(formData.salary) || 0,
           bonus: Number(formData.bonus) || 0,
-          experience_years: Number(formData.experience_years) || 1
+          experience_years: Number(formData.experience_years) || 1,
+          humanVerificationToken,
         })
       });
       const json = await res.json();
@@ -134,6 +147,8 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
       setFormError(t.formErrorNetwork);
     } finally {
       setIsSubmitting(false);
+      setHumanVerificationToken(null);
+      setHumanVerificationResetKey((value) => value + 1);
     }
   };
 
@@ -156,6 +171,8 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
     });
     setFormError('');
     setFormSuccess(false);
+    setHumanVerificationToken(null);
+    setHumanVerificationResetKey((value) => value + 1);
     setShowSubmitForm(true);
   };
 
@@ -530,6 +547,11 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                           />
                         </div>
 
+                        <HumanVerification
+                          onToken={setHumanVerificationToken}
+                          resetKey={humanVerificationResetKey}
+                        />
+
                         <div className="flex justify-end gap-3 pt-3 border-t border-border">
                           <button
                             type="button"
@@ -540,7 +562,10 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
                           </button>
                           <button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={
+                              isSubmitting ||
+                              (humanVerificationEnabled && !humanVerificationToken)
+                            }
                             className="inline-flex items-center gap-1.5 px-6 py-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-none text-xs font-bold transition-colors cursor-pointer"
                           >
                             {isSubmitting && <Loader2 className="w-3 h-3 animate-spin text-black" />}

@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, Loader2, Plus, Vote } from 'lucide-react';
+import {
+  HumanVerification,
+  humanVerificationEnabled,
+} from './human-verification';
 
 type Profile = Record<string, string | null | undefined>;
 
@@ -43,6 +47,8 @@ export function CompanyGovernancePanel({
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [humanVerificationToken, setHumanVerificationToken] = useState<string | null>(null);
+  const [humanVerificationResetKey, setHumanVerificationResetKey] = useState(0);
 
   const isSupplement = useMemo(() => !profile[field]?.trim(), [field, profile]);
 
@@ -61,6 +67,10 @@ export function CompanyGovernancePanel({
   async function submitChange(event: React.FormEvent) {
     event.preventDefault();
     if (!value.trim()) return;
+    if (humanVerificationEnabled && !humanVerificationToken) {
+      setMessage(lang === 'zh' ? '请先完成人机验证。' : 'Complete human verification first.');
+      return;
+    }
     setBusy('submit');
     setMessage('');
     try {
@@ -70,7 +80,10 @@ export function CompanyGovernancePanel({
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ changes: { [field]: value.trim() } }),
+        body: JSON.stringify({
+          changes: { [field]: value.trim() },
+          humanVerificationToken,
+        }),
       });
       const result = await response.json();
       if (!result.success) throw new Error(result.error || 'Request failed.');
@@ -89,17 +102,23 @@ export function CompanyGovernancePanel({
       setMessage(error instanceof Error ? error.message : 'Request failed.');
     } finally {
       setBusy(null);
+      setHumanVerificationToken(null);
+      setHumanVerificationResetKey((current) => current + 1);
     }
   }
 
   async function approve(proposalId: string) {
+    if (humanVerificationEnabled && !humanVerificationToken) {
+      setMessage(lang === 'zh' ? '请先完成人机验证。' : 'Complete human verification first.');
+      return;
+    }
     setBusy(proposalId);
     setMessage('');
     try {
       const response = await fetch(`/api/company-proposals/${proposalId}/approvals`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: '{}',
+        body: JSON.stringify({ humanVerificationToken }),
       });
       const result = await response.json();
       if (!result.success) throw new Error(result.error || 'Request failed.');
@@ -109,6 +128,8 @@ export function CompanyGovernancePanel({
       setMessage(error instanceof Error ? error.message : 'Request failed.');
     } finally {
       setBusy(null);
+      setHumanVerificationToken(null);
+      setHumanVerificationResetKey((current) => current + 1);
     }
   }
 
@@ -145,7 +166,11 @@ export function CompanyGovernancePanel({
           className="border border-border bg-background px-3 py-2 text-xs outline-none focus:border-emerald-500"
         />
         <button
-          disabled={busy !== null || !value.trim()}
+          disabled={
+            busy !== null ||
+            !value.trim() ||
+            (humanVerificationEnabled && !humanVerificationToken)
+          }
           className="bg-emerald-500 text-black px-4 py-2 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5"
         >
           {busy === 'submit' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
@@ -158,6 +183,11 @@ export function CompanyGovernancePanel({
               : 'Propose'}
         </button>
       </form>
+
+      <HumanVerification
+        onToken={setHumanVerificationToken}
+        resetKey={humanVerificationResetKey}
+      />
 
       {message && <p className="text-[11px] font-mono text-emerald-500">{message}</p>}
 
@@ -176,7 +206,10 @@ export function CompanyGovernancePanel({
                 {pending && (
                   <button
                     onClick={() => void approve(proposal.id)}
-                    disabled={busy !== null}
+                    disabled={
+                      busy !== null ||
+                      (humanVerificationEnabled && !humanVerificationToken)
+                    }
                     className="border border-emerald-500 text-emerald-500 px-3 py-1.5 text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1.5 shrink-0"
                   >
                     {busy === proposal.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}

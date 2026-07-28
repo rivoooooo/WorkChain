@@ -188,21 +188,25 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
     async function loadData() {
       setIsLoading(true);
       try {
-        const compRes = await fetch(`/api/companies?id=${companyId}`);
-        const compJson = await compRes.json();
+        const [compRes, revRes, detailRes] = await Promise.all([
+          fetch(`/api/companies?id=${companyId}`),
+          fetch(`/api/reviews?company_id=${companyId}`),
+          fetch(`/api/companies/details?company_id=${companyId}`),
+        ]);
+        const [compJson, revJson, detailJson] = await Promise.all([
+          compRes.json(),
+          revRes.json(),
+          detailRes.json(),
+        ]);
+
         if (compJson.success) {
           setCompany(compJson.data);
         }
 
-        const revRes = await fetch(`/api/reviews?company_id=${companyId}`);
-        const revJson = await revRes.json();
         if (revJson.success) {
           setReviews(revJson.data || []);
         }
 
-        // 详细扩展信息与相关链接
-        const detailRes = await fetch(`/api/companies/details?company_id=${companyId}`);
-        const detailJson = await detailRes.json();
         if (detailJson.success && detailJson.data) {
           setCompanyDetailsInfo(detailJson.data.details || null);
           setCompanyLinksList(detailJson.data.links || []);
