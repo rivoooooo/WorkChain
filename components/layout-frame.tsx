@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { Languages, Plus, Loader2, AlertCircle, ShieldCheck, X, Search, Building2, Star, ArrowRight, Github } from 'lucide-react';
+import { Languages, Plus, Loader2, AlertCircle, ShieldCheck, X, Search, Building2, Star, ArrowRight, Github, Menu } from 'lucide-react';
 import {
   Language,
   i18n,
@@ -36,6 +36,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
   const t = i18n[lang];
 
   const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // Global Search Modal State
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -84,11 +85,13 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
       if (e.key === 'Escape') {
         if (showSearchModal) setShowSearchModal(false);
         if (showSubmitForm) setShowSubmitForm(false);
+        if (showMobileMenu) setShowMobileMenu(false);
+        if (showLangDropdown) setShowLangDropdown(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showSubmitForm, showSearchModal]);
+  }, [showLangDropdown, showMobileMenu, showSubmitForm, showSearchModal]);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -210,27 +213,104 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
       <div className="max-w-6xl mx-auto border-x border-border min-h-screen flex flex-col justify-between relative z-10 px-0" id="app_container">
         
         {/* NEWSPAPER EDITORIAL HEADER MASTHEAD */}
-        <header className="w-full border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50 mb-8 px-4 sm:px-6 py-4 flex items-center justify-between" id="newspaper_header">
+        <header className="w-full border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-50 mb-8 px-3 sm:px-6 py-4 flex items-center" id="newspaper_header">
+          <div className="flex flex-auto items-center min-w-0">
+          <button
+            type="button"
+            onClick={() => {
+              setShowMobileMenu(prev => !prev);
+              setShowLangDropdown(false);
+            }}
+            className="sm:hidden w-8 h-9 -ms-1 me-1 text-foreground hover:bg-muted transition-colors cursor-pointer flex shrink-0 items-center justify-center rounded-none"
+            title={lang === 'zh' ? '更多菜单' : 'More Menu'}
+            aria-label="Toggle More Menu"
+            aria-expanded={showMobileMenu}
+          >
+            {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
+
+          {showMobileMenu && (
+            <div className="sm:hidden absolute start-3 top-full mt-2 w-64 bg-popover text-popover-foreground border border-border shadow-lg z-50">
+              <a
+                href="https://github.com/rivoooooo/WorkChain"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setShowMobileMenu(false)}
+                className="w-full px-4 py-3 flex items-center gap-3 text-sm font-semibold hover:bg-muted transition-colors"
+              >
+                <Github className="w-4 h-4" />
+                <span>GitHub</span>
+              </a>
+
+              <div className="w-full px-4 py-2 border-t border-border flex items-center justify-between">
+                <span className="text-sm font-semibold">
+                  {lang === 'zh' ? '颜色模式' : 'Color Mode'}
+                </span>
+                <ThemeToggle className="w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none" />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowLangDropdown(prev => !prev)}
+                className="w-full px-4 py-3 border-t border-border flex items-center gap-3 text-sm font-semibold hover:bg-muted transition-colors cursor-pointer"
+                aria-expanded={showLangDropdown}
+              >
+                <Languages className="w-4 h-4" />
+                <span>{lang === 'zh' ? '语言 / 翻译' : 'Language / Translation'}</span>
+              </button>
+
+              {showLangDropdown && (
+                <div className="max-h-64 overflow-y-auto border-t border-border py-1">
+                  {localeOptions.map((locale) => (
+                    <button
+                      key={locale.code}
+                      onClick={() => {
+                        setShowLangDropdown(false);
+                        setShowMobileMenu(false);
+                        if (lang === locale.code) return;
+                        const segments = window.location.pathname.split('/');
+                        segments[1] = locale.path;
+                        window.location.href = segments.join('/') || `/${locale.path}`;
+                      }}
+                      dir={locale.dir}
+                      className={`w-full text-start px-4 py-2 text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
+                        lang === locale.code
+                          ? 'bg-muted text-foreground font-bold'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      <span>{locale.label}</span>
+                      {lang === locale.code && (
+                        <span className="w-1.5 h-1.5 bg-foreground rounded-full" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Left: App Name */}
           <Link
             href={`/${rawLang}`}
-            className="flex items-center gap-2 group"
+            className="flex items-center gap-1.5 sm:gap-2 group min-w-0"
           >
-            <span className="font-black text-foreground text-xl sm:text-2xl tracking-tighter uppercase font-sans group-hover:opacity-80 transition-opacity">
+            <span className="font-black text-foreground text-lg sm:text-2xl tracking-tighter uppercase font-sans group-hover:opacity-80 transition-opacity">
               workchain
             </span>
             <span className="border border-amber-500/50 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest text-amber-600 dark:text-amber-400">
               Beta
             </span>
           </Link>
+          </div>
 
           {/* Right: Actions & Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="relative flex shrink-0 items-center gap-0.5 sm:gap-2">
             {/* Ghost Search Icon Button */}
             <button
               type="button"
               onClick={() => setShowSearchModal(true)}
-              className="w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none"
+              className="w-8 h-9 sm:w-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none"
               title={lang === 'zh' ? '搜索公司口碑' : 'Search Company Ledger'}
               aria-label="Search Companies"
             >
@@ -238,13 +318,15 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
             </button>
 
             {/* Theme Toggle */}
-            <ThemeToggle className="w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none" />
+            <div className="hidden sm:block">
+              <ThemeToggle className="w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none" />
+            </div>
 
             <a
               href="https://github.com/rivoooooo/WorkChain"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer flex items-center justify-center rounded-none"
+              className="hidden sm:flex w-9 h-9 text-foreground hover:bg-muted transition-colors cursor-pointer items-center justify-center rounded-none"
               title="GitHub · rivoooooo/WorkChain"
               aria-label="Open WorkChain on GitHub"
             >
@@ -252,7 +334,7 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
             </a>
 
             {/* Language Switcher Dropdown */}
-            <div className="relative">
+            <div className="relative hidden sm:block">
               <button
                 type="button"
                 onClick={() => setShowLangDropdown(prev => !prev)}
@@ -298,11 +380,12 @@ export function LayoutFrame({ children, rawLang }: LayoutFrameProps) {
             {/* Write Review Newspaper Button */}
             <button
               onClick={openReviewModal}
-              className="px-4 py-2 bg-foreground text-background hover:opacity-90 text-xs font-bold rounded-none transition-all shadow-none flex items-center gap-1.5 cursor-pointer ml-1"
+              className="px-3 sm:px-4 py-2 bg-foreground text-background hover:opacity-90 text-xs font-bold rounded-none transition-all shadow-none flex items-center gap-1.5 cursor-pointer sm:ml-1 whitespace-nowrap"
             >
-              <Plus className="w-3.5 h-3.5 text-background" />
+              <Plus className="hidden sm:block w-3.5 h-3.5 text-background" />
               <span>{t.addReview}</span>
             </button>
+
           </div>
         </header>
 

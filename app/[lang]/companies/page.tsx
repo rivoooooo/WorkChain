@@ -116,8 +116,8 @@ export default function CompaniesPage({ params }: PageProps) {
             avgCulture: c.avg_culture,
             avgSalary: Math.round(c.avg_salary / 1000),
             avgBonus: Math.round(c.avg_bonus / 1000),
-            latestReviewSnippet: lang === 'zh' ? '包含已归档存证的匿名员工真实职场与薪资评价。' : 'Cryptographically verified anonymous corporate reviews & salary telemetry.',
-            location: [c.province, c.city].filter(Boolean).join(' / ') || (lang === 'zh' ? '地区未提供' : 'Location unavailable')
+            latestReviewSnippet: t.dirReviewSnippet,
+            location: [c.province, c.city].filter(Boolean).join(' / ') || t.dirLocationUnavailable
           }));
           setCompaniesList(stats);
         }
@@ -154,13 +154,13 @@ export default function CompaniesPage({ params }: PageProps) {
   };
 
   const sortOptions: { label: string; field: SortField }[] = [
-    { label: lang === 'zh' ? '综合评分' : 'Overall Score', field: 'avgRating' },
-    { label: lang === 'zh' ? '评价数量' : 'Reviews Count', field: 'reviewCount' },
-    { label: lang === 'zh' ? '平均月薪' : 'Avg Monthly Salary', field: 'avgSalary' },
-    { label: lang === 'zh' ? '工作平衡(WLB)' : 'Work-Life Balance', field: 'avgBalance' },
-    { label: lang === 'zh' ? '职业发展' : 'Career Growth', field: 'avgCareer' },
-    { label: lang === 'zh' ? '福利待遇' : 'Benefits & Perks', field: 'avgCompensation' },
-    { label: lang === 'zh' ? '企业文化' : 'Company Culture', field: 'avgCulture' }
+    { label: t.dirSortOverall, field: 'avgRating' },
+    { label: t.dirSortReviews, field: 'reviewCount' },
+    { label: t.dirSortSalary, field: 'avgSalary' },
+    { label: t.dirSortBalance, field: 'avgBalance' },
+    { label: t.dirSortCareer, field: 'avgCareer' },
+    { label: t.dirSortCompensation, field: 'avgCompensation' },
+    { label: t.dirSortCulture, field: 'avgCulture' }
   ];
 
   return (
@@ -187,13 +187,13 @@ export default function CompaniesPage({ params }: PageProps) {
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
           {/* Quick Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t.dirSearchPlaceholder}
-              className="w-full pl-10 pr-4 py-2 bg-muted/40 border border-border focus:border-foreground outline-none text-xs text-foreground placeholder:text-muted-foreground rounded-none transition-colors"
+              className="w-full ps-10 pe-4 py-2 bg-muted/40 border border-border focus:border-foreground outline-none text-xs text-foreground placeholder:text-muted-foreground rounded-none transition-colors"
               autoComplete="off"
             />
           </div>
@@ -203,10 +203,10 @@ export default function CompaniesPage({ params }: PageProps) {
             <SlidersHorizontal className="w-3.5 h-3.5 text-foreground" />
             <span>
               {t.dirSortModeLabel}
-              <strong className="text-foreground font-bold ml-1">
+              <strong className="text-foreground font-bold ms-1">
                 {sortOptions.find(opt => opt.field === sortField)?.label}
               </strong>
-              （{sortOrder === 'desc' ? (lang === 'zh' ? '降序' : 'Desc') : (lang === 'zh' ? '升序' : 'Asc')}）
+              {' '}({sortOrder === 'desc' ? t.dirSortDescending : t.dirSortAscending})
             </span>
           </div>
         </div>
@@ -308,7 +308,7 @@ export default function CompaniesPage({ params }: PageProps) {
                         <span>{comp.name}</span>
                       </h3>
                       <span className="text-[11px] text-muted-foreground font-mono block mt-0.5">
-                        {comp.location} · {comp.reviewCount} {lang === 'zh' ? '笔存证评价' : 'ledger entries'}
+                        {comp.location} · {comp.reviewCount} {t.dirLedgerEntries}
                       </span>
                     </div>
 
@@ -318,7 +318,7 @@ export default function CompaniesPage({ params }: PageProps) {
                         WLB: {comp.avgBalance}
                       </span>
                       <span className="border border-border text-[10px] font-mono px-2 py-0.5 uppercase tracking-wider text-foreground bg-background">
-                        {lang === 'zh' ? '成长' : 'Growth'}: {comp.avgCareer}
+                        {t.dirGrowth}: {comp.avgCareer}
                       </span>
                       {comp.avgSalary > 0 && (
                         <span className="border border-border text-[10px] font-mono px-2 py-0.5 uppercase tracking-wider text-foreground bg-background">

@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI, Type } from '@google/genai';
 import { getCompanyReviews } from '../../../lib/db';
 
+const supportedOutputLanguages = {
+  zh: 'Simplified Chinese (简体中文)',
+  'zh-tw': 'Traditional Chinese (繁體中文)',
+  en: 'English',
+  ja: 'Japanese (日本語)',
+  ar: 'Arabic (العربية)',
+  hi: 'Hindi (हिन्दी)',
+  tr: 'Turkish (Türkçe)',
+  es: 'Spanish (Español)',
+  bo: 'Tibetan (བོད་ཡིག)',
+} as const;
+
+type OutputLanguage = keyof typeof supportedOutputLanguages;
+
 // Lazy initialization of Gemini Client
 let aiClient: GoogleGenAI | null = null;
 
@@ -26,6 +40,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { companyId, companyName: passedCompanyName } = body;
+    const language: OutputLanguage =
+      typeof body.language === 'string' && body.language in supportedOutputLanguages
+        ? (body.language as OutputLanguage)
+        : 'en';
+    const outputLanguage = supportedOutputLanguages[language];
     const relatedCompanyIds = Array.isArray(body.relatedCompanyIds)
       ? Array.from(
           new Set(
@@ -163,6 +182,8 @@ export async function POST(req: NextRequest) {
       const prompt = `你是一个资深的职场咨询与企业文化分析专家。请根据以下关于 ${companyName} 及用户主动选择的相关分区/相似名称企业的真实匿名员工评价（共 ${reviews.length} 条），进行深度的语义分析和综合评估。
 本次分析范围：${includedCompanies.map((item) => `${item.name}（${item.location || '地区未提供'}）`).join('、')}
 请注意：评价数据完全匿名，绝对不能在报告中泄露个人隐私。
+
+输出语言要求：所有面向用户的字符串字段必须使用 ${outputLanguage}。即使原始评价使用其他语言，也必须将分析结论翻译为 ${outputLanguage}。公司名称、专有名词和数值可以保留原文。JSON 属性名必须保持 Schema 中定义的英文名称，不得翻译。
 
 员工评价数据：
 ${reviewsContext}

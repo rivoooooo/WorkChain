@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { i18n, Language, resolveLanguage } from '../../../../lib/i18n';
+import { companyAiReportI18n, companyDetailI18n, companyPageCommonI18n } from '../../../../lib/company-detail-i18n';
 import { CompanyGovernancePanel } from '../../../../components/company-governance-panel';
 import { CompanyShareCard } from '../../../../components/company-share-card';
 import {
@@ -233,16 +234,56 @@ function CompanyDetailSkeleton() {
   );
 }
 
-const reportCacheKey = (companyId: string, relatedIds: string[] = []) =>
-  `ai_report_cache_${companyId}_${[...relatedIds].sort().join('_')}`;
+function AIReportSkeleton({ label }: { label: string }) {
+  return (
+    <div className="space-y-6 animate-pulse" aria-busy="true" aria-label={label}>
+      <div className="border border-border bg-card p-5 space-y-4">
+        <div className="flex items-center justify-between gap-4 border-b border-border pb-3">
+          <div className="h-4 w-44 max-w-[65%] bg-muted" />
+          <div className="h-3 w-20 bg-muted" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-3 w-full bg-muted" />
+          <div className="h-3 w-11/12 bg-muted" />
+          <div className="h-3 w-4/5 bg-muted" />
+        </div>
+        <div className="space-y-2 border-t border-border pt-3">
+          <div className="h-3 w-full bg-muted" />
+          <div className="h-3 w-3/4 bg-muted" />
+        </div>
+        <span className="sr-only">{label}</span>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {Array.from({ length: 2 }, (_, column) => (
+          <div key={column} className="border border-border bg-card p-5 space-y-4">
+            <div className="h-4 w-32 bg-muted border-b border-border" />
+            <div className="space-y-3">
+              {Array.from({ length: 3 }, (_, row) => (
+                <div key={row} className="flex items-center gap-2">
+                  <div className="h-3 w-3 shrink-0 bg-muted" />
+                  <div className={`h-3 bg-muted ${row === 1 ? 'w-4/5' : 'w-full'}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const reportCacheKey = (companyId: string, language: Language, relatedIds: string[] = []) =>
+  `ai_report_cache_${language}_${companyId}_${[...relatedIds].sort().join('_')}`;
 
 const getCachedAIReport = (
   companyId: string,
+  language: Language,
   relatedIds: string[] = []
 ): AIReport | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const key = reportCacheKey(companyId, relatedIds);
+    const key = reportCacheKey(companyId, language, relatedIds);
     const itemStr = localStorage.getItem(key);
     if (!itemStr) return null;
     const entry: CacheEntry = JSON.parse(itemStr);
@@ -260,12 +301,13 @@ const getCachedAIReport = (
 
 const setCachedAIReport = (
   companyId: string,
+  language: Language,
   data: AIReport,
   relatedIds: string[] = []
 ) => {
   if (typeof window === 'undefined') return;
   try {
-    const key = reportCacheKey(companyId, relatedIds);
+    const key = reportCacheKey(companyId, language, relatedIds);
     const entry: CacheEntry = {
       data,
       timestamp: Date.now()
@@ -280,6 +322,9 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const { id: companyId, lang: rawLang } = use(params);
   const lang: Language = resolveLanguage(rawLang);
   const t = i18n[lang];
+  const detailT = companyDetailI18n[lang];
+  const aiT = companyAiReportI18n[lang];
+  const commonT = companyPageCommonI18n[lang];
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -350,7 +395,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         );
         setRelatedCompanies(loadedRelated);
 
-        const cached = getCachedAIReport(companyId);
+        const cached = getCachedAIReport(companyId, lang);
         if (cached) {
           setAiReport(cached);
         }
@@ -361,7 +406,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
       }
     }
     loadData();
-  }, [companyId]);
+  }, [companyId, lang]);
 
   const uniquePositions = Array.from(new Set(reviews.map(r => r.position.trim()))).filter(Boolean);
 
@@ -390,7 +435,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
   const handleGenerateAIReport = async (force: boolean = false) => {
     if (!company) return;
     if (!force) {
-      const cached = getCachedAIReport(companyId, selectedRelatedCompanyIds);
+      const cached = getCachedAIReport(companyId, lang, selectedRelatedCompanyIds);
       if (cached) {
         setAiReport(cached);
         return;
@@ -405,13 +450,14 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           companyId,
+          language: lang,
           relatedCompanyIds: selectedRelatedCompanyIds,
         }),
       });
       const json = await res.json();
       if (json.success) {
         setAiReport(json.data);
-        setCachedAIReport(companyId, json.data, selectedRelatedCompanyIds);
+        setCachedAIReport(companyId, lang, json.data, selectedRelatedCompanyIds);
       } else {
         setAiError(json.error || '无法生成AI分析报告，请稍后再试。');
       }
@@ -466,9 +512,9 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
     return (
       <div className="text-center py-20 border border-border bg-card rounded-none" id="error_screen">
         <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-        <h1 className="text-lg font-bold text-foreground mb-2">{lang === 'zh' ? '未找到该企业' : 'Company Not Found'}</h1>
+        <h1 className="text-lg font-bold text-foreground mb-2">{commonT.notFound}</h1>
         <p className="text-xs text-muted-foreground mb-6 max-w-sm mx-auto">
-          {lang === 'zh' ? '该企业可能尚未创建评价，或者标识符无效。' : 'No records exist under this identifier.'}
+          {commonT.notFoundDesc}
         </p>
         <Link
           href={`/${rawLang}/companies`}
@@ -494,7 +540,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground font-mono mt-2">
             <span>ID: <strong className="text-foreground">{company.id}</strong></span>
             <span>•</span>
-            <span>{company.review_count} {lang === 'zh' ? '笔存证记录' : 'block entries'}</span>
+            <span>{company.review_count} {commonT.ledgerEntries}</span>
             <span>•</span>
             <span className="text-foreground font-bold flex items-center gap-1">
               <Star className="w-3.5 h-3.5 fill-foreground text-foreground" />
@@ -511,7 +557,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
             className="px-3.5 py-2 border border-border hover:bg-muted text-xs font-bold text-foreground flex items-center gap-1.5 cursor-pointer rounded-none"
           >
             <Share2 className="w-3.5 h-3.5 text-foreground" />
-            <span>{lang === 'zh' ? '分享' : 'Share'}</span>
+            <span>{t.shareButton}</span>
           </button>
 
           <button
@@ -533,7 +579,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
             className="px-3.5 py-2 bg-foreground text-background font-bold text-xs flex items-center gap-1.5 cursor-pointer rounded-none hover:opacity-90 transition-opacity"
           >
             <Lock className="w-3.5 h-3.5 text-background" />
-            <span>{lang === 'zh' ? '验证账本' : 'Verify Ledger'}</span>
+            <span>{detailT.verifyLedger}</span>
           </button>
         </div>
       </div>
@@ -542,7 +588,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
       <div className="flex border-b border-border mb-8 font-mono text-xs overflow-x-auto" id="detail_tabs_row">
         <button
           onClick={() => selectTab('reviews')}
-          className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+          className={`shrink-0 px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'reviews'
               ? 'border-foreground text-foreground'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -556,7 +602,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
         <button
           onClick={() => selectTab('details')}
-          className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+          className={`shrink-0 px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'details'
               ? 'border-foreground text-foreground'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -564,7 +610,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
         >
           <span className="flex items-center gap-2 uppercase">
             <Building2 className="w-3.5 h-3.5 text-emerald-500" />
-            <span>{lang === 'zh' ? '公司详情信息' : 'Company Details'}</span>
+            <span>{detailT.companyDetails}</span>
           </span>
         </button>
 
@@ -573,7 +619,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
             selectTab('aiReport');
             if (!aiReport) handleGenerateAIReport(false);
           }}
-          className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer ${
+          className={`shrink-0 px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'aiReport'
               ? 'border-foreground text-foreground'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -587,7 +633,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
         <button
           onClick={() => selectTab('ledger')}
-          className={`px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer ${
+          className={`shrink-0 px-4 py-3 font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
             activeTab === 'ledger'
               ? 'border-foreground text-foreground'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -609,7 +655,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
           {/* STATS BLOCK 1: CORE SATISFACTION METRICS */}
           <div className="border border-border p-4 bg-card rounded-none space-y-3">
             <h3 className="text-xs font-black text-foreground uppercase tracking-wider border-b border-border pb-2 flex items-center justify-between">
-              <span>{lang === 'zh' ? '多维度评价满意度' : 'Satisfaction Metrics'}</span>
+              <span>{t.statsSatisfaction}</span>
               <span className="font-mono text-muted-foreground">{company.avg_rating} / 5</span>
             </h3>
 
@@ -636,16 +682,16 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
           {company.avg_salary > 0 && (
             <div className="border border-border p-4 bg-card rounded-none space-y-3">
               <h3 className="text-xs font-black text-foreground uppercase tracking-wider border-b border-border pb-2">
-                {lang === 'zh' ? '基本薪资与年终奖' : 'Salary Telemetry'}
+                {t.statsCompensation}
               </h3>
               <div className="space-y-2 font-mono">
                 <div>
-                  <span className="text-[10px] text-muted-foreground block">{lang === 'zh' ? '平均基本月薪' : 'Avg Base Salary'}</span>
+                  <span className="text-[10px] text-muted-foreground block">{t.statsAvgBaseSalary}</span>
                   <span className="text-xl font-black text-foreground">{(company.avg_salary / 1000).toFixed(1)}K / M</span>
                 </div>
                 {company.avg_bonus > 0 && (
                   <div className="border-t border-border pt-2">
-                    <span className="text-[10px] text-muted-foreground block">{lang === 'zh' ? '平均期望年终奖' : 'Avg Annual Bonus'}</span>
+                    <span className="text-[10px] text-muted-foreground block">{t.statsAvgAnnualBonus}</span>
                     <span className="text-lg font-bold text-foreground">{(company.avg_bonus / 1000).toFixed(1)}K / Y</span>
                   </div>
                 )}
@@ -657,12 +703,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
           <div className="border border-border p-4 bg-muted/20 rounded-none space-y-2 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5 font-bold text-foreground text-xs uppercase tracking-wider mb-1">
               <ShieldCheck className="w-4 h-4 text-foreground" />
-              <span>{lang === 'zh' ? '密码学存证保障' : 'Ledger Security'}</span>
+              <span>{t.statsLedgerSecurity}</span>
             </div>
             <p className="leading-relaxed text-[11px]">
-              {lang === 'zh'
-                ? '本页面所有评论与薪资数据均已使用 SHA-256 区块链链式散列处理，数据不可篡改。'
-                : 'All reviews and salary data are cryptographically bound via SHA-256 blocks.'}
+              {t.statsLedgerSecurityDesc}
             </p>
           </div>
         </aside>
@@ -677,13 +721,13 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
               {/* FILTER & SORT TOOLBAR */}
               <div className="border border-border p-3 bg-card rounded-none flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between" id="local_filters">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                   <input
                     type="text"
                     value={localSearch}
                     onChange={(e) => setLocalSearch(e.target.value)}
-                    placeholder={t.reviewSearchPlaceholder}
-                    className="w-full pl-9 pr-3 py-1.5 bg-muted/40 border border-border focus:border-foreground outline-none text-xs text-foreground placeholder:text-muted-foreground rounded-none transition-colors"
+                    placeholder={detailT.searchReviews}
+                    className="w-full ps-9 pe-3 py-1.5 bg-muted/40 border border-border focus:border-foreground outline-none text-xs text-foreground placeholder:text-muted-foreground rounded-none transition-colors"
                   />
                 </div>
 
@@ -693,7 +737,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                     onChange={(e) => setFilterPosition(e.target.value)}
                     className="bg-muted/40 border border-border outline-none px-2 py-1 text-xs text-foreground cursor-pointer rounded-none"
                   >
-                    <option value="ALL">{t.allPositions}</option>
+                    <option value="ALL">{detailT.allPositions}</option>
                     {uniquePositions.map(pos => (
                       <option key={pos} value={pos}>{pos}</option>
                     ))}
@@ -704,9 +748,9 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                     onChange={(e) => setFilterStatus(e.target.value)}
                     className="bg-muted/40 border border-border outline-none px-2 py-1 text-xs text-foreground cursor-pointer rounded-none"
                   >
-                    <option value="ALL">{t.allStatus}</option>
-                    <option value="current">{t.currentEmployee}</option>
-                    <option value="former">{t.formerEmployee}</option>
+                    <option value="ALL">{detailT.allStatuses}</option>
+                    <option value="current">{detailT.currentEmployee}</option>
+                    <option value="former">{detailT.formerEmployee}</option>
                   </select>
 
                   <div className="flex bg-muted/40 p-0.5 border border-border gap-0.5">
@@ -716,7 +760,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                         sortBy === 'latest' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      {t.sortLatest}
+                      {detailT.latest}
                     </button>
                     <button
                       onClick={() => setSortBy('salary')}
@@ -724,7 +768,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                         sortBy === 'salary' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      {t.sortSalary}
+                      {detailT.salary}
                     </button>
                     <button
                       onClick={() => setSortBy('rating')}
@@ -732,7 +776,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                         sortBy === 'rating' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      {t.sortRating}
+                      {detailT.rating}
                     </button>
                   </div>
                 </div>
@@ -743,7 +787,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="text-center py-16 border border-border bg-card text-card-foreground rounded-none" id="empty_reviews">
                   <Briefcase className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                   <h3 className="text-xs font-bold text-foreground mb-1">
-                    {lang === 'zh' ? '未找到符合条件的评价' : 'No Reviews Found'}
+                    {detailT.noReviews}
                   </h3>
                 </div>
               ) : (
@@ -832,13 +876,9 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div>
                   <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                     <Building2 className="w-5 h-5 text-emerald-500" />
-                    <span>{lang === 'zh' ? '企业基本与工商补充信息档案' : 'Company Dossier & Corporate Specs'}</span>
+                    <span>{detailT.dossier}</span>
                   </h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {lang === 'zh'
-                      ? '包含统一社会信用代码、注册资金、法人代表、经营范围及关联媒体图片/链接。'
-                      : 'Corporate registry attributes, credit code, and linked media assets.'}
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">{detailT.dossier}</p>
                 </div>
               </div>
 
@@ -848,10 +888,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="border border-border p-4 bg-card rounded-none space-y-1">
                   <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                    {lang === 'zh' ? '统一社会信用代码' : 'USCC Credit Code'}
+                    {detailT.creditCode}
                   </span>
                   <div className="text-sm font-mono font-bold text-foreground truncate" title={company.credit_code || '未录入'}>
-                    {company.credit_code || (lang === 'zh' ? '暂无社会信用代码' : 'N/A')}
+                    {company.credit_code || detailT.notProvided}
                   </div>
                 </div>
 
@@ -859,10 +899,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="border border-border p-4 bg-card rounded-none space-y-1">
                   <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
                     <Globe className="w-3.5 h-3.5 text-emerald-500" />
-                    {lang === 'zh' ? '国家/地区与城市' : 'Country / Region & City'}
+                    {detailT.region}
                   </span>
                   <div className="text-sm font-bold text-foreground truncate">
-                    {[company.country_name || company.country_code, company.province, company.city].filter(Boolean).join(' · ') || (lang === 'zh' ? '中国' : 'China')}
+                    {[company.country_name || company.country_code, company.province, company.city].filter(Boolean).join(' · ') || detailT.notProvided}
                   </div>
                 </div>
 
@@ -870,10 +910,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="border border-border p-4 bg-card rounded-none space-y-1">
                   <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
                     <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
-                    {lang === 'zh' ? '法定代表人' : 'Legal Representative'}
+                    {detailT.legalRepresentative}
                   </span>
                   <div className="text-sm font-bold text-foreground truncate">
-                    {companyDetailsInfo?.legal_representative || (lang === 'zh' ? '未填写' : 'N/A')}
+                    {companyDetailsInfo?.legal_representative || detailT.notProvided}
                   </div>
                 </div>
 
@@ -881,10 +921,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="border border-border p-4 bg-card rounded-none space-y-1">
                   <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
                     <Coins className="w-3.5 h-3.5 text-emerald-500" />
-                    {lang === 'zh' ? '注册资金' : 'Registered Capital'}
+                    {detailT.registeredCapital}
                   </span>
                   <div className="text-sm font-mono font-bold text-foreground truncate">
-                    {companyDetailsInfo?.registered_capital || (lang === 'zh' ? '未填写' : 'N/A')}
+                    {companyDetailsInfo?.registered_capital || detailT.notProvided}
                   </div>
                 </div>
 
@@ -892,10 +932,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="border border-border p-4 bg-card rounded-none space-y-1">
                   <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-emerald-500" />
-                    {lang === 'zh' ? '成立 / 注册日期' : 'Establishment Date'}
+                    {detailT.establishmentDate}
                   </span>
                   <div className="text-sm font-mono font-bold text-foreground truncate">
-                    {companyDetailsInfo?.establishment_date || (lang === 'zh' ? '未填写' : 'N/A')}
+                    {companyDetailsInfo?.establishment_date || detailT.notProvided}
                   </div>
                 </div>
 
@@ -903,10 +943,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="border border-border p-4 bg-card rounded-none space-y-1">
                   <span className="text-[10px] font-extrabold uppercase text-muted-foreground tracking-wider flex items-center gap-1">
                     <Briefcase className="w-3.5 h-3.5 text-emerald-500" />
-                    {lang === 'zh' ? '企业类型' : 'Company Type'}
+                    {detailT.companyType}
                   </span>
                   <div className="text-sm font-bold text-foreground truncate">
-                    {companyDetailsInfo?.company_type || (lang === 'zh' ? '未填写' : 'N/A')}
+                    {companyDetailsInfo?.company_type || detailT.notProvided}
                   </div>
                 </div>
               </div>
@@ -915,10 +955,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
               <div className="border border-border p-5 bg-card rounded-none space-y-2">
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 border-b border-border pb-2">
                   <MapPin className="w-4 h-4 text-emerald-500" />
-                  <span>{lang === 'zh' ? '注册 / 住所地址' : 'Registered Address'}</span>
+                  <span>{detailT.registeredAddress}</span>
                 </h4>
                 <p className="text-xs text-foreground font-mono leading-relaxed">
-                  {companyDetailsInfo?.registered_address || (lang === 'zh' ? '暂未填写注册详细地址' : 'No registered address provided.')}
+                  {companyDetailsInfo?.registered_address || detailT.notProvided}
                 </p>
               </div>
 
@@ -926,10 +966,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
               <div className="border border-border p-5 bg-card rounded-none space-y-2">
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 border-b border-border pb-2">
                   <FileText className="w-4 h-4 text-emerald-500" />
-                  <span>{lang === 'zh' ? '经营范围' : 'Business Scope'}</span>
+                  <span>{detailT.businessScope}</span>
                 </h4>
                 <p className="text-xs text-foreground/90 leading-relaxed font-sans whitespace-pre-wrap">
-                  {companyDetailsInfo?.business_scope || (lang === 'zh' ? '暂未填写经营范围' : 'No business scope details provided.')}
+                  {companyDetailsInfo?.business_scope || detailT.notProvided}
                 </p>
               </div>
 
@@ -938,7 +978,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="border border-border p-5 bg-card rounded-none space-y-2">
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 border-b border-border pb-2">
                     <Globe className="w-4 h-4 text-emerald-500" />
-                    <span>{lang === 'zh' ? '官方网站' : 'Official Website'}</span>
+                    <span>{detailT.officialWebsite}</span>
                   </h4>
                   {getExternalUrl(companyDetailsInfo.website) ? (
                     <a
@@ -963,7 +1003,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="flex items-center justify-between border-b border-border pb-2">
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <Link2 className="w-4 h-4 text-emerald-500" />
-                    <span>{lang === 'zh' ? '相关链接与媒体展示' : 'Associated Links & Media'} ({companyLinksList.length})</span>
+                    <span>{detailT.linksAndMedia} ({companyLinksList.length})</span>
                   </h4>
                 </div>
 
@@ -971,7 +1011,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   <div className="py-8 text-center space-y-2">
                     <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto" />
                     <p className="text-xs text-muted-foreground">
-                      {lang === 'zh' ? '暂无关联图片、Logo或外部链接' : 'No linked media or URLs recorded.'}
+                      {detailT.notProvided}
                     </p>
                   </div>
                 ) : (
@@ -1004,12 +1044,12 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                               rel="noopener noreferrer"
                               className="px-2.5 py-1 border border-border hover:bg-foreground hover:text-background text-[10px] font-bold transition-colors shrink-0 flex items-center gap-1"
                             >
-                              <span>{lang === 'zh' ? '打开' : 'Open'}</span>
+                              <span>{detailT.open}</span>
                               <ExternalLink className="w-3 h-3" />
                             </a>
                           ) : (
                             <span className="text-[10px] text-muted-foreground">
-                              {lang === 'zh' ? '链接无效' : 'Invalid URL'}
+                              {detailT.invalidUrl}
                             </span>
                           )}
                         </div>
@@ -1028,14 +1068,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 >
                   <span className="flex items-center gap-2 text-sm font-bold text-foreground">
                     <Plus className="h-4 w-4 text-emerald-500" />
-                    {lang === 'zh'
-                      ? '社区维护企业档案'
-                      : 'Maintain this company profile'}
+                    {commonT.maintainProfile}
                   </span>
                   <span className="mt-1 block text-xs text-muted-foreground">
-                    {lang === 'zh'
-                      ? '补充缺失信息，或提交对现有企业资料的修改建议。'
-                      : 'Add missing information or propose changes to existing company details.'}
+                    {commonT.maintainProfileDesc}
                   </span>
                 </button>
               ) : (
@@ -1083,7 +1119,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                     className="px-3.5 py-2 border border-border hover:bg-muted text-xs font-bold text-foreground flex items-center gap-1.5 cursor-pointer rounded-none"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 text-foreground ${isGeneratingAI ? 'animate-spin' : ''}`} />
-                    <span>{lang === 'zh' ? '刷新报告' : 'Refresh'}</span>
+                    <span>{t.aiRegenTooltip}</span>
                   </button>
                 )}
               </div>
@@ -1092,14 +1128,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="border border-border p-5 bg-card rounded-none space-y-3">
                   <div>
                     <h4 className="text-xs font-extrabold uppercase tracking-wider text-foreground">
-                      {lang === 'zh'
-                        ? '选择要合并分析的分区或相似企业'
-                        : 'Include regional or similar companies'}
+                      {aiT.relatedTitle}
                     </h4>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {lang === 'zh'
-                        ? '只有你勾选的企业评价会加入本次报告，原始企业统计不会被改变。'
-                        : 'Only selected company reviews are included in this report; source statistics remain unchanged.'}
+                      {aiT.relatedDesc}
                     </p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -1130,18 +1162,14 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                             </span>
                             <span className="block text-[11px] text-muted-foreground">
                               {[related.province, related.city].filter(Boolean).join(' / ') ||
-                                (lang === 'zh' ? '地区未提供' : 'Location unavailable')}
+                                detailT.notProvided}
                               {' · '}
                               {related.review_count}
-                              {lang === 'zh' ? ' 条评价' : ' reviews'}
+                              {' '}{aiT.reviewUnit}
                               {' · '}
                               {related.relation === 'same_name_region'
-                                ? lang === 'zh'
-                                  ? '同名分区'
-                                  : 'Same-name region'
-                                : lang === 'zh'
-                                  ? '名称相似'
-                                  : 'Similar name'}
+                                ? aiT.sameNameRegion
+                                : aiT.similarName}
                             </span>
                           </span>
                         </label>
@@ -1152,10 +1180,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
               )}
 
               {isGeneratingAI ? (
-                <div className="py-16 text-center border border-border bg-card rounded-none flex flex-col items-center justify-center">
-                  <Loader2 className="w-8 h-8 text-foreground animate-spin mb-4" />
-                  <h3 className="text-xs font-bold text-foreground mb-1">{t.aiGenerating}</h3>
-                </div>
+                <AIReportSkeleton label={t.aiGenerating} />
               ) : aiError ? (
                 <div className="p-6 border border-rose-500/30 bg-rose-500/10 text-center rounded-none">
                   <AlertCircle className="w-8 h-8 text-rose-500 mx-auto mb-2" />
@@ -1164,7 +1189,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                     onClick={() => handleGenerateAIReport(true)}
                     className="px-4 py-2 bg-foreground text-background font-bold text-xs rounded-none"
                   >
-                    {lang === 'zh' ? '重试' : 'Retry'}
+                    {t.aiStartBtn}
                   </button>
                 </div>
               ) : !aiReport ? (
@@ -1174,7 +1199,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                     onClick={() => handleGenerateAIReport(true)}
                     className="px-5 py-2.5 bg-foreground text-background font-bold text-xs rounded-none cursor-pointer"
                   >
-                    {lang === 'zh' ? '立即生成 AI 分析报告' : 'Generate AI Report'}
+                    {t.aiStartBtn}
                   </button>
                 </div>
               ) : (
@@ -1182,7 +1207,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   {/* OVERALL SUMMARY CARD */}
                   <div className="border border-border p-5 bg-card rounded-none space-y-3">
                     <h4 className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground border-b border-border pb-2">
-                      {lang === 'zh' ? 'AI 综合职场总结' : 'Executive Overview'}
+                      {t.aiTitle}
                     </h4>
                     <p className="text-xs text-foreground leading-relaxed font-sans">
                       {aiReport.overallSummary}
@@ -1194,7 +1219,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                     )}
                     {aiReport.analysisScope && aiReport.analysisScope.length > 0 && (
                       <p className="text-[11px] text-muted-foreground border-t border-border pt-3">
-                        {lang === 'zh' ? '分析范围：' : 'Scope: '}
+                        {aiT.scope}{' '}
                         {aiReport.analysisScope
                           .map((item) => `${item.name}（${item.location || '-'}）`)
                           .join('、')}
@@ -1206,7 +1231,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="border border-border p-5 bg-card rounded-none space-y-2">
                       <h5 className="text-xs font-bold uppercase text-foreground border-b border-border pb-2">
-                        {lang === 'zh' ? '核心优势 (Pros)' : 'Key Advantages'}
+                        {t.aiCatStrengths}
                       </h5>
                       <ul className="space-y-1 text-xs text-muted-foreground">
                         {aiReport.pros.map((pro, idx) => (
@@ -1220,7 +1245,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
 
                     <div className="border border-border p-5 bg-card rounded-none space-y-2">
                       <h5 className="text-xs font-bold uppercase text-foreground border-b border-border pb-2">
-                        {lang === 'zh' ? '风险与卡点 (Cons)' : 'Potential Friction Points'}
+                        {t.aiCatPainPoints}
                       </h5>
                       <ul className="space-y-1 text-xs text-muted-foreground">
                         {aiReport.cons.map((con, idx) => (
@@ -1244,10 +1269,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div>
                   <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                     <Lock className="w-4 h-4 text-foreground" />
-                    <span>{lang === 'zh' ? '密码学账本防篡改审计' : 'Blockchain Ledger Audit'}</span>
+                    <span>{t.ledgerTitle}</span>
                   </h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {lang === 'zh' ? '依次对每一个区块评论计算 SHA-256 哈希，验证前向指针完整性。' : 'Validate cryptographic previous_hash links.'}
+                    {t.ledgerDesc}
                   </p>
                 </div>
 
@@ -1259,10 +1284,10 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                   {isVerifyingLedger ? (
                     <span className="flex items-center gap-1.5">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>{lang === 'zh' ? '审计中...' : 'Auditing...'}</span>
+                      <span>{commonT.auditing}</span>
                     </span>
                   ) : (
-                    <span>{lang === 'zh' ? '开始全链审计' : 'Run Audit'}</span>
+                    <span>{t.ledgerVerifyBtn}</span>
                   )}
                 </button>
               </div>
@@ -1272,7 +1297,7 @@ export default function CompanyDetailPage({ params }: { params: Promise<{ id: st
                 <div className="border border-border p-5 bg-card rounded-none space-y-4 font-mono">
                   <div className="flex items-center justify-between border-b border-border pb-3">
                     <span className="text-xs font-bold text-foreground uppercase">
-                      {lang === 'zh' ? '审计结论' : 'Audit Result'}
+                      {t.ledgerIntegrityPassed}
                     </span>
                     <span className={`text-xs font-bold px-2 py-0.5 border ${
                       verificationResult.isValid
