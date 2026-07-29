@@ -1,122 +1,156 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+  <img width="1200" height="475" alt="WorkChain" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Work-Chain 职场匿名评价与薪资账本系统
+# WorkChain
 
-基于 Next.js、Drizzle ORM、PostgreSQL / Supabase 与密码学散列的匿名职场评价、薪资透明度与企业注册数据全景系统。
+**匿名分享企业信息，让真实的工作体验被看见。**
 
----
+WorkChain 是一个由社区共同维护的匿名职场信息平台。你可以在这里查询企业口碑，也可以分享真实的薪资、工时和工作体验，为正在求职或考虑换工作的人提供更多参考。
 
-## 🚀 核心架构与数据库设计 (Schema Architecture)
+使用 WorkChain 无需注册账号，也不需要公开姓名、手机号或电子邮箱。我们希望把那些通常只存在于朋友聊天和私下交流中的职场信息，沉淀为可以公开查询、共同补充和验证的数据。
 
-系统采用解耦与可扩充的 PostgreSQL 数据模型架构：
+> WorkChain 仍处于早期阶段。匿名评价只能作为了解企业的一个信息来源，请结合面试、合同及其他公开资料独立判断。
 
-- **公司主表 (`companies`)**：
-  - `credit_code`: 统一社会信用代码（可选检索字段）；企业身份由规范化名称与国家/省份/城市共同确定。
-  - 地理位置属性: `country_code` ('CN' 等)、`country_name` ('中国' 等)、`province` (省份)、`city` (工作城市)。
-  - 评级汇总指标: 综合评分、薪资与年终奖均值、多维度满意度统计。
-- **扩展详细信息表 (`company_details`)**：
-  - 补充工商扩展字段: 法人代表 (`legal_representative`)、注册资金 (`registered_capital`)、经营范围 (`business_scope`)、注册地址 (`registered_address`)、注册日期 (`establishment_date`)、企业类型 (`company_type`)。
-  - *设计优势*：创建评价时仅需填入最少必要基本信息，无需强制录入复杂的扩展工商属性。
-- **相关链接与媒体表 (`company_links`)**：
-  - 支持 Logo (`logo`)、展示图片 (`image`)、官方网站 (`url`) 与文档 (`document`) 关联存储。结合 Supabase Object Storage (`company-assets` Bucket)。
-- **社区位置字符串索引 (`location_countries` & `location_cities`)**：
-  - 正式数据库不预置地理数据；用户可用中文或英文填写国家与城市。
-  - 国家按规范化名称全局唯一，城市按“国家 + 规范化城市名”唯一。
+## 为什么做 WorkChain
 
----
+招聘页面通常会详细介绍岗位职责和公司愿景，却很少回答求职者真正关心的问题：
 
-## 🛠️ 数据初始化与 CLI 脚本指南 (Data Ingestion & CLI)
+- 实际每天工作多久、每周工作几天？
+- 薪资和年终奖大概处于什么水平？
+- 管理方式、团队氛围和工作生活平衡怎么样？
+- 这份工作是否有成长空间？
+- 同名企业或不同城市的分支，真实体验是否相同？
 
-在配置好 `.env` 中的 `DATABASE_URL` 之后，系统提供开箱即用的命令行脚本工具：
+这些问题往往只有亲身工作过的人才知道。WorkChain 希望提供一个不依赖公开身份的分享空间，让更多真实经验能够被看见。
 
-### 1. 数据库结构同步
-`drizzle/schema.ts` 是唯一结构源。开发环境推送：
-```bash
-bun run db:push
-```
-正式环境使用带项目目标和显式确认保护的 `bun run db:push:prod`，详见 [SCRIPTS.md](SCRIPTS.md)。
+## 你可以在 WorkChain 做什么
 
-### 2. 可选的离线地理 SQL
-脚本仍可从 `data/cities500.txt` 生成只包含 INSERT 的离线 SQL，但正式环境不需要导入：
-```bash
-bun run data:export:geo --output data/cities500.sql --force
-bun run data:check-sql data/cities500.sql
-```
+### 查询企业口碑
 
-### 3. 载入企业注册 CSV 数据 (Kinginsun 仓库格式)
-支持解析并导入中国大陆企业注册数据，感谢开源数据提供：
-- 🔗 **数据来源与致谢**：[kinginsun/Enterprise-Registration-Data-of-Chinese-Mainland](https://github.com/kinginsun/Enterprise-Registration-Data-of-Chinese-Mainland)
+搜索企业名称，查看不同城市或分支的匿名评价、综合评分、薪资水平、年终奖及工作强度。企业目录支持按照评价数量、综合评分、薪资和不同满意度维度进行比较。
 
-```bash
-# 使用 --dir 参数批量导入目录下（包含子目录）的所有 CSV / TXT 数据
-bun run data:export:companies --dir /path/to/enterprise_csv_dir \
-  --output data/companies.sql
+### 匿名分享工作体验
 
-# 或导入单个 CSV 数据文件
-bun run data:export:companies /path/to/enterprise.csv \
-  --output data/companies.sql
-```
+无需注册即可提交评价。除了文字体验，还可以填写：
 
-*特质说明*：
-- **通用转换适配器**：自动映射统一社会信用代码、企业名称、法人代表、资金、经营范围、企业类型等列名。
-- **不可变追加**：以规范化的 **企业名称 + 国家/省份/城市** 作为唯一身份；同名企业在不同地区可以独立存在，已存在记录不会覆写。
-- **可选联合分析**：生成企业分析报告时，可由用户主动勾选同名分区企业或名称相似企业，将其评价临时合并到本次分析口径。
-- **工作强度样本**：新评价同时收集每天工作时长和每周工作天数，并纳入不可变评价哈希与分析报告。
-- **读写分离**：企业、评价、统计和地理数据由浏览器通过 Supabase Data API 直接读取；受控写入继续经过 Next.js、Turnstile 与速率限制。
-- **多语言与 RTL**：支持简体中文、繁体中文、英语、日语、阿拉伯语、印地语、土耳其语、西班牙语和藏语；阿拉伯语界面自动使用从右到左布局。
+- 工作城市、岗位与在职状态
+- 基本月薪和年终奖
+- 工作年限
+- 每天工作时长和每周工作天数
+- 职业成长、工作生活平衡、管理方式、福利待遇和企业文化评分
 
-`bun run db:push` 会先通过 Drizzle 推送结构，再自动为前端读取所需的
-表与视图授予 `anon` 角色 `USAGE/SELECT` 权限；不会授予写入、修改或
-删除权限。`db:grant-public-read` 仅用于需要单独修复权限的场景。
+如果平台尚未收录某家企业，也可以创建企业档案并提交第一条评价。
 
----
+### 共同维护企业资料
 
-## 🖥️ 前端组件与功能特性 (UI Components)
+任何人都可以补充企业的基本资料、工商信息和相关链接。已有资料需要修改时，可以通过提议与匿名采纳机制由社区共同维护，而不是由单一用户随意覆盖。
 
-1. **已建企业模糊检索与自动补全 (`CompanySelect`)**：
-   - 评价表单中输入公司名称时打字实时检索已知企业库。
-   - 选中已知企业后，**自动补全/填充所在国家与工作城市**。
-2. **自由填写国家与城市**：
-   - 国家与工作城市都是普通文本输入，可直接填写中文或英文。
-   - 首次出现的位置会自动追加到轻量唯一字符串索引，不依赖预置地理数据库。
-3. **Web 端公司详情 Tab 页签 (`/[lang]/companies/[id]`)**：
-   - 新增 **“公司详情信息”** 专属 Tab 页签，展示统一社会信用代码、法人代表、注册资金、成立日期、经营范围及媒体图集/外部链接。
+### 查看企业文化分析
 
----
+WorkChain 可以综合公开的匿名评价、薪资、工时和评分，生成企业文化、主要优势、潜在风险、薪酬体验和适合人群等分析。分析结果用于辅助阅读，不能代替个人判断。
 
-## 💻 本地开发指南
+### 验证评价记录
 
-**包管理器要求**：本项目统一使用 **`bun`**。
+每条评价都会生成 SHA-256 哈希，并与该企业的上一条评价关联。任何人都可以在浏览器中重新计算并核对记录，检查评价链是否保持完整。
 
-1. **安装依赖**：
+链式哈希用于提高数据变更的可发现性和可验证性，并不代表数据已经写入公开区块链。
+
+### 下载开放数据
+
+公开的企业与匿名评价数据可以按 CSV、Excel 和 SQL 等格式下载，并附带校验摘要，方便进行独立分析、研究和长期归档。
+
+### 使用不同语言
+
+WorkChain 目前支持简体中文、繁体中文、英语、日语、阿拉伯语、印地语、土耳其语、西班牙语和藏语，阿拉伯语界面同时支持从右到左布局。
+
+## 如何参与
+
+1. 搜索你想了解的企业，阅读已有评价和统计信息。
+2. 分享一段不包含个人隐私或企业机密的真实工作体验。
+3. 为缺失的企业补充资料，或参与现有资料的社区维护。
+4. 在使用过程中发现问题，可以通过 [GitHub Issues](https://github.com/rivoooooo/WorkChain/issues) 提交反馈。
+
+如果你是开发者，也欢迎参与代码审查、提出产品建议或贡献改进。
+
+## 隐私与数据原则
+
+- **无需公开身份**：浏览和提交内容不要求账号、姓名、手机号或电子邮箱。
+- **公开分享**：提交的企业资料、评价、薪资、工时和评分会公开展示，并可能进入开放数据集。
+- **避免敏感信息**：请勿提交个人隐私、商业秘密或能够识别具体个人的信息。
+- **限制滥用**：服务会在必要范围内处理网络信息、匿名凭证和人机验证结果，用于限速及防止恶意提交。
+- **追加式记录**：公开评价采用追加式保存，不按普通社交平台的方式随意覆盖历史内容，提交前请仔细确认。
+
+更完整的说明请查看应用内的隐私政策。
+
+## 项目状态
+
+WorkChain 当前处于持续开发和早期测试阶段，界面、数据结构及部分功能仍可能调整。
+
+我们尤其希望收到以下反馈：
+
+- 企业搜索和评价提交流程是否顺畅
+- 页面文案是否清楚、容易理解
+- 移动端和不同浏览器下的显示问题
+- 隐私、防滥用与数据验证机制是否合理
+- 你真正希望在求职前了解哪些企业信息
+
+## 技术实现与本地开发
+
+WorkChain 基于 Next.js、React 和 TypeScript 构建，使用 Drizzle ORM 管理 PostgreSQL / Supabase 数据结构，项目统一使用 Bun。
+
+### 数据设计
+
+- 企业以规范化的“企业名称 + 国家 / 省份 / 城市”作为身份，同名企业在不同地区可以独立存在。
+- 企业基础身份、扩展工商资料和媒体链接分开保存，便于社区逐步补充。
+- 评价包含前一条记录的哈希，并对评价内容计算 SHA-256 摘要。
+- 导入和业务数据遵循追加原则；发生冲突时跳过，不更新或删除已有数据。
+- 企业、评价和统计数据可公开只读，受控写入继续经过服务端验证、限速和人机校验。
+
+### 本地运行
+
+1. 安装依赖：
+
    ```bash
    bun install
    ```
-2. **环境配置**：
-   复制 `.env.example`，配置 `DATABASE_OWNER_URL`、`APP_DATABASE_URL` 与 Supabase 参数。
-3. **启动服务**：
+
+2. 复制 `.env.example`，配置数据库、Supabase 和所需服务参数。
+
+3. 同步开发数据库结构：
+
+   ```bash
+   bun run db:push
+   ```
+
+4. 启动开发服务：
+
    ```bash
    bun run dev
    ```
 
----
+### 常用命令
 
-## 📜 常用 CLI 脚本列表
+| 命令 | 用途 |
+| --- | --- |
+| `bun run dev` | 启动本地开发服务 |
+| `bun run build` | 构建生产版本 |
+| `bun run lint` | 运行代码检查 |
+| `bun test` | 运行测试 |
+| `bun run db:push` | 同步开发数据库结构和公开只读权限 |
+| `bun run db:push:prod` | 将数据库结构推送到正式环境 |
+| `bun run db:generate` | 生成 Drizzle 迁移文件 |
+| `bun run db:studio` | 启动 Drizzle Studio |
+| `bun run data:export:geo --output <file>` | 生成可选的国家与城市数据 SQL |
+| `bun run data:export:companies --dir <dir> --output <file>` | 将企业注册 CSV 转换为追加式 SQL |
+| `bun run data:check-sql <file>` | 检查数据 SQL 是否只包含安全的追加操作 |
 
-| 脚本命令 | 说明 |
-| :--- | :--- |
-| `bun run db:push` | 从 Drizzle schema 同步开发数据库结构 |
-| `bun run db:push:prod` | 带环境、确认文本和 Supabase 项目标识保护的生产结构推送 |
-| `bun run data:export:geo --output <file>` | 从 `cities500.txt` 生成城市与国家 INSERT-only SQL |
-| `bun run data:export:companies --dir <path> --output <file>` | 转换企业 CSV 并生成确定性的 INSERT-only SQL |
-| `bun run data:check-sql <file>` | 拒绝含 DDL、更新或删除语句的数据 SQL |
+`drizzle/schema.ts` 是表、约束、视图和 RLS 的唯一结构来源，迁移文件应通过 Drizzle Kit 生成。
 
----
+企业注册数据转换工具兼容 [kinginsun/Enterprise-Registration-Data-of-Chinese-Mainland](https://github.com/kinginsun/Enterprise-Registration-Data-of-Chinese-Mainland) 的数据格式，感谢原项目提供开放数据。
 
-## 📚 项目文档
+更多开发和运维信息：
 
 - [运维与 CLI 脚本指南](SCRIPTS.md)
 - [设计系统与样式指南](DESIGN.md)
-- [AGENTS 指南与规范](AGENTS.md)
+- [协作与提交规范](AGENTS.md)
